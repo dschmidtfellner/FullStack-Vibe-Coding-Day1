@@ -10,8 +10,11 @@ export default defineSchema({
   }).index("by_clerkId", ["clerkId"]),
   
   messages: defineTable({
-    text: v.string(),
+    text: v.optional(v.string()),
+    imageId: v.optional(v.id("_storage")),
+    audioId: v.optional(v.id("_storage")),
     senderId: v.id("users"),
     senderName: v.string(),
+    type: v.optional(v.union(v.literal("text"), v.literal("image"), v.literal("audio"))),
   }),
 });

@@ -59,9 +59,9 @@ function RootComponent() {
                   checked={isSidebarOpen}
                   onChange={toggleSidebar}
                 />
-                <div className="drawer-content flex flex-col h-screen">
+                <div className="drawer-content flex flex-col h-screen bg-white">
                   {/* Navbar */}
-                  <header className="navbar bg-base-100 shadow-sm border-b border-base-300 flex-shrink-0">
+                  <header className="navbar bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
                     <div className="navbar-start">
                       <label
                         htmlFor="drawer-toggle"
@@ -71,7 +71,7 @@ function RootComponent() {
                       </label>
                       <Link
                         to="/"
-                        className="btn btn-ghost normal-case text-xl"
+                        className="btn btn-ghost normal-case text-xl text-purple-800 hover:text-purple-900"
                       >
                         Chat
                       </Link>
@@ -94,8 +94,8 @@ function RootComponent() {
                       <UserButton />
                     </div>
                   </header>
-                  {/* Main content */}
-                  <main className="flex-1 prose prose-invert max-w-none overflow-hidden">
+                  {/* Main content - no prose styling for messaging app */}
+                  <main className="flex-1 overflow-hidden">
                     <Outlet />
                   </main>
                 </div>
@@ -158,7 +158,6 @@ function RootComponent() {
               </div>
             </Unauthenticated>
           </div>
-          {import.meta.env.DEV && <TanStackRouterDevtools />}
         </QueryClientProvider>
       </ConvexProviderWithClerk>
     </ClerkProvider>
