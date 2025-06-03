@@ -59,9 +59,9 @@ function RootComponent() {
                   checked={isSidebarOpen}
                   onChange={toggleSidebar}
                 />
-                <div className="drawer-content container mx-auto flex flex-col h-full">
+                <div className="drawer-content flex flex-col h-screen">
                   {/* Navbar */}
-                  <header className="navbar bg-base-100 shadow-sm border-b border-base-300">
+                  <header className="navbar bg-base-100 shadow-sm border-b border-base-300 flex-shrink-0">
                     <div className="navbar-start">
                       <label
                         htmlFor="drawer-toggle"
@@ -73,7 +73,7 @@ function RootComponent() {
                         to="/"
                         className="btn btn-ghost normal-case text-xl"
                       >
-                        Fullstack Vibe Coding
+                        Chat
                       </Link>
                     </div>
                     <div className="navbar-center hidden lg:flex">
@@ -86,7 +86,7 @@ function RootComponent() {
                           }}
                           onClick={() => setIsSidebarOpen(false)}
                         >
-                          Home
+                          Messages
                         </Link>
                       </nav>
                     </div>
@@ -95,12 +95,9 @@ function RootComponent() {
                     </div>
                   </header>
                   {/* Main content */}
-                  <main className="flex-1 p-4 prose prose-invert max-w-none">
+                  <main className="flex-1 prose prose-invert max-w-none overflow-hidden">
                     <Outlet />
                   </main>
-                  <footer className="footer footer-center p-4 text-base-content">
-                    <p>© {new Date().getFullYear()} Fullstack Vibe Coding</p>
-                  </footer>
                 </div>
                 {/* Sidebar content for mobile */}
                 <div className="drawer-side z-10">
@@ -135,31 +132,30 @@ function RootComponent() {
               </div>
             </Authenticated>
             <Unauthenticated>
-              <header className="navbar bg-base-100 shadow-sm border-b border-base-300">
-                <div className="container mx-auto flex justify-between w-full">
-                  <div className="navbar-start">
-                    <h1 className="font-semibold">Fullstack Vibe Coding</h1>
+              <div className="min-h-screen flex flex-col">
+                <header className="navbar bg-base-100 shadow-sm border-b border-base-300">
+                  <div className="container mx-auto flex justify-between w-full">
+                    <div className="navbar-start">
+                      <h1 className="font-semibold">Chat</h1>
+                    </div>
+                    <div className="navbar-end">
+                      <SignInButton mode="modal">
+                        <button className="btn btn-primary btn-sm">
+                          Sign in
+                        </button>
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <button className="btn btn-ghost btn-sm ml-2">
+                          Sign up
+                        </button>
+                      </SignUpButton>
+                    </div>
                   </div>
-                  <div className="navbar-end">
-                    <SignInButton mode="modal">
-                      <button className="btn btn-primary btn-sm">
-                        Sign in
-                      </button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <button className="btn btn-ghost btn-sm ml-2">
-                        Sign up
-                      </button>
-                    </SignUpButton>
-                  </div>
-                </div>
-              </header>
-              <main className="flex-1 container mx-auto p-4 prose prose-invert max-w-none">
-                <Outlet />
-              </main>
-              <footer className="footer footer-center p-4 text-base-content">
-                <p>© {new Date().getFullYear()} Fullstack Vibe Coding</p>
-              </footer>
+                </header>
+                <main className="flex-1 container mx-auto prose prose-invert max-w-none">
+                  <Outlet />
+                </main>
+              </div>
             </Unauthenticated>
           </div>
           {import.meta.env.DEV && <TanStackRouterDevtools />}
