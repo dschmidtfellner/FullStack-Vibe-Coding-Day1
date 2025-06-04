@@ -214,15 +214,20 @@ function MessagingApp() {
   };
 
   const startRecording = async () => {
-    if (isRequestingMic || isRecording) return;
+    console.log('startRecording called', { isRequestingMic, isRecording, isUploading });
+    
+    if (isRequestingMic || isRecording) {
+      console.log('Preventing recording - already in progress');
+      return;
+    }
     
     try {
-      console.log('Requesting microphone permission...');
+      console.log('Starting recording process...');
       setIsRequestingMic(true);
       
       // Request microphone permission - this may show a browser dialog
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone permission granted, starting recording...');
+      console.log('Microphone access granted, setting up recorder...');
       
       setIsRequestingMic(false);
       
@@ -244,9 +249,11 @@ function MessagingApp() {
 
       mediaRecorder.start();
       setIsRecording(true);
+      // Clear any existing message when starting recording
+      setNewMessage("");
       console.log('Recording started successfully');
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error('Error in startRecording:', error);
       
       // Reset states if there was an error
       setIsRequestingMic(false);
@@ -257,15 +264,25 @@ function MessagingApp() {
       } else if (error.name === 'NotFoundError') {
         alert('No microphone found. Please connect a microphone and try again.');
       } else {
-        alert('Unable to access microphone. Please check your permissions and try again.');
+        alert(`Unable to access microphone: ${error.message}`);
       }
     }
   };
 
   const stopRecording = () => {
+    console.log('stopRecording called', { 
+      hasMediaRecorder: !!mediaRecorderRef.current, 
+      isRecording,
+      mediaRecorderState: mediaRecorderRef.current?.state 
+    });
+    
     if (mediaRecorderRef.current && isRecording) {
+      console.log('Stopping media recorder...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      console.log('Recording stopped, state updated');
+    } else {
+      console.log('Cannot stop recording - missing mediaRecorder or not recording');
     }
   };
 
@@ -396,13 +413,33 @@ function MessagingApp() {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                onKeyDown={(e) => e.key === "Enter" && !isRecording && handleSend()}
                 placeholder="Start typing here"
                 className="input w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-purple-400 focus:outline-none text-gray-700 placeholder-gray-500 py-3"
+                disabled={isRecording}
               />
             )}
             <button 
-              onClick={isRecording ? stopRecording : newMessage.trim() ? handleSend : startRecording}
+              onClick={(e) => {
+                console.log('Button clicked!', { 
+                  isRecording, 
+                  hasMessage: !!newMessage.trim(), 
+                  isUploading, 
+                  isRequestingMic,
+                  disabled: isUploading || isRequestingMic
+                });
+                
+                if (isRecording) {
+                  console.log('Calling stopRecording');
+                  stopRecording();
+                } else if (newMessage.trim()) {
+                  console.log('Calling handleSend');
+                  handleSend();
+                } else {
+                  console.log('Calling startRecording');
+                  startRecording();
+                }
+              }}
               disabled={isUploading || isRequestingMic}
               className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 ${
                 isRecording
