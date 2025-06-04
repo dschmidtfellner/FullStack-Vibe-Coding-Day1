@@ -204,3 +204,62 @@ export function listenToMessages(
     callback(messages);
   });
 }
+
+/**
+ * Set user typing status
+ */
+export async function setTypingStatus(userId: string, userName: string, isTyping: boolean) {
+  try {
+    const typingRef = doc(db, 'typing', userId);
+    
+    if (isTyping) {
+      await setDoc(typingRef, {
+        userId,
+        userName,
+        isTyping: true,
+        lastTyped: serverTimestamp(),
+      });
+    } else {
+      // Remove typing indicator when user stops typing
+      await setDoc(typingRef, {
+        userId,
+        userName,
+        isTyping: false,
+        lastTyped: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    console.error('Error setting typing status:', error);
+  }
+}
+
+/**
+ * Listen to typing indicators
+ */
+export function listenToTypingIndicators(
+  currentUserId: string,
+  callback: (typingUsers: { userId: string; userName: string }[]) => void
+) {
+  const q = query(
+    collection(db, 'typing'),
+    where('isTyping', '==', true)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const typingUsers = snapshot.docs
+      .map((doc) => ({
+        userId: doc.data().userId,
+        userName: doc.data().userName,
+        lastTyped: doc.data().lastTyped,
+      }))
+      .filter((user) => user.userId !== currentUserId) // Exclude current user
+      .filter((user) => {
+        // Only show users who typed in the last 5 seconds
+        const now = Date.now();
+        const lastTyped = user.lastTyped?.toDate?.() || new Date(user.lastTyped);
+        return now - lastTyped.getTime() < 5000;
+      });
+    
+    callback(typingUsers);
+  });
+}

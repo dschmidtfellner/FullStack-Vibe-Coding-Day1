@@ -8,6 +8,8 @@ import {
   sendImageMessage,
   sendAudioMessage,
   listenToMessages,
+  setTypingStatus,
+  listenToTypingIndicators,
 } from "@/lib/firebase-messaging";
 
 function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
@@ -100,9 +102,11 @@ function MessagingApp() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Listen to messages
   useEffect(() => {
@@ -112,6 +116,17 @@ function MessagingApp() {
 
     return unsubscribe;
   }, []);
+
+  // Listen to typing indicators
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = listenToTypingIndicators(user.id, (typingUsers) => {
+      setTypingUsers(typingUsers);
+    });
+
+    return unsubscribe;
+  }, [user?.id]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !user) {
@@ -260,6 +275,45 @@ function MessagingApp() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    if (!user) return;
+
+    // If user is typing, set typing status to true
+    if (value.trim()) {
+      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', true);
+      
+      // Clear any existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set a timeout to stop typing indicator after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+      }, 2000);
+    } else {
+      // If input is empty, immediately stop typing indicator
+      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+  };
+
+  const handleSendWithTypingCleanup = async () => {
+    // Stop typing indicator when sending message
+    if (user) {
+      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+    await handleSend();
+  };
+
 
   return (
     <div className="relative h-full bg-white">
@@ -306,6 +360,26 @@ function MessagingApp() {
           className="hidden"
         />
         
+        {/* Typing Indicators */}
+        {typingUsers.length > 0 && (
+          <div className="mb-3 px-4 py-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+              <span>
+                {typingUsers.length === 1 
+                  ? `${typingUsers[0].userName} is typing...`
+                  : typingUsers.length === 2
+                  ? `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing...`
+                  : `${typingUsers[0].userName} and ${typingUsers.length - 1} others are typing...`
+                }
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 max-w-full">
           <button 
@@ -340,13 +414,13 @@ function MessagingApp() {
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onChange={handleInputChange}
+              onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder="Start typing here"
               className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-purple-400 focus:outline-none text-gray-700 placeholder-gray-500 h-12 box-border"
             />
             <button 
-              onClick={handleSend}
+              onClick={handleSendWithTypingCleanup}
               disabled={isUploading || !newMessage.trim()}
               className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
             >

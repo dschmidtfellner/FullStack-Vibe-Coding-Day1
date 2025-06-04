@@ -24,5 +24,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true; // Temporarily allow all writes for user creation
     }
+    
+    // Typing indicators - allow read for all, write for user's own typing status
+    match /typing/{userId} {
+      allow read: if true;
+      allow write: if true; // Allow anyone to update typing status for global chat
+    }
   }
 }
