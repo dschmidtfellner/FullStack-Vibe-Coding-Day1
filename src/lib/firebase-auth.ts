@@ -11,19 +11,9 @@ export function useFirebaseAuth() {
   const signInToFirebase = async () => {
     if (!isSignedIn) return null;
     
-    try {
-      // Get custom token from Clerk
-      const token = await getToken({ template: 'firebase' });
-      
-      if (token) {
-        // Sign in to Firebase with the custom token
-        const userCredential = await signInWithCustomToken(auth, token);
-        return userCredential.user;
-      }
-    } catch (error) {
-      console.error('Error signing in to Firebase:', error);
-    }
-    
+    // TODO: Configure Firebase JWT template in Clerk dashboard
+    // For now, skip Firebase auth since messaging works without it
+    console.log('Firebase auth integration not configured yet - messaging still works');
     return null;
   };
 
