@@ -19,14 +19,14 @@ export function useBubbleAuth(): AuthState {
   });
 
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
         // Get token from URL
         const token = getTokenFromURL();
         
         if (token) {
           // Validate JWT token
-          const user = validateJWTToken(token);
+          const user = await validateJWTToken(token);
           
           if (user) {
             setAuthState({
@@ -46,11 +46,12 @@ export function useBubbleAuth(): AuthState {
           if (import.meta.env.DEV) {
             // For development, show test user options or use default
             console.log('Development mode: No token provided');
-            console.log('Available test tokens:', createTestUsers());
             
             // Use a default test user for development
-            const testUsers = createTestUsers();
-            const defaultTestUser = validateJWTToken(testUsers.parent1);
+            const testUsers = await createTestUsers();
+            console.log('Available test tokens:', testUsers);
+            
+            const defaultTestUser = await validateJWTToken(testUsers.parent1);
             
             if (defaultTestUser) {
               setAuthState({

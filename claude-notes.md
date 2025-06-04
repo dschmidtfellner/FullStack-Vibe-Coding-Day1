@@ -2,7 +2,7 @@
 
 ## Session Start
 - Starting commit hash: d71b103 (fix: Align username/timestamp to far edges of chat bubbles)
-- Session commits: [3bc4155, bd949c0, d366f80, 353c4d7, 51747ea, 427aab3, c471899, f1983cd, df66c27, ddceb80, d92fc43, d9f7c73]
+- Session commits: [3bc4155, bd949c0, d366f80, 353c4d7, 51747ea, 427aab3, c471899, f1983cd, df66c27, ddceb80, d92fc43, d9f7c73, e996e6f, ab1d0f3, e6487ab]
 
 ## Current Status - FIREBASE MIGRATION COMPLETE ✅
 - Firebase project "doulaconnect-messaging" created and configured
@@ -33,6 +33,8 @@
 - **COMPLETED: Clean audio recording implementation** ✅ - separate mic button works perfectly without layout shifts
 - **COMPLETED: Real-time typing indicators** ✅ - shows when other users are typing with animated dots and smart debouncing
 - **COMPLETED: Message reactions** ✅ - emoji reactions with picker, real-time updates, and user tracking
+- **COMPLETED: Conversation-based messaging** ✅ - child-specific conversations with URL routing
+- **COMPLETED: JWT authentication system** ✅ - replaced Clerk with Bubble-compatible JWT tokens
 - Ready for integration as module in Bubble app
 
 ## Important Context
