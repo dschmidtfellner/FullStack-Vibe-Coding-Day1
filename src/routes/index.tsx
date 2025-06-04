@@ -402,7 +402,7 @@ function MessagingApp() {
           
           <div className="flex-1 relative">
             {isRecording ? (
-              <div className="input input-bordered w-full pr-12 rounded-full bg-red-100 border-red-300 flex items-center gap-3 min-h-[48px]">
+              <div className="input input-bordered w-full pr-12 rounded-full bg-red-100 border-red-300 flex items-center gap-3 h-12 box-border">
                 <div className="flex items-center gap-2 text-red-600">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                   <span className="text-sm font-medium">Recording...</span>
@@ -415,7 +415,7 @@ function MessagingApp() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !isRecording && handleSend()}
                 placeholder="Start typing here"
-                className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-purple-400 focus:outline-none text-gray-700 placeholder-gray-500 min-h-[48px]"
+                className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-purple-400 focus:outline-none text-gray-700 placeholder-gray-500 h-12 box-border"
                 disabled={isRecording}
               />
             )}
