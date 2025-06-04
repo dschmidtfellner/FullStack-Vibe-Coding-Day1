@@ -59,7 +59,7 @@ function RootComponent() {
                   checked={isSidebarOpen}
                   onChange={toggleSidebar}
                 />
-                <div className="drawer-content flex flex-col h-screen bg-white">
+                <div className="drawer-content flex flex-col min-h-screen bg-white">
                   {/* Navbar */}
                   <header className="navbar bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
                     <div className="navbar-start">
@@ -95,7 +95,7 @@ function RootComponent() {
                     </div>
                   </header>
                   {/* Main content - no prose styling for messaging app */}
-                  <main className="flex-1 overflow-hidden">
+                  <main className="flex-1 flex flex-col overflow-y-auto">
                     <Outlet />
                   </main>
                 </div>
