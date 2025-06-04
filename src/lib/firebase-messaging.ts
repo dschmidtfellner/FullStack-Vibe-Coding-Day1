@@ -81,12 +81,27 @@ export async function sendMessage(
  */
 export async function uploadFile(file: File, path: string): Promise<string> {
   try {
+    console.log('Starting file upload to Firebase Storage:', {
+      fileName: file.name,
+      fileSize: file.size,
+      path: path
+    });
+    
     const fileRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+    console.log('Created storage reference:', fileRef.fullPath);
+    
+    console.log('Uploading file to Firebase Storage...');
     const snapshot = await uploadBytes(fileRef, file);
+    console.log('File uploaded successfully, getting download URL...');
+    
     const downloadURL = await getDownloadURL(snapshot.ref);
+    console.log('Download URL obtained:', downloadURL);
+    
     return downloadURL;
   } catch (error) {
     console.error('Error uploading file:', error);
+    console.error('Error details:', error.message);
+    console.error('Error code:', error.code);
     throw error;
   }
 }
@@ -100,22 +115,36 @@ export async function sendImageMessage(
   imageFile: File
 ) {
   try {
+    console.log('sendImageMessage called with:', {
+      senderId,
+      senderName,
+      fileName: imageFile.name,
+      fileSize: imageFile.size
+    });
+    
     // Upload image to Firebase Storage
+    console.log('Uploading image to Firebase Storage...');
     const imageUrl = await uploadFile(imageFile, 'images');
+    console.log('Image uploaded, URL:', imageUrl);
     
     // Send message with image
-    const messageRef = await addDoc(collection(db, 'messages'), {
+    console.log('Creating message document in Firestore...');
+    const messageData = {
       senderId,
       senderName,
       type: 'image',
       imageId: imageUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
-    });
+    };
+    
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
+    console.log('Image message created successfully:', messageRef.id);
 
     return messageRef.id;
   } catch (error) {
     console.error('Error sending image message:', error);
+    console.error('Error details:', error.message);
     throw error;
   }
 }

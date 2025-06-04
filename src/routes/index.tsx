@@ -145,7 +145,10 @@ function MessagingApp() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) {
+      console.log('No file or user:', { file, user });
+      return;
+    }
 
     // Check if it's an image
     if (!file.type.startsWith("image/")) {
@@ -153,17 +156,27 @@ function MessagingApp() {
       return;
     }
 
+    console.log('Starting image upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      userId: user.id,
+      userName: user.fullName || user.firstName || 'Anonymous'
+    });
+
     setIsUploading(true);
 
     try {
-      await sendImageMessage(
+      const messageId = await sendImageMessage(
         user.id,
         user.fullName || user.firstName || 'Anonymous',
         file
       );
+      console.log('Image message sent successfully:', messageId);
     } catch (error) {
       console.error("Failed to upload image:", error);
-      alert("Failed to upload image");
+      console.error("Error details:", error.message);
+      alert(`Failed to upload image: ${error.message}`);
     } finally {
       setIsUploading(false);
       // Reset file input
