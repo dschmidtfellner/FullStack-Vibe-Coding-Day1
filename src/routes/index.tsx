@@ -3,7 +3,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated, useMutation } from "convex/react";
-import { MessageCircle, Plus, Mic, Send, Image, X, Square, Play, Pause } from "lucide-react";
+import { MessageCircle, Plus, Mic, Send, X, Square, Play, Pause } from "lucide-react";
 import { useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 
@@ -278,18 +278,19 @@ function MessagingApp() {
           const isOwn = isOwnMessage(message.senderId);
           return (
             <div key={message._id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-              {/* Sender name and timestamp */}
-              <div className={`text-sm text-gray-600 mb-1 max-w-[75%] w-full flex justify-between items-center`}>
-                <span className="font-medium">{message.senderName}</span>
-                <span className="text-xs">{formatTime(message._creationTime)}</span>
-              </div>
-              
-              {/* Message bubble */}
-              <div className={`max-w-[75%] rounded-2xl ${
-                isOwn 
-                  ? 'bg-purple-200 text-gray-800 rounded-br-md' 
-                  : 'bg-gray-200 text-gray-800 rounded-bl-md'
-              } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
+              <div className="max-w-[75%] flex flex-col">
+                {/* Sender name and timestamp */}
+                <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center px-4`}>
+                  <span className="font-medium">{message.senderName}</span>
+                  <span>{formatTime(message._creationTime)}</span>
+                </div>
+                
+                {/* Message bubble */}
+                <div className={`min-w-[200px] rounded-2xl ${
+                  isOwn 
+                    ? 'bg-purple-200 text-gray-800 rounded-br-md' 
+                    : 'bg-gray-200 text-gray-800 rounded-bl-md'
+                } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
                 {message.type === 'image' && message.imageId ? (
                   <ImageMessage imageId={message.imageId} onImageClick={handleImageClick} />
                 ) : message.type === 'audio' && message.audioId ? (
@@ -297,6 +298,7 @@ function MessagingApp() {
                 ) : (
                   <p className="text-base leading-relaxed">{message.text}</p>
                 )}
+                </div>
               </div>
             </div>
           );
