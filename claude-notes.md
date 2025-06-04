@@ -1,47 +1,36 @@
 # Claude Code Session Notes
 
 ## Session Start
-- Starting commit hash: 2c771dd (Initial commit)
-- Session commits: [f11b30b, 8704484, and several others]
+- Starting commit hash: d71b103 (fix: Align username/timestamp to far edges of chat bubbles)
+- Session commits: [3bc4155]
 
-## Current Status - MESSAGING APP 100% COMPLETE ✅
-- Real-time messaging app fully implemented
-- Text, image, and audio messaging working
-- Authentication with Clerk working
-- Real-time updates working
-- Mobile-first design implemented
-- **FIXED**: Scroll layout issue resolved with flexbox container structure
+## Current Status - FIREBASE SETUP COMPLETE ✅
+- Firebase project "doulaconnect-messaging" created
+- Firestore database configured with security rules
+- Firebase SDK integrated with existing Clerk authentication
+- Environment variables configured for Firebase connection
+- Real-time messaging utilities created for Firebase integration
 
-## Progress
-- ✅ Project initialization completed
-- ✅ Convex dev deployment ready
-- ✅ Messaging schema (text, image, audio messages)
-- ✅ All Convex queries and mutations working
-- ✅ Text messaging with real-time updates
-- ✅ Image upload and full-screen modal viewing
-- ✅ Audio recording and playback functionality
-- ✅ Mobile-first UI matching screenshot exactly
-- ✅ Authentication and user management
-- ✅ Scroll layout issue fixed with proper flexbox structure
+## Firebase Setup Progress
+- ✅ Firebase CLI installed and authenticated
+- ✅ Firebase project "doulaconnect-messaging" created
+- ✅ Firestore database created with production mode
+- ✅ Security rules deployed for messaging collections
+- ✅ Firebase SDK installed and configured
+- ✅ Environment variables set up for Firebase connection
+- ✅ Firebase-Clerk authentication integration prepared
+- ✅ Real-time messaging utilities created
 
-## Major Checkpoint - Core Messaging Complete ✅
-- ✅ SCROLLING FIXED: Resolved root layout constraints preventing proper scroll
-- ✅ FLOATING INPUT: Input bar now pinned at bottom of window with shadow
-- ✅ LAYOUT PERFECTED: Messages scroll properly while input stays visible
-- ✅ PUSHED TO GITHUB: Major milestone committed and pushed
-
-## Session Status: Ready for Next Features
-- Core messaging functionality is solid and production-ready
-- Layout issues resolved, scrolling and input positioning working perfectly
-
-## Complete Documentation
-- See MESSAGING_APP_SPEC.md for full implementation details
-- All features working including scroll layout
-- Messaging app is production ready
+## Next Steps for Firebase Integration
+- Migrate existing Convex messaging to Firebase
+- Update components to use Firebase real-time listeners
+- Test Firebase authentication with Clerk tokens
+- Configure Clerk to generate Firebase custom tokens
 
 ## Important Context
-- Full-stack TypeScript app with React + Vite + TanStack Router (frontend), Convex (backend), Clerk (auth)
+- Full-stack TypeScript app with React + Vite + TanStack Router (frontend)
+- TRANSITIONING: From Convex backend to Firebase for messaging performance
+- Firebase project: doulaconnect-messaging
+- Target: High-performance messaging module for integration with Bubble app
 - Use `mcp__shell-commands__launch-dev-all` to start development servers
 - Project follows git workflow with frequent commits as checkpoints
-- Messaging app designed to match screenshot with purple/lavender sender bubbles and gray receiver bubbles
-- Real-time updates using Convex's live queries for minimal delay

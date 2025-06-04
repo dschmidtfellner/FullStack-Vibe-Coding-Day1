@@ -9,54 +9,57 @@ import {
   updateDoc,
   serverTimestamp,
   arrayUnion,
-  type Timestamp,
+  setDoc,
+  getDocs,
+  limit,
 } from 'firebase/firestore';
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL, 
+  getStorage 
+} from 'firebase/storage';
 import { db } from './firebase';
+import { FirebaseMessage, FirebaseConversation, FirebaseUser } from '@/types/firebase';
 
-export interface Message {
-  id: string;
-  text: string;
-  senderId: string;
-  receiverId: string;
-  conversationId: string;
-  timestamp: Timestamp;
-  read: boolean;
-}
+const storage = getStorage();
 
-export interface Conversation {
-  id: string;
-  participants: string[];
-  lastMessage?: string;
-  lastMessageTimestamp?: Timestamp;
-  unreadCount: { [userId: string]: number };
+/**
+ * Ensure user exists in Firebase
+ */
+export async function ensureUser(clerkUserId: string, name: string, email?: string) {
+  try {
+    const userRef = doc(db, 'users', clerkUserId);
+    await setDoc(userRef, {
+      id: clerkUserId,
+      clerkId: clerkUserId,
+      name,
+      email: email || '',
+      createdAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error ensuring user:', error);
+    throw error;
+  }
 }
 
 /**
- * Send a message
+ * Send a text message
  */
 export async function sendMessage(
-  conversationId: string,
   senderId: string,
-  receiverId: string,
+  senderName: string,
   text: string
 ) {
   try {
-    // Add message to messages collection
+    // For now, send to global chat (no conversations yet)
     const messageRef = await addDoc(collection(db, 'messages'), {
       text,
       senderId,
-      receiverId,
-      conversationId,
+      senderName,
+      type: 'text',
       timestamp: serverTimestamp(),
       read: false,
-    });
-
-    // Update conversation with last message info
-    const conversationRef = doc(db, 'conversations', conversationId);
-    await updateDoc(conversationRef, {
-      lastMessage: text,
-      lastMessageTimestamp: serverTimestamp(),
-      [`unreadCount.${receiverId}`]: arrayUnion(messageRef.id),
     });
 
     return messageRef.id;
@@ -67,91 +70,101 @@ export async function sendMessage(
 }
 
 /**
- * Listen to messages in a conversation
+ * Upload file to Firebase Storage
+ */
+export async function uploadFile(file: File, path: string): Promise<string> {
+  try {
+    const fileRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+    const snapshot = await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send an image message
+ */
+export async function sendImageMessage(
+  senderId: string,
+  senderName: string,
+  imageFile: File
+) {
+  try {
+    // Upload image to Firebase Storage
+    const imageUrl = await uploadFile(imageFile, 'images');
+    
+    // Send message with image
+    const messageRef = await addDoc(collection(db, 'messages'), {
+      senderId,
+      senderName,
+      type: 'image',
+      imageId: imageUrl, // Store the download URL directly
+      timestamp: serverTimestamp(),
+      read: false,
+    });
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error sending image message:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send an audio message
+ */
+export async function sendAudioMessage(
+  senderId: string,
+  senderName: string,
+  audioBlob: Blob
+) {
+  try {
+    // Convert blob to file
+    const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, {
+      type: audioBlob.type
+    });
+    
+    // Upload audio to Firebase Storage
+    const audioUrl = await uploadFile(audioFile, 'audio');
+    
+    // Send message with audio
+    const messageRef = await addDoc(collection(db, 'messages'), {
+      senderId,
+      senderName,
+      type: 'audio',
+      audioId: audioUrl, // Store the download URL directly
+      timestamp: serverTimestamp(),
+      read: false,
+    });
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error sending audio message:', error);
+    throw error;
+  }
+}
+
+/**
+ * Listen to all messages (global chat for now)
  */
 export function listenToMessages(
-  conversationId: string,
-  callback: (messages: Message[]) => void
+  callback: (messages: FirebaseMessage[]) => void
 ) {
   const q = query(
     collection(db, 'messages'),
-    where('conversationId', '==', conversationId),
-    orderBy('timestamp', 'desc')
+    orderBy('timestamp', 'desc'),
+    limit(50) // Limit to last 50 messages
   );
 
   return onSnapshot(q, (snapshot) => {
     const messages = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as Message[];
+    })) as FirebaseMessage[];
     
     callback(messages);
   });
-}
-
-/**
- * Listen to conversations for a user
- */
-export function listenToConversations(
-  userId: string,
-  callback: (conversations: Conversation[]) => void
-) {
-  const q = query(
-    collection(db, 'conversations'),
-    where('participants', 'array-contains', userId),
-    orderBy('lastMessageTimestamp', 'desc')
-  );
-
-  return onSnapshot(q, (snapshot) => {
-    const conversations = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Conversation[];
-    
-    callback(conversations);
-  });
-}
-
-/**
- * Create or get existing conversation between two users
- */
-export async function getOrCreateConversation(userId1: string, userId2: string) {
-  try {
-    // Try to find existing conversation
-    const q = query(
-      collection(db, 'conversations'),
-      where('participants', 'array-contains', userId1)
-    );
-
-    // Check if conversation with both users exists
-    // Note: Firestore doesn't support array-contains-all, so we filter client-side
-    const snapshot = await new Promise((resolve) => {
-      const unsubscribe = onSnapshot(q, resolve);
-      setTimeout(() => unsubscribe(), 1000); // Cleanup after 1 second
-    });
-
-    const existingConversation = (snapshot as any).docs.find((doc: any) => 
-      doc.data().participants.includes(userId2)
-    );
-
-    if (existingConversation) {
-      return existingConversation.id;
-    }
-
-    // Create new conversation
-    const conversationRef = await addDoc(collection(db, 'conversations'), {
-      participants: [userId1, userId2],
-      lastMessage: '',
-      lastMessageTimestamp: serverTimestamp(),
-      unreadCount: {
-        [userId1]: [],
-        [userId2]: [],
-      },
-    });
-
-    return conversationRef.id;
-  } catch (error) {
-    console.error('Error creating/getting conversation:', error);
-    throw error;
-  }
 }

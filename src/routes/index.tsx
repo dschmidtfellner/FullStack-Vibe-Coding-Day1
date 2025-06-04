@@ -1,17 +1,16 @@
-import { SignInButton, useUser } from "@clerk/clerk-react";
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { SignInButton, useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Authenticated, Unauthenticated, useMutation } from "convex/react";
 import { MessageCircle, Plus, Mic, Send, X, Square, Play, Pause } from "lucide-react";
-import { useState, useRef } from "react";
-import { api } from "../../convex/_generated/api";
+import { useState, useRef, useEffect } from "react";
+import { FirebaseMessage } from "@/types/firebase";
+import {
+  sendMessage,
+  sendImageMessage,
+  sendAudioMessage,
+  listenToMessages,
+} from "@/lib/firebase-messaging";
 
-function ImageMessage({ imageId, onImageClick }: { imageId: string; onImageClick: (imageUrl: string) => void }) {
-  const { data: imageUrl } = useSuspenseQuery(convexQuery(api.messages.getImageUrl, { imageId: imageId as any }));
-  
-  if (!imageUrl) return null;
-  
+function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
   return (
     <img 
       src={imageUrl} 
@@ -22,12 +21,9 @@ function ImageMessage({ imageId, onImageClick }: { imageId: string; onImageClick
   );
 }
 
-function AudioMessage({ audioId }: { audioId: string }) {
-  const { data: audioUrl } = useSuspenseQuery(convexQuery(api.messages.getAudioUrl, { audioId: audioId as any }));
+function AudioMessage({ audioUrl }: { audioUrl: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  
-  if (!audioUrl) return null;
   
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -71,21 +67,14 @@ function AudioMessage({ audioId }: { audioId: string }) {
   );
 }
 
-const messagesQueryOptions = convexQuery(api.messages.list, {});
-const currentUserQueryOptions = convexQuery(api.users.getCurrentUser, {});
-
 export const Route = createFileRoute("/")({
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(messagesQueryOptions);
-    await queryClient.ensureQueryData(currentUserQueryOptions);
-  },
   component: HomePage,
 });
 
 function HomePage() {
   return (
     <div className="not-prose">
-      <Unauthenticated>
+      <SignedOut>
         <div className="text-center min-h-screen flex flex-col items-center justify-center px-4">
           <MessageCircle className="w-16 h-16 text-primary mb-4" />
           <h1 className="text-2xl font-semibold mb-2">Welcome to Chat</h1>
@@ -94,23 +83,18 @@ function HomePage() {
             <button className="btn btn-primary btn-lg">Get Started</button>
           </SignInButton>
         </div>
-      </Unauthenticated>
+      </SignedOut>
 
-      <Authenticated>
+      <SignedIn>
         <MessagingApp />
-      </Authenticated>
+      </SignedIn>
     </div>
   );
 }
 
 function MessagingApp() {
-  const { data: messages } = useSuspenseQuery(messagesQueryOptions);
-  const { data: currentUser } = useSuspenseQuery(currentUserQueryOptions);
   const { user } = useUser();
-  const sendMessage = useMutation(api.messages.send);
-  const sendImage = useMutation(api.messages.sendImage);
-  const sendAudio = useMutation(api.messages.sendAudio);
-  const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
+  const [messages, setMessages] = useState<FirebaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -120,13 +104,24 @@ function MessagingApp() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  // Listen to messages
+  useEffect(() => {
+    const unsubscribe = listenToMessages((newMessages) => {
+      setMessages(newMessages);
+    });
+
+    return unsubscribe;
+  }, []);
+
   const handleSend = async () => {
     if (!newMessage.trim() || !user) return;
     
     try {
-      await sendMessage({
-        text: newMessage.trim(),
-      });
+      await sendMessage(
+        user.id,
+        user.fullName || user.firstName || 'Anonymous',
+        newMessage.trim()
+      );
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -150,22 +145,11 @@ function MessagingApp() {
     setIsUploading(true);
 
     try {
-      // Generate upload URL
-      const uploadUrl = await generateUploadUrl();
-
-      // Upload the file
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-
-      const { storageId } = await result.json();
-
-      // Send the image message
-      await sendImage({
-        imageId: storageId,
-      });
+      await sendImageMessage(
+        user.id,
+        user.fullName || user.firstName || 'Anonymous',
+        file
+      );
     } catch (error) {
       console.error("Failed to upload image:", error);
       alert("Failed to upload image");
@@ -178,8 +162,11 @@ function MessagingApp() {
     }
   };
 
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    // Handle Firebase Timestamp
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString("en-US", { 
       month: "numeric", 
       day: "numeric" 
@@ -190,7 +177,7 @@ function MessagingApp() {
   };
 
   const isOwnMessage = (senderId: string) => {
-    return currentUser?._id === senderId;
+    return user?.id === senderId;
   };
 
   const handleImageClick = (imageUrl: string) => {
@@ -234,29 +221,17 @@ function MessagingApp() {
     }
   };
 
-  const sendAudioMessage = async () => {
+  const handleSendAudio = async () => {
     if (!audioBlob || !user) return;
 
     setIsUploading(true);
 
     try {
-      // Generate upload URL
-      const uploadUrl = await generateUploadUrl();
-
-      // Upload the audio file
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": audioBlob.type },
-        body: audioBlob,
-      });
-
-      const { storageId } = await result.json();
-
-      // Send the audio message
-      await sendAudio({
-        audioId: storageId,
-      });
-
+      await sendAudioMessage(
+        user.id,
+        user.fullName || user.firstName || 'Anonymous',
+        audioBlob
+      );
       setAudioBlob(null);
     } catch (error) {
       console.error("Failed to upload audio:", error);
@@ -277,12 +252,12 @@ function MessagingApp() {
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
           return (
-            <div key={message._id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+            <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
               <div className="max-w-[75%] flex flex-col">
                 {/* Sender name and timestamp */}
                 <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center`}>
                   <span className="font-medium">{message.senderName}</span>
-                  <span>{formatTime(message._creationTime)}</span>
+                  <span>{formatTime(message.timestamp)}</span>
                 </div>
                 
                 {/* Message bubble */}
@@ -292,9 +267,9 @@ function MessagingApp() {
                     : 'bg-gray-200 text-gray-800 rounded-bl-md'
                 } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
                 {message.type === 'image' && message.imageId ? (
-                  <ImageMessage imageId={message.imageId} onImageClick={handleImageClick} />
+                  <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
                 ) : message.type === 'audio' && message.audioId ? (
-                  <AudioMessage audioId={message.audioId} />
+                  <AudioMessage audioUrl={message.audioId} />
                 ) : (
                   <p className="text-base leading-relaxed">{message.text}</p>
                 )}
@@ -334,7 +309,7 @@ function MessagingApp() {
               <X className="w-4 h-4" />
             </button>
             <button
-              onClick={sendAudioMessage}
+              onClick={handleSendAudio}
               disabled={isUploading}
               className="btn btn-sm bg-purple-600 text-white hover:bg-purple-700"
             >

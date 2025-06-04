@@ -5,6 +5,8 @@ import {
   UserButton,
   useAuth as useClerkAuth,
   useUser,
+  SignedIn,
+  SignedOut,
 } from "@clerk/clerk-react";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -14,26 +16,19 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import {
-  Authenticated,
-  ConvexReactClient,
-  Unauthenticated,
-  useMutation,
-} from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { Menu } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "../../convex/_generated/api";
+import { ensureUser } from "@/lib/firebase-messaging";
+import { useFirebaseAuth } from "@/lib/firebase-auth";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  convexClient: ConvexReactClient;
 }>()({
   component: RootComponent,
 });
 
 function RootComponent() {
-  const { queryClient, convexClient: convex } = Route.useRouteContext();
+  const { queryClient } = Route.useRouteContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -45,11 +40,10 @@ function RootComponent() {
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       afterSignOutUrl="/"
     >
-      <ConvexProviderWithClerk client={convex} useAuth={useClerkAuth}>
-        <QueryClientProvider client={queryClient}>
-          <div className="min-h-screen flex flex-col">
-            <Authenticated>
-              <EnsureUser />
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen flex flex-col">
+          <SignedIn>
+            <EnsureUser />
               {/* Mobile sidebar drawer */}
               <div className="drawer min-h-screen">
                 <input
@@ -130,8 +124,8 @@ function RootComponent() {
                   </div>
                 </div>
               </div>
-            </Authenticated>
-            <Unauthenticated>
+          </SignedIn>
+          <SignedOut>
               <div className="min-h-screen flex flex-col">
                 <header className="navbar bg-base-100 shadow-sm border-b border-base-300">
                   <div className="container mx-auto flex justify-between w-full">
@@ -156,23 +150,26 @@ function RootComponent() {
                   <Outlet />
                 </main>
               </div>
-            </Unauthenticated>
-          </div>
-        </QueryClientProvider>
-      </ConvexProviderWithClerk>
+          </SignedOut>
+        </div>
+      </QueryClientProvider>
     </ClerkProvider>
   );
 }
 
 function EnsureUser() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const ensureUser = useMutation(api.users.ensureUser);
+  const { signInToFirebase } = useFirebaseAuth();
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
-      void ensureUser();
+      // Ensure user exists in Firebase
+      ensureUser(user.id, user.fullName || user.firstName || 'Anonymous', user.primaryEmailAddress?.emailAddress);
+      
+      // Sign in to Firebase (for future use with custom tokens)
+      signInToFirebase().catch(console.error);
     }
-  }, [isLoaded, isSignedIn, user, ensureUser]);
+  }, [isLoaded, isSignedIn, user, signInToFirebase]);
 
   return null;
 }
