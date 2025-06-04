@@ -271,9 +271,9 @@ function MessagingApp() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="relative h-full bg-white">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-4 space-y-4">
+      <div className="overflow-y-auto px-4 py-6 pb-32 space-y-4 h-full">
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
           return (
@@ -303,8 +303,8 @@ function MessagingApp() {
         })}
       </div>
 
-      {/* Message Input */}
-      <div className="flex-shrink-0 border-t border-gray-200 p-4 bg-white">
+      {/* Message Input - Floating at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white shadow-lg z-10">
         <input
           ref={fileInputRef}
           type="file"
