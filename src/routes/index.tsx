@@ -1,4 +1,4 @@
-import { SignInButton, useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -77,28 +77,46 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const { user, isLoading, error } = useBubbleAuth();
+
+  if (isLoading) {
+    return (
+      <div className="not-prose min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="not-prose min-h-screen flex flex-col items-center justify-center px-4">
+        <MessageCircle className="w-16 h-16 text-red-500 mb-4" />
+        <h1 className="text-2xl font-semibold mb-2 text-gray-900">Authentication Required</h1>
+        <p className="text-gray-600 mb-6 text-center max-w-md">
+          {error || 'Please provide a valid authentication token to access the chat.'}
+        </p>
+        <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 max-w-lg">
+          <p className="font-medium mb-2">Expected URL format:</p>
+          <code className="text-xs bg-white p-2 rounded block">
+            ?childId=123&amp;token=eyJ...
+          </code>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="not-prose">
-      <SignedOut>
-        <div className="text-center min-h-screen flex flex-col items-center justify-center px-4">
-          <MessageCircle className="w-16 h-16 text-primary mb-4" />
-          <h1 className="text-2xl font-semibold mb-2">Welcome to Chat</h1>
-          <p className="text-base-content/70 mb-6">Sign in to start messaging</p>
-          <SignInButton mode="modal">
-            <button className="btn btn-primary btn-lg">Get Started</button>
-          </SignInButton>
-        </div>
-      </SignedOut>
-
-      <SignedIn>
-        <MessagingApp />
-      </SignedIn>
+      <MessagingApp />
     </div>
   );
 }
 
 function MessagingApp() {
-  const { user } = useUser();
+  const { user } = useBubbleAuth();
   const [messages, setMessages] = useState<FirebaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -109,6 +127,9 @@ function MessagingApp() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [childId, setChildId] = useState<string | null>(null);
   const [isLoadingConversation, setIsLoadingConversation] = useState(true);
+  
+  // Check if user has access to the current child
+  const hasChildAccess = useChildAccess(childId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -198,7 +219,7 @@ function MessagingApp() {
     
     console.log('Attempting to send message:', {
       userId: user.id,
-      userName: user.fullName || user.firstName || 'Anonymous',
+      userName: user.name,
       text: newMessage.trim(),
       conversationId,
       childId
@@ -207,7 +228,7 @@ function MessagingApp() {
     try {
       const messageId = await sendMessage(
         user.id,
-        user.fullName || user.firstName || 'Anonymous',
+        user.name,
         newMessage.trim(),
         conversationId,
         childId
@@ -247,7 +268,7 @@ function MessagingApp() {
       fileSize: file.size,
       fileType: file.type,
       userId: user.id,
-      userName: user.fullName || user.firstName || 'Anonymous',
+      userName: user.name,
       conversationId,
       childId
     });
@@ -257,7 +278,7 @@ function MessagingApp() {
     try {
       const messageId = await sendImageMessage(
         user.id,
-        user.fullName || user.firstName || 'Anonymous',
+        user.name,
         file,
         conversationId,
         childId
@@ -323,7 +344,7 @@ function MessagingApp() {
           try {
             await sendAudioMessage(
               user.id,
-              user.fullName || user.firstName || 'Anonymous',
+              user.name,
               audioBlob,
               conversationId,
               childId
@@ -360,7 +381,7 @@ function MessagingApp() {
 
     // If user is typing, set typing status to true
     if (value.trim()) {
-      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', true);
+      setTypingStatus(user.id, user.name, true);
       
       // Clear any existing timeout
       if (typingTimeoutRef.current) {
@@ -369,11 +390,11 @@ function MessagingApp() {
       
       // Set a timeout to stop typing indicator after 2 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
-        setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+        setTypingStatus(user.id, user.name, false);
       }, 2000);
     } else {
       // If input is empty, immediately stop typing indicator
-      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+      setTypingStatus(user.id, user.name, false);
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -383,7 +404,7 @@ function MessagingApp() {
   const handleSendWithTypingCleanup = async () => {
     // Stop typing indicator when sending message
     if (user) {
-      setTypingStatus(user.id, user.fullName || user.firstName || 'Anonymous', false);
+      setTypingStatus(user.id, user.name, false);
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -399,7 +420,7 @@ function MessagingApp() {
         messageId,
         emoji,
         user.id,
-        user.fullName || user.firstName || 'Anonymous'
+        user.name
       );
       setShowReactionPicker(null);
     } catch (error) {
@@ -428,7 +449,26 @@ function MessagingApp() {
           <MessageCircle className="w-16 h-16 text-gray-400 mb-4 mx-auto" />
           <h2 className="text-xl font-semibold text-gray-700 mb-2">No Conversation</h2>
           <p className="text-gray-500">Please provide a valid childId parameter.</p>
-          <p className="text-sm text-gray-400 mt-2">URL format: ?childId=123&childName=John</p>
+          <p className="text-sm text-gray-400 mt-2">URL format: ?childId=123&childName=John&token=...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has permission to access this child's conversation
+  if (!hasChildAccess) {
+    return (
+      <div className="relative h-full bg-white flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-16 h-16 text-red-400 mb-4 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Access Denied</h2>
+          <p className="text-gray-500">You don't have permission to view this conversation.</p>
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-left">
+            <p className="font-medium text-gray-700 mb-2">Your access:</p>
+            <p className="text-gray-600">Role: <span className="font-medium">{user?.role}</span></p>
+            <p className="text-gray-600">Child IDs: <span className="font-medium">{user?.childIds.join(', ')}</span></p>
+            <p className="text-gray-600">Requested: <span className="font-medium">{childId}</span></p>
+          </div>
         </div>
       </div>
     );
@@ -438,13 +478,19 @@ function MessagingApp() {
     <div className="relative h-full bg-white">
       {/* Conversation Header */}
       <div className="border-b border-gray-200 p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <MessageCircle className="w-6 h-6 text-purple-600" />
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">
-              Chat for Child {childId}
-            </h1>
-            <p className="text-sm text-gray-500">{messages.length} messages</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <MessageCircle className="w-6 h-6 text-purple-600" />
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                Chat for Child {childId}
+              </h1>
+              <p className="text-sm text-gray-500">{messages.length} messages</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>
         </div>
       </div>
