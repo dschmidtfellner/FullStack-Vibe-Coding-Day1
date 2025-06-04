@@ -1,6 +1,4 @@
 import { useAuth } from '@clerk/clerk-react';
-import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from './firebase';
 
 /**
  * Custom hook to authenticate Firebase with Clerk token
