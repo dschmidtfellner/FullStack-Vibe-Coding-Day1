@@ -279,9 +279,9 @@ function MessagingApp() {
           return (
             <div key={message._id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
               {/* Sender name and timestamp */}
-              <div className={`text-sm text-gray-600 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+              <div className={`text-sm text-gray-600 mb-1 max-w-[75%] w-full flex justify-between items-center`}>
                 <span className="font-medium">{message.senderName}</span>
-                <span className="ml-2">{formatTime(message._creationTime)}</span>
+                <span className="text-xs">{formatTime(message._creationTime)}</span>
               </div>
               
               {/* Message bubble */}
