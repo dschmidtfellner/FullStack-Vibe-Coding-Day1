@@ -275,6 +275,8 @@ export async function toggleMessageReaction(
   userName: string
 ) {
   try {
+    console.log('toggleMessageReaction called:', { messageId, emoji, userId, userName });
+    
     const messageRef = doc(db, 'messages', messageId);
     const messageDoc = await getDoc(messageRef);
     
@@ -284,26 +286,33 @@ export async function toggleMessageReaction(
 
     const messageData = messageDoc.data() as FirebaseMessage;
     const currentReactions = messageData.reactions || {};
+    
+    console.log('Current reactions:', currentReactions);
 
     // Get current reaction for this emoji
     const currentReaction = currentReactions[emoji];
 
     if (currentReaction) {
+      console.log('Existing reaction found:', currentReaction);
       // Check if user already reacted with this emoji
       const userIndex = currentReaction.users.indexOf(userId);
+      console.log('User index in reaction:', userIndex);
       
       if (userIndex > -1) {
+        console.log('Removing user reaction');
         // User already reacted, remove their reaction
         const updatedUsers = currentReaction.users.filter(id => id !== userId);
         const updatedUserNames = currentReaction.userNames.filter(name => name !== userName);
         
         if (updatedUsers.length === 0) {
+          console.log('No users left, removing entire reaction');
           // No users left with this reaction, remove the entire emoji reaction
           const { [emoji]: removed, ...remainingReactions } = currentReactions;
           await updateDoc(messageRef, {
             reactions: remainingReactions
           });
         } else {
+          console.log('Updating with remaining users:', updatedUsers);
           // Update with remaining users
           await updateDoc(messageRef, {
             [`reactions.${emoji}.users`]: updatedUsers,
@@ -311,6 +320,7 @@ export async function toggleMessageReaction(
           });
         }
       } else {
+        console.log('Adding user to existing reaction');
         // User hasn't reacted with this emoji, add their reaction
         await updateDoc(messageRef, {
           [`reactions.${emoji}.users`]: arrayUnion(userId),
@@ -318,6 +328,7 @@ export async function toggleMessageReaction(
         });
       }
     } else {
+      console.log('Creating first reaction with this emoji');
       // First reaction with this emoji
       await updateDoc(messageRef, {
         [`reactions.${emoji}`]: {
@@ -327,6 +338,8 @@ export async function toggleMessageReaction(
         }
       });
     }
+    
+    console.log('Reaction toggle completed successfully');
   } catch (error) {
     console.error('Error toggling message reaction:', error);
     throw error;

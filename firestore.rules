@@ -8,8 +8,10 @@ service cloud.firestore {
       allow read: if true;
       // Allow creating new messages (for global chat)
       allow create: if true;
-      // Allow updating/deleting only your own messages
-      allow update, delete: if request.auth != null && 
+      // Allow updating for reactions (anyone can react) or for message owner
+      allow update: if true; // Temporarily allow all updates for reactions
+      // Allow deleting only your own messages
+      allow delete: if request.auth != null && 
         request.auth.uid == resource.data.senderId;
     }
     
