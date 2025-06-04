@@ -99,6 +99,7 @@ function MessagingApp() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isRequestingMic, setIsRequestingMic] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -213,8 +214,18 @@ function MessagingApp() {
   };
 
   const startRecording = async () => {
+    if (isRequestingMic || isRecording) return;
+    
     try {
+      console.log('Requesting microphone permission...');
+      setIsRequestingMic(true);
+      
+      // Request microphone permission - this may show a browser dialog
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted, starting recording...');
+      
+      setIsRequestingMic(false);
+      
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -224,6 +235,7 @@ function MessagingApp() {
       };
 
       mediaRecorder.onstop = () => {
+        console.log('Recording stopped, creating audio blob...');
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
         // Stop all tracks to turn off microphone
@@ -232,9 +244,21 @@ function MessagingApp() {
 
       mediaRecorder.start();
       setIsRecording(true);
+      console.log('Recording started successfully');
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      alert('Unable to access microphone. Please check your permissions.');
+      
+      // Reset states if there was an error
+      setIsRequestingMic(false);
+      setIsRecording(false);
+      
+      if (error.name === 'NotAllowedError') {
+        alert('Microphone access denied. Please allow microphone access and try again.');
+      } else if (error.name === 'NotFoundError') {
+        alert('No microphone found. Please connect a microphone and try again.');
+      } else {
+        alert('Unable to access microphone. Please check your permissions and try again.');
+      }
     }
   };
 
@@ -379,16 +403,20 @@ function MessagingApp() {
             )}
             <button 
               onClick={isRecording ? stopRecording : newMessage.trim() ? handleSend : startRecording}
-              disabled={isUploading}
+              disabled={isUploading || isRequestingMic}
               className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 ${
                 isRecording
                   ? 'bg-red-600 text-white hover:bg-red-700'
+                  : isRequestingMic
+                  ? 'bg-orange-500 text-white'
                   : newMessage.trim() 
                   ? 'bg-purple-600 text-white hover:bg-purple-700' 
                   : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
-              {isRecording ? (
+              {isRequestingMic ? (
+                <div className="loading loading-spinner w-3 h-3"></div>
+              ) : isRecording ? (
                 <Square className="w-4 h-4" />
               ) : newMessage.trim() ? (
                 <Send className="w-4 h-4" />
