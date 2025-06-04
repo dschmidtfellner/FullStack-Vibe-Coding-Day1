@@ -280,7 +280,7 @@ function MessagingApp() {
             <div key={message._id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
               <div className="max-w-[75%] flex flex-col">
                 {/* Sender name and timestamp */}
-                <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center px-4`}>
+                <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center`}>
                   <span className="font-medium">{message.senderName}</span>
                   <span>{formatTime(message._creationTime)}</span>
                 </div>
