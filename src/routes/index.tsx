@@ -379,7 +379,7 @@ function MessagingApp() {
             <button 
               onClick={isRecording ? stopRecording : newMessage.trim() ? handleSend : startRecording}
               disabled={isUploading}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 ${
+              className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 ${
                 isRecording
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : newMessage.trim() 
