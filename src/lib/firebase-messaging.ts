@@ -26,6 +26,51 @@ import { FirebaseMessage, FirebaseConversation, FirebaseUser, MessageReaction } 
 const storage = getStorage();
 
 /**
+ * Update conversation with last message info
+ */
+async function updateConversationLastMessage(conversationId: string, lastMessage: string, timestamp: any) {
+  try {
+    const conversationRef = doc(db, 'conversations', conversationId);
+    await updateDoc(conversationRef, {
+      lastMessage,
+      lastMessageTimestamp: timestamp,
+    });
+  } catch (error) {
+    console.error('Error updating conversation:', error);
+    // Don't throw - this is not critical for message sending
+  }
+}
+
+/**
+ * Create or get conversation for a child
+ */
+export async function getOrCreateConversation(childId: string, childName?: string): Promise<string> {
+  try {
+    const conversationId = `child_${childId}`;
+    const conversationRef = doc(db, 'conversations', conversationId);
+    const conversationDoc = await getDoc(conversationRef);
+    
+    if (!conversationDoc.exists()) {
+      // Create new conversation
+      await setDoc(conversationRef, {
+        id: conversationId,
+        childId,
+        childName: childName || `Child ${childId}`,
+        participants: [], // Will be populated based on permissions
+        participantNames: {},
+        createdAt: serverTimestamp(),
+      });
+      console.log('Created new conversation:', conversationId);
+    }
+    
+    return conversationId;
+  } catch (error) {
+    console.error('Error creating/getting conversation:', error);
+    throw error;
+  }
+}
+
+/**
  * Ensure user exists in Firebase
  */
 export async function ensureUser(clerkUserId: string, name: string, email?: string) {
@@ -50,16 +95,19 @@ export async function ensureUser(clerkUserId: string, name: string, email?: stri
 export async function sendMessage(
   senderId: string,
   senderName: string,
-  text: string
+  text: string,
+  conversationId: string,
+  childId: string
 ) {
   try {
-    console.log('Firebase sendMessage called with:', { senderId, senderName, text });
+    console.log('Firebase sendMessage called with:', { senderId, senderName, text, conversationId, childId });
     
-    // For now, send to global chat (no conversations yet)
     const messageData = {
       text,
       senderId,
       senderName,
+      conversationId,
+      childId,
       type: 'text',
       timestamp: serverTimestamp(),
       read: false,
@@ -68,6 +116,9 @@ export async function sendMessage(
     console.log('Adding document to Firestore:', messageData);
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     console.log('Document added successfully with ID:', messageRef.id);
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, text, serverTimestamp());
 
     return messageRef.id;
   } catch (error) {
@@ -113,14 +164,18 @@ export async function uploadFile(file: File, path: string): Promise<string> {
 export async function sendImageMessage(
   senderId: string,
   senderName: string,
-  imageFile: File
+  imageFile: File,
+  conversationId: string,
+  childId: string
 ) {
   try {
     console.log('sendImageMessage called with:', {
       senderId,
       senderName,
       fileName: imageFile.name,
-      fileSize: imageFile.size
+      fileSize: imageFile.size,
+      conversationId,
+      childId
     });
     
     // Upload image to Firebase Storage
@@ -133,6 +188,8 @@ export async function sendImageMessage(
     const messageData = {
       senderId,
       senderName,
+      conversationId,
+      childId,
       type: 'image',
       imageId: imageUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
@@ -141,6 +198,9 @@ export async function sendImageMessage(
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     console.log('Image message created successfully:', messageRef.id);
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, '📷 Image', serverTimestamp());
 
     return messageRef.id;
   } catch (error) {
@@ -156,7 +216,9 @@ export async function sendImageMessage(
 export async function sendAudioMessage(
   senderId: string,
   senderName: string,
-  audioBlob: Blob
+  audioBlob: Blob,
+  conversationId: string,
+  childId: string
 ) {
   try {
     // Convert blob to file
@@ -171,11 +233,16 @@ export async function sendAudioMessage(
     const messageRef = await addDoc(collection(db, 'messages'), {
       senderId,
       senderName,
+      conversationId,
+      childId,
       type: 'audio',
       audioId: audioUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
     });
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, '🎵 Audio', serverTimestamp());
 
     return messageRef.id;
   } catch (error) {
@@ -185,13 +252,15 @@ export async function sendAudioMessage(
 }
 
 /**
- * Listen to all messages (global chat for now)
+ * Listen to messages for a specific conversation
  */
 export function listenToMessages(
+  conversationId: string,
   callback: (messages: FirebaseMessage[]) => void
 ) {
   const q = query(
     collection(db, 'messages'),
+    where('conversationId', '==', conversationId),
     orderBy('timestamp', 'asc'), // Changed to ascending - oldest first
     limit(50) // Limit to last 50 messages
   );

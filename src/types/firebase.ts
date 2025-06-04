@@ -11,8 +11,8 @@ export interface FirebaseMessage {
   text?: string;
   senderId: string;
   senderName: string;
-  receiverId?: string;
-  conversationId?: string;
+  conversationId: string;  // Required - every message belongs to a conversation
+  childId: string;  // Required - the child this conversation is about
   type: 'text' | 'image' | 'audio';
   imageId?: string;
   audioId?: string;
@@ -23,11 +23,14 @@ export interface FirebaseMessage {
 
 export interface FirebaseConversation {
   id: string;
-  participants: string[];
+  childId: string;  // The child this conversation is about
+  childName?: string;  // Optional display name for the child
+  participants: string[];  // User IDs who can access this conversation
   participantNames: { [userId: string]: string };
   lastMessage?: string;
   lastMessageTimestamp?: Timestamp;
   unreadCount: { [userId: string]: number };
+  createdAt: Timestamp;
 }
 
 export interface FirebaseUser {

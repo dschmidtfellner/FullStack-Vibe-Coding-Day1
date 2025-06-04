@@ -11,6 +11,7 @@ import {
   setTypingStatus,
   listenToTypingIndicators,
   toggleMessageReaction,
+  getOrCreateConversation,
 } from "@/lib/firebase-messaging";
 
 function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
@@ -105,19 +106,58 @@ function MessagingApp() {
   const [isRecording, setIsRecording] = useState(false);
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null); // messageId or null
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [childId, setChildId] = useState<string | null>(null);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Listen to messages
+  // Initialize conversation from URL parameters
   useEffect(() => {
-    const unsubscribe = listenToMessages((newMessages) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const childIdParam = urlParams.get('childId');
+    const childNameParam = urlParams.get('childName');
+    
+    if (childIdParam) {
+      // Create or get conversation for this child
+      getOrCreateConversation(childIdParam, childNameParam || undefined)
+        .then((convId) => {
+          setConversationId(convId);
+          setChildId(childIdParam);
+          setIsLoadingConversation(false);
+        })
+        .catch((error) => {
+          console.error('Error initializing conversation:', error);
+          setIsLoadingConversation(false);
+        });
+    } else {
+      // For testing - use a default child ID
+      const defaultChildId = 'test_child_1';
+      getOrCreateConversation(defaultChildId, 'Test Child')
+        .then((convId) => {
+          setConversationId(convId);
+          setChildId(defaultChildId);
+          setIsLoadingConversation(false);
+        })
+        .catch((error) => {
+          console.error('Error initializing conversation:', error);
+          setIsLoadingConversation(false);
+        });
+    }
+  }, []);
+
+  // Listen to messages for the current conversation
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const unsubscribe = listenToMessages(conversationId, (newMessages) => {
       setMessages(newMessages);
     });
 
     return unsubscribe;
-  }, []);
+  }, [conversationId]);
 
   // Listen to typing indicators
   useEffect(() => {
@@ -146,22 +186,31 @@ function MessagingApp() {
   }, [showReactionPicker]);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !user) {
-      console.log('Cannot send: missing message or user', { newMessage, user });
+    if (!newMessage.trim() || !user || !conversationId || !childId) {
+      console.log('Cannot send: missing required data', { 
+        newMessage: newMessage.trim(), 
+        user: !!user, 
+        conversationId, 
+        childId 
+      });
       return;
     }
     
     console.log('Attempting to send message:', {
       userId: user.id,
       userName: user.fullName || user.firstName || 'Anonymous',
-      text: newMessage.trim()
+      text: newMessage.trim(),
+      conversationId,
+      childId
     });
     
     try {
       const messageId = await sendMessage(
         user.id,
         user.fullName || user.firstName || 'Anonymous',
-        newMessage.trim()
+        newMessage.trim(),
+        conversationId,
+        childId
       );
       console.log('Message sent successfully:', messageId);
       setNewMessage("");
@@ -177,8 +226,13 @@ function MessagingApp() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) {
-      console.log('No file or user:', { file, user });
+    if (!file || !user || !conversationId || !childId) {
+      console.log('Missing required data for file upload:', { 
+        file: !!file, 
+        user: !!user, 
+        conversationId, 
+        childId 
+      });
       return;
     }
 
@@ -193,7 +247,9 @@ function MessagingApp() {
       fileSize: file.size,
       fileType: file.type,
       userId: user.id,
-      userName: user.fullName || user.firstName || 'Anonymous'
+      userName: user.fullName || user.firstName || 'Anonymous',
+      conversationId,
+      childId
     });
 
     setIsUploading(true);
@@ -202,7 +258,9 @@ function MessagingApp() {
       const messageId = await sendImageMessage(
         user.id,
         user.fullName || user.firstName || 'Anonymous',
-        file
+        file,
+        conversationId,
+        childId
       );
       console.log('Image message sent successfully:', messageId);
     } catch (error) {
@@ -260,13 +318,15 @@ function MessagingApp() {
         stream.getTracks().forEach(track => track.stop());
         
         // Automatically send the audio
-        if (user) {
+        if (user && conversationId && childId) {
           setIsUploading(true);
           try {
             await sendAudioMessage(
               user.id,
               user.fullName || user.firstName || 'Anonymous',
-              audioBlob
+              audioBlob,
+              conversationId,
+              childId
             );
           } catch (error) {
             console.error("Failed to upload audio:", error);
@@ -350,10 +410,47 @@ function MessagingApp() {
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
 
+  if (isLoadingConversation) {
+    return (
+      <div className="relative h-full bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
+          <p className="text-gray-600">Loading conversation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!conversationId || !childId) {
+    return (
+      <div className="relative h-full bg-white flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-16 h-16 text-gray-400 mb-4 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">No Conversation</h2>
+          <p className="text-gray-500">Please provide a valid childId parameter.</p>
+          <p className="text-sm text-gray-400 mt-2">URL format: ?childId=123&childName=John</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full bg-white">
+      {/* Conversation Header */}
+      <div className="border-b border-gray-200 p-4 bg-white">
+        <div className="flex items-center gap-3">
+          <MessageCircle className="w-6 h-6 text-purple-600" />
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">
+              Chat for Child {childId}
+            </h1>
+            <p className="text-sm text-gray-500">{messages.length} messages</p>
+          </div>
+        </div>
+      </div>
+
       {/* Messages Container */}
-      <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4 h-full">
+      <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4" style={{ height: 'calc(100% - 80px)' }}>
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
           return (
