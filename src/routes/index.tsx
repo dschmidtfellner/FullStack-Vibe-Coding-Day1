@@ -114,17 +114,28 @@ function MessagingApp() {
   }, []);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim() || !user) {
+      console.log('Cannot send: missing message or user', { newMessage, user });
+      return;
+    }
+    
+    console.log('Attempting to send message:', {
+      userId: user.id,
+      userName: user.fullName || user.firstName || 'Anonymous',
+      text: newMessage.trim()
+    });
     
     try {
-      await sendMessage(
+      const messageId = await sendMessage(
         user.id,
         user.fullName || user.firstName || 'Anonymous',
         newMessage.trim()
       );
+      console.log('Message sent successfully:', messageId);
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
+      alert(`Failed to send message: ${error.message}`);
     }
   };
 

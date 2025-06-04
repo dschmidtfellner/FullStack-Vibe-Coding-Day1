@@ -52,19 +52,26 @@ export async function sendMessage(
   text: string
 ) {
   try {
+    console.log('Firebase sendMessage called with:', { senderId, senderName, text });
+    
     // For now, send to global chat (no conversations yet)
-    const messageRef = await addDoc(collection(db, 'messages'), {
+    const messageData = {
       text,
       senderId,
       senderName,
       type: 'text',
       timestamp: serverTimestamp(),
       read: false,
-    });
+    };
+    
+    console.log('Adding document to Firestore:', messageData);
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
+    console.log('Document added successfully with ID:', messageRef.id);
 
     return messageRef.id;
   } catch (error) {
     console.error('Error sending message:', error);
+    console.error('Error details:', error.message);
     throw error;
   }
 }
@@ -155,7 +162,7 @@ export function listenToMessages(
 ) {
   const q = query(
     collection(db, 'messages'),
-    orderBy('timestamp', 'desc'),
+    orderBy('timestamp', 'asc'), // Changed to ascending - oldest first
     limit(50) // Limit to last 50 messages
   );
 
