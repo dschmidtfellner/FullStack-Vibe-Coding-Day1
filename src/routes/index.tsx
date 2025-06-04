@@ -1,11 +1,12 @@
 import { SignInButton, useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X } from "lucide-react";
+import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { FirebaseMessage } from "@/types/firebase";
 import {
   sendMessage,
   sendImageMessage,
+  sendAudioMessage,
   listenToMessages,
 } from "@/lib/firebase-messaging";
 
@@ -17,6 +18,52 @@ function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageCli
       className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
       onClick={() => onImageClick(imageUrl)}
     />
+  );
+}
+
+function AudioMessage({ audioUrl }: { audioUrl: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+  
+  const handleAudioEnd = () => {
+    setIsPlaying(false);
+  };
+  
+  return (
+    <div className="flex items-center gap-3 min-w-[200px]">
+      <button
+        onClick={togglePlay}
+        className="btn btn-circle btn-sm bg-purple-100 text-purple-600 hover:bg-purple-200"
+      >
+        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+      </button>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-1 bg-purple-300 rounded-full"></div>
+          <div className="w-6 h-1 bg-purple-300 rounded-full"></div>
+          <div className="w-10 h-1 bg-purple-300 rounded-full"></div>
+          <div className="w-4 h-1 bg-purple-300 rounded-full"></div>
+        </div>
+      </div>
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onEnded={handleAudioEnd}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
+    </div>
   );
 }
 
@@ -52,7 +99,10 @@ function MessagingApp() {
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Listen to messages
   useEffect(() => {
@@ -162,6 +212,54 @@ function MessagingApp() {
     setSelectedImage(null);
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Automatically send the audio
+        if (user) {
+          setIsUploading(true);
+          try {
+            await sendAudioMessage(
+              user.id,
+              user.fullName || user.firstName || 'Anonymous',
+              audioBlob
+            );
+          } catch (error) {
+            console.error("Failed to upload audio:", error);
+            alert("Failed to upload audio");
+          } finally {
+            setIsUploading(false);
+          }
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Unable to access microphone');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
 
   return (
     <div className="relative h-full bg-white">
@@ -186,6 +284,8 @@ function MessagingApp() {
                 } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
                 {message.type === 'image' && message.imageId ? (
                   <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
+                ) : message.type === 'audio' && message.audioId ? (
+                  <AudioMessage audioUrl={message.audioId} />
                 ) : (
                   <p className="text-base leading-relaxed">{message.text}</p>
                 )}
@@ -217,6 +317,22 @@ function MessagingApp() {
               <div className="loading loading-spinner w-4 h-4"></div>
             ) : (
               <Plus className="w-4 h-4" />
+            )}
+          </button>
+
+          <button 
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isUploading}
+            className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
+              isRecording 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+            }`}
+          >
+            {isRecording ? (
+              <Square className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
             )}
           </button>
           
