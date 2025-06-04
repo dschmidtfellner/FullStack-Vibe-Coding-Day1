@@ -10,6 +10,7 @@ import {
   listenToMessages,
   setTypingStatus,
   listenToTypingIndicators,
+  toggleMessageReaction,
 } from "@/lib/firebase-messaging";
 
 function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
@@ -103,6 +104,7 @@ function MessagingApp() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null); // messageId or null
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -127,6 +129,21 @@ function MessagingApp() {
 
     return unsubscribe;
   }, [user?.id]);
+
+  // Close reaction picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.reaction-picker') && !target.closest('.reaction-button')) {
+        setShowReactionPicker(null);
+      }
+    };
+
+    if (showReactionPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showReactionPicker]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !user) {
@@ -314,6 +331,24 @@ function MessagingApp() {
     await handleSend();
   };
 
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      await toggleMessageReaction(
+        messageId,
+        emoji,
+        user.id,
+        user.fullName || user.firstName || 'Anonymous'
+      );
+      setShowReactionPicker(null);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+    }
+  };
+
+  const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+
 
   return (
     <div className="relative h-full bg-white">
@@ -331,18 +366,63 @@ function MessagingApp() {
                 </div>
                 
                 {/* Message bubble */}
-                <div className={`min-w-[200px] rounded-2xl ${
-                  isOwn 
-                    ? 'bg-purple-200 text-gray-800 rounded-br-md' 
-                    : 'bg-gray-200 text-gray-800 rounded-bl-md'
-                } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
-                {message.type === 'image' && message.imageId ? (
-                  <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
-                ) : message.type === 'audio' && message.audioId ? (
-                  <AudioMessage audioUrl={message.audioId} />
-                ) : (
-                  <p className="text-base leading-relaxed">{message.text}</p>
-                )}
+                <div className="relative group">
+                  <div className={`min-w-[200px] rounded-2xl ${
+                    isOwn 
+                      ? 'bg-purple-200 text-gray-800 rounded-br-md' 
+                      : 'bg-gray-200 text-gray-800 rounded-bl-md'
+                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
+                  {message.type === 'image' && message.imageId ? (
+                    <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
+                  ) : message.type === 'audio' && message.audioId ? (
+                    <AudioMessage audioUrl={message.audioId} />
+                  ) : (
+                    <p className="text-base leading-relaxed">{message.text}</p>
+                  )}
+                  </div>
+                  
+                  {/* Reaction button (shows on hover) */}
+                  <button
+                    onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
+                    className="reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs bg-gray-100 text-gray-600 hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    😊
+                  </button>
+                  
+                  {/* Reaction picker */}
+                  {showReactionPicker === message.id && (
+                    <div className="reaction-picker absolute top-8 right-0 bg-white rounded-lg shadow-lg border p-2 flex gap-1 z-20">
+                      {commonEmojis.map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => handleReaction(message.id, emoji)}
+                          className="hover:bg-gray-100 rounded p-1 text-lg transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Display existing reactions */}
+                  {message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {Object.values(message.reactions).map((reaction) => (
+                        <button
+                          key={reaction.emoji}
+                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors ${
+                            reaction.users.includes(user?.id || '')
+                              ? 'bg-purple-100 border-purple-300 text-purple-700'
+                              : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span>{reaction.users.length}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

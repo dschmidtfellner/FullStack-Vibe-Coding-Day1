@@ -11,6 +11,7 @@ import {
   arrayUnion,
   setDoc,
   getDocs,
+  getDoc,
   limit,
 } from 'firebase/firestore';
 import { 
@@ -20,7 +21,7 @@ import {
   getStorage 
 } from 'firebase/storage';
 import { db } from './firebase';
-import { FirebaseMessage, FirebaseConversation, FirebaseUser } from '@/types/firebase';
+import { FirebaseMessage, FirebaseConversation, FirebaseUser, MessageReaction } from '@/types/firebase';
 
 const storage = getStorage();
 
@@ -262,4 +263,72 @@ export function listenToTypingIndicators(
     
     callback(typingUsers);
   });
+}
+
+/**
+ * Add or remove a reaction to a message
+ */
+export async function toggleMessageReaction(
+  messageId: string,
+  emoji: string,
+  userId: string,
+  userName: string
+) {
+  try {
+    const messageRef = doc(db, 'messages', messageId);
+    const messageDoc = await getDoc(messageRef);
+    
+    if (!messageDoc.exists()) {
+      throw new Error('Message not found');
+    }
+
+    const messageData = messageDoc.data() as FirebaseMessage;
+    const currentReactions = messageData.reactions || {};
+
+    // Get current reaction for this emoji
+    const currentReaction = currentReactions[emoji];
+
+    if (currentReaction) {
+      // Check if user already reacted with this emoji
+      const userIndex = currentReaction.users.indexOf(userId);
+      
+      if (userIndex > -1) {
+        // User already reacted, remove their reaction
+        const updatedUsers = currentReaction.users.filter(id => id !== userId);
+        const updatedUserNames = currentReaction.userNames.filter(name => name !== userName);
+        
+        if (updatedUsers.length === 0) {
+          // No users left with this reaction, remove the entire emoji reaction
+          const { [emoji]: removed, ...remainingReactions } = currentReactions;
+          await updateDoc(messageRef, {
+            reactions: remainingReactions
+          });
+        } else {
+          // Update with remaining users
+          await updateDoc(messageRef, {
+            [`reactions.${emoji}.users`]: updatedUsers,
+            [`reactions.${emoji}.userNames`]: updatedUserNames
+          });
+        }
+      } else {
+        // User hasn't reacted with this emoji, add their reaction
+        await updateDoc(messageRef, {
+          [`reactions.${emoji}.users`]: arrayUnion(userId),
+          [`reactions.${emoji}.userNames`]: arrayUnion(userName)
+        });
+      }
+    } else {
+      // First reaction with this emoji
+      await updateDoc(messageRef, {
+        [`reactions.${emoji}`]: {
+          emoji,
+          users: [userId],
+          userNames: [userName]
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling message reaction:', error);
+    throw error;
+  }
 }

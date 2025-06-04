@@ -2,7 +2,7 @@
 
 ## Session Start
 - Starting commit hash: d71b103 (fix: Align username/timestamp to far edges of chat bubbles)
-- Session commits: [3bc4155, bd949c0, d366f80, 353c4d7, 51747ea, 427aab3, c471899, f1983cd, df66c27, ddceb80]
+- Session commits: [3bc4155, bd949c0, d366f80, 353c4d7, 51747ea, 427aab3, c471899, f1983cd, df66c27, ddceb80, d92fc43]
 
 ## Current Status - FIREBASE MIGRATION COMPLETE ✅
 - Firebase project "doulaconnect-messaging" created and configured
@@ -31,6 +31,7 @@
 - All features working: text messages, image uploads, audio recording
 - Real-time updates faster than previous Convex implementation
 - **COMPLETED: Clean audio recording implementation** ✅ - separate mic button works perfectly without layout shifts
+- **COMPLETED: Real-time typing indicators** ✅ - shows when other users are typing with animated dots and smart debouncing
 - Ready for integration as module in Bubble app
 
 ## Important Context
