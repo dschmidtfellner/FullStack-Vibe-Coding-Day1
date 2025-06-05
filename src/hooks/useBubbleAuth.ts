@@ -73,6 +73,19 @@ export function useChildAccess(childId: string | null): boolean {
   
   if (!user || !childId) return false;
   
+  // Debug logging
+  console.log('🔍 Permission check:', {
+    requestedChildId: childId,
+    requestedChildIdType: typeof childId,
+    userChildIds: user.childIds,
+    userChildIdsExpanded: JSON.stringify(user.childIds),
+    firstChildId: user.childIds[0],
+    firstChildIdType: typeof user.childIds[0],
+    hasAccess: user.childIds.includes(childId),
+    userType: user.userType,
+    userName: user.name
+  });
+  
   // Check if user has explicit access to this child
   // The childIds array from Bubble already contains all children this user can access
   // (including own child for Parents, direct clients + shared clients + teammate clients for Coaches)

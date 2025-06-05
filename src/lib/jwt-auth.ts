@@ -44,13 +44,20 @@ export async function validateJWTToken(token: string): Promise<BubbleUser | null
       return null;
     }
     
+    // Handle childIds - if it's an array with comma-separated strings, split them
+    let childIds = decoded.childIds;
+    if (Array.isArray(childIds) && childIds.length === 1 && typeof childIds[0] === 'string' && childIds[0].includes(',')) {
+      // Split the comma-separated string into separate IDs
+      childIds = childIds[0].split(',').map(id => id.trim());
+    }
+    
     // Return user object
     return {
       id: decoded.userId,
       name: decoded.name,
       email: decoded.email,
       userType: decoded.userType,
-      childIds: decoded.childIds,
+      childIds: childIds,
       isAuthenticated: true,
     };
   } catch (error) {

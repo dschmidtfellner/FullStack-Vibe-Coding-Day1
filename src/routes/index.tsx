@@ -48,16 +48,17 @@ function AudioMessage({ audioUrl }: { audioUrl: string }) {
     <div className="flex items-center gap-3 min-w-[200px]">
       <button
         onClick={togglePlay}
-        className="btn btn-circle btn-sm bg-purple-100 text-purple-600 hover:bg-purple-200"
+        className="btn btn-circle btn-sm text-white hover:opacity-90"
+        style={{ backgroundColor: '#503460' }}
       >
         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
       </button>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-1 bg-purple-300 rounded-full"></div>
-          <div className="w-6 h-1 bg-purple-300 rounded-full"></div>
-          <div className="w-10 h-1 bg-purple-300 rounded-full"></div>
-          <div className="w-4 h-1 bg-purple-300 rounded-full"></div>
+          <div className="w-8 h-1 rounded-full" style={{ backgroundColor: '#503460' }}></div>
+          <div className="w-6 h-1 rounded-full" style={{ backgroundColor: '#503460' }}></div>
+          <div className="w-10 h-1 rounded-full" style={{ backgroundColor: '#503460' }}></div>
+          <div className="w-4 h-1 rounded-full" style={{ backgroundColor: '#503460' }}></div>
         </div>
       </div>
       <audio
@@ -134,6 +135,16 @@ function MessagingApp() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Initialize conversation from URL parameters
   useEffect(() => {
@@ -456,6 +467,14 @@ function MessagingApp() {
   }
 
   // Check if user has permission to access this child's conversation
+  console.log('🔍 Access Check Debug:', {
+    hasChildAccess,
+    childId,
+    userChildIds: user?.childIds,
+    userType: user?.userType,
+    userName: user?.name
+  });
+  
   if (!hasChildAccess) {
     return (
       <div className="relative h-full bg-white flex items-center justify-center">
@@ -552,6 +571,8 @@ function MessagingApp() {
             </div>
           );
         })}
+        {/* Invisible div to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input - Floating at bottom with space for Bubble nav */}
@@ -624,7 +645,7 @@ function MessagingApp() {
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder="Start typing here"
-              className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-purple-400 focus:outline-none text-gray-700 placeholder-gray-500 h-12 box-border"
+              className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-gray-300 focus:outline-none text-gray-700 placeholder-gray-500 h-12 box-border"
             />
             <button 
               onClick={handleSendWithTypingCleanup}
