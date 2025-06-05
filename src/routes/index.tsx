@@ -573,8 +573,8 @@ function MessagingApp() {
         })}
       </div>
 
-      {/* Message Input - Floating at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white shadow-lg z-10">
+      {/* Message Input - Floating at bottom with space for Bubble nav */}
+      <div className="fixed left-0 right-0 border-t border-gray-200 p-4 bg-white shadow-lg z-10" style={{ bottom: '81px' }}>
         <input
           ref={fileInputRef}
           type="file"
@@ -652,6 +652,9 @@ function MessagingApp() {
           </div>
         </div>
       </div>
+
+      {/* White space for Bubble nav bar - 81px */}
+      <div className="h-[81px] bg-white"></div>
 
       {/* Image Modal */}
       {selectedImage && (
