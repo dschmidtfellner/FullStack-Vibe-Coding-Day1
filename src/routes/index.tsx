@@ -80,28 +80,9 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { user, isLoading, error } = useBubbleAuth();
 
-  // Show loading animation while authenticating
-  if (isLoading) {
-    return <LoadingScreen message="Connecting..." />;
-  }
-
-  // Only show error after we've finished loading and confirmed there's an issue
-  if (error || !user) {
-    return (
-      <div className="not-prose min-h-screen flex flex-col items-center justify-center px-4">
-        <MessageCircle className="w-16 h-16 text-red-500 mb-4" />
-        <h1 className="text-2xl font-semibold mb-2 text-gray-900">Authentication Required</h1>
-        <p className="text-gray-600 mb-6 text-center max-w-md">
-          {error || 'Please provide a valid authentication token to access the chat.'}
-        </p>
-        <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 max-w-lg">
-          <p className="font-medium mb-2">Expected URL format:</p>
-          <code className="text-xs bg-white p-2 rounded block">
-            ?childId=123&amp;token=eyJ...
-          </code>
-        </div>
-      </div>
-    );
+  // Show loading animation while authenticating or if there's an auth error
+  if (isLoading || error || !user) {
+    return <LoadingScreen message="Connecting..." darkMode={user?.darkMode} />;
   }
 
   return (
@@ -111,27 +92,15 @@ function HomePage() {
   );
 }
 
-// Enhanced loading screen component
-function LoadingScreen({ message = "Loading..." }: { message?: string }) {
+// Minimalist loading screen component
+function LoadingScreen({ message = "Loading...", darkMode = false }: { message?: string; darkMode?: boolean }) {
   return (
-    <div className="not-prose min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className={`not-prose min-h-screen flex items-center justify-center ${
+      darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
       <div className="text-center">
-        {/* Animated logo/icon */}
-        <div className="relative mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <MessageCircle className="w-8 h-8 text-white" />
-          </div>
-          {/* Floating dots animation */}
-          <div className="flex justify-center space-x-1">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-          </div>
-        </div>
-        
-        {/* Loading text */}
-        <p className="text-lg font-medium text-gray-700 mb-2">{message}</p>
-        <p className="text-sm text-gray-500">Setting up your secure chat...</p>
+        <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
+        <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{message}</p>
       </div>
     </div>
   );
@@ -463,48 +432,9 @@ function MessagingApp() {
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
 
-  if (isLoadingConversation) {
-    return <LoadingScreen message="Loading conversation..." />;
-  }
-
-  if (!conversationId || !childId) {
-    return (
-      <div className="relative h-full bg-white flex items-center justify-center">
-        <div className="text-center">
-          <MessageCircle className="w-16 h-16 text-gray-400 mb-4 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">No Conversation</h2>
-          <p className="text-gray-500">Please provide a valid childId parameter.</p>
-          <p className="text-sm text-gray-400 mt-2">URL format: ?childId=123&childName=John&token=...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if user has permission to access this child's conversation
-  console.log('🔍 Access Check Debug:', {
-    hasChildAccess,
-    childId,
-    userChildIds: user?.childIds,
-    userType: user?.userType,
-    userName: user?.name
-  });
-  
-  if (!hasChildAccess) {
-    return (
-      <div className="relative h-full bg-white flex items-center justify-center">
-        <div className="text-center">
-          <MessageCircle className="w-16 h-16 text-red-400 mb-4 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Access Denied</h2>
-          <p className="text-gray-500">You don't have permission to view this conversation.</p>
-          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-left">
-            <p className="font-medium text-gray-700 mb-2">Your access:</p>
-            <p className="text-gray-600">Type: <span className="font-medium">{user?.userType}</span></p>
-            <p className="text-gray-600">Child IDs: <span className="font-medium">{user?.childIds.join(', ')}</span></p>
-            <p className="text-gray-600">Requested: <span className="font-medium">{childId}</span></p>
-          </div>
-        </div>
-      </div>
-    );
+  // Show loading for any of these conditions
+  if (isLoadingConversation || !conversationId || !childId || !hasChildAccess) {
+    return <LoadingScreen message="Loading conversation..." darkMode={user?.darkMode} />;
   }
 
   return (
