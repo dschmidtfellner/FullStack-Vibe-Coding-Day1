@@ -227,7 +227,7 @@ function MessagingApp() {
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert(`Failed to send message: ${error.message}`);
+      alert(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -276,8 +276,8 @@ function MessagingApp() {
       console.log('Image message sent successfully:', messageId);
     } catch (error) {
       console.error("Failed to upload image:", error);
-      console.error("Error details:", error.message);
-      alert(`Failed to upload image: ${error.message}`);
+      console.error("Error details:", error instanceof Error ? error.message : 'Unknown error');
+      alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -341,7 +341,8 @@ function MessagingApp() {
             );
           } catch (error) {
             console.error("Failed to upload audio:", error);
-            alert("Failed to upload audio");
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to upload audio: ${errorMessage}`);
           } finally {
             setIsUploading(false);
           }

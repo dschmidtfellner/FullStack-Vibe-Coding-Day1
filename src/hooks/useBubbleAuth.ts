@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BubbleUser, validateJWTToken, getTokenFromURL, createTestUsers } from '@/lib/jwt-auth';
+import { BubbleUser, validateJWTToken, getTokenFromURL } from '@/lib/jwt-auth';
 
 interface AuthState {
   user: BubbleUser | null;

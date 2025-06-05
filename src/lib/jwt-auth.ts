@@ -33,7 +33,7 @@ export async function validateJWTToken(token: string): Promise<BubbleUser | null
   try {
     // Decode and verify the token
     const { payload } = await jwtVerify(token, secret);
-    const decoded = payload as JWTPayload;
+    const decoded = payload as unknown as JWTPayload;
     
     // Validate required fields
     if (!decoded.userId || !decoded.name || !decoded.userType || !Array.isArray(decoded.childIds)) {
@@ -80,38 +80,3 @@ export function getTokenFromURL(): string | null {
   return urlParams.get('token');
 }
 
-/**
- * Create test users for development
- */
-export async function createTestUsers() {
-  return {
-    parent1: await createTestJWTToken({
-      userId: 'parent_1',
-      name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      role: 'parent',
-      childIds: ['child_123']
-    }),
-    parent2: await createTestJWTToken({
-      userId: 'parent_2', 
-      name: 'Mike Wilson',
-      email: 'mike@example.com',
-      role: 'parent',
-      childIds: ['child_456']
-    }),
-    provider: await createTestJWTToken({
-      userId: 'provider_1',
-      name: 'Dr. Lisa Chen',
-      email: 'lisa@clinic.com',
-      role: 'provider',
-      childIds: ['child_123', 'child_456', 'child_789']
-    }),
-    admin: await createTestJWTToken({
-      userId: 'admin_1',
-      name: 'Admin User',
-      email: 'admin@example.com', 
-      role: 'admin',
-      childIds: ['child_123', 'child_456', 'child_789', 'child_999']
-    })
-  };
-}

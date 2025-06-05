@@ -10,7 +10,6 @@ import {
   serverTimestamp,
   arrayUnion,
   setDoc,
-  getDocs,
   getDoc,
   limit,
 } from 'firebase/firestore';
@@ -21,7 +20,7 @@ import {
   getStorage 
 } from 'firebase/storage';
 import { db } from './firebase';
-import { FirebaseMessage, FirebaseConversation, FirebaseUser, MessageReaction } from '@/types/firebase';
+import { FirebaseMessage } from '@/types/firebase';
 
 const storage = getStorage();
 
@@ -66,7 +65,7 @@ export async function getOrCreateConversation(childId: string, childName?: strin
     return conversationId;
   } catch (error) {
     console.error('Error creating/getting conversation:', error);
-    throw error;
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
 
@@ -123,8 +122,8 @@ export async function sendMessage(
     return messageRef.id;
   } catch (error) {
     console.error('Error sending message:', error);
-    console.error('Error details:', error.message);
-    throw error;
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
 
@@ -152,9 +151,8 @@ export async function uploadFile(file: File, path: string): Promise<string> {
     return downloadURL;
   } catch (error) {
     console.error('Error uploading file:', error);
-    console.error('Error details:', error.message);
-    console.error('Error code:', error.code);
-    throw error;
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
 
