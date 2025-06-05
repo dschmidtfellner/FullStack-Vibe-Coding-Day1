@@ -499,12 +499,12 @@ function MessagingApp() {
     }`}>
       {/* Spacer for free trial header */}
       {user?.needsSpacer && (
-        <div className="h-[60px]"></div>
+        <div className="h-[36px]"></div>
       )}
       
       {/* Messages Container */}
       <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
-        user?.needsSpacer ? 'h-[calc(100%-60px)]' : 'h-full'
+        user?.needsSpacer ? 'h-[calc(100%-36px)]' : 'h-full'
       }`}>
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
@@ -646,8 +646,15 @@ function MessagingApp() {
             <button 
               onClick={handlePhotoSelect}
               disabled={isUploading}
-              className="btn btn-circle btn-sm border-none text-white hover:opacity-90 flex-shrink-0 disabled:opacity-50"
-              style={{ backgroundColor: '#503460' }}
+              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
+                user?.darkMode 
+                  ? 'hover:opacity-90' 
+                  : 'text-white hover:opacity-90'
+              }`}
+              style={{ 
+                backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                color: user?.darkMode ? '#503460' : 'white'
+              }}
             >
             {isUploading ? (
               <div className="loading loading-spinner w-4 h-4"></div>
@@ -662,9 +669,14 @@ function MessagingApp() {
               className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
                 isRecording 
                   ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : user?.darkMode
+                  ? 'hover:opacity-90'
                   : 'text-white hover:opacity-90'
               }`}
-              style={{ backgroundColor: isRecording ? undefined : '#503460' }}
+              style={{ 
+                backgroundColor: isRecording ? undefined : (user?.darkMode ? '#f0ddef' : '#503460'),
+                color: isRecording ? undefined : (user?.darkMode ? '#503460' : 'white')
+              }}
             >
             {isRecording ? (
               <Square className="w-4 h-4" />
@@ -689,8 +701,13 @@ function MessagingApp() {
             <button 
               onClick={handleSendWithTypingCleanup}
               disabled={isUploading || !newMessage.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 text-white hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#503460' }}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+                user?.darkMode ? '' : 'text-white'
+              }`}
+              style={{ 
+                backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                color: user?.darkMode ? '#503460' : 'white'
+              }}
             >
               <Send className="w-4 h-4" />
             </button>
