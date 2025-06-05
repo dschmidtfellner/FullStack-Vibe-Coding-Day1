@@ -42,42 +42,15 @@ export function useBubbleAuth(): AuthState {
             });
           }
         } else {
-          // No token provided - check if we're in development mode
-          if (import.meta.env.DEV) {
-            // For development, show test user options or use default
-            console.log('Development mode: No token provided');
-            
-            // Use a default test user for development
-            const testUsers = await createTestUsers();
-            console.log('Available test tokens:', testUsers);
-            
-            const defaultTestUser = await validateJWTToken(testUsers.parent1);
-            
-            if (defaultTestUser) {
-              setAuthState({
-                user: defaultTestUser,
-                isLoading: false,
-                error: null,
-              });
-              console.log('Using default test user:', defaultTestUser);
-            } else {
-              setAuthState({
-                user: null,
-                isLoading: false,
-                error: 'No authentication token provided',
-              });
-            }
-          } else {
-            // Production mode - require token
-            setAuthState({
-              user: null,
-              isLoading: false,
-              error: 'No authentication token provided',
-            });
-          }
+          // No token provided
+          setAuthState({
+            user: null,
+            isLoading: false,
+            error: 'No authentication token provided',
+          });
         }
       } catch (error) {
-        console.error('Authentication initialization failed:', error);
+        console.error('❌ Authentication initialization failed:', error);
         setAuthState({
           user: null,
           isLoading: false,
@@ -100,9 +73,8 @@ export function useChildAccess(childId: string | null): boolean {
   
   if (!user || !childId) return false;
   
-  // Admin role has access to all children
-  if (user.role === 'admin') return true;
-  
   // Check if user has explicit access to this child
+  // The childIds array from Bubble already contains all children this user can access
+  // (including own child for Parents, direct clients + shared clients + teammate clients for Coaches)
   return user.childIds.includes(childId);
 }

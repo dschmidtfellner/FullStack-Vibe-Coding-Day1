@@ -154,18 +154,8 @@ function MessagingApp() {
           setIsLoadingConversation(false);
         });
     } else {
-      // For testing - use a default child ID
-      const defaultChildId = 'test_child_1';
-      getOrCreateConversation(defaultChildId, 'Test Child')
-        .then((convId) => {
-          setConversationId(convId);
-          setChildId(defaultChildId);
-          setIsLoadingConversation(false);
-        })
-        .catch((error) => {
-          console.error('Error initializing conversation:', error);
-          setIsLoadingConversation(false);
-        });
+      // Development mode - require childId parameter
+      setIsLoadingConversation(false);
     }
   }, []);
 
@@ -465,7 +455,7 @@ function MessagingApp() {
           <p className="text-gray-500">You don't have permission to view this conversation.</p>
           <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-left">
             <p className="font-medium text-gray-700 mb-2">Your access:</p>
-            <p className="text-gray-600">Role: <span className="font-medium">{user?.role}</span></p>
+            <p className="text-gray-600">Type: <span className="font-medium">{user?.userType}</span></p>
             <p className="text-gray-600">Child IDs: <span className="font-medium">{user?.childIds.join(', ')}</span></p>
             <p className="text-gray-600">Requested: <span className="font-medium">{childId}</span></p>
           </div>
@@ -490,7 +480,7 @@ function MessagingApp() {
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+            <p className="text-xs text-gray-500 capitalize">{user?.userType}</p>
           </div>
         </div>
       </div>
