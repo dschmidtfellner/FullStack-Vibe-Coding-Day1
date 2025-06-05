@@ -495,7 +495,7 @@ function MessagingApp() {
 
   return (
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-gray-900' : 'bg-white'
+      user?.darkMode ? 'bg-[#1a1a1a]' : 'bg-white'
     }`}>
       {/* Spacer for free trial header */}
       {user?.needsSpacer && (
@@ -513,7 +513,7 @@ function MessagingApp() {
               <div className="max-w-[75%] flex flex-col">
                 {/* Sender name and timestamp */}
                 <div className={`text-xs mb-1 flex justify-between items-center ${
-                  user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>
                   <span>{message.senderName}</span>
                   <span>{formatTime(message.timestamp)}</span>
@@ -524,7 +524,7 @@ function MessagingApp() {
                   <div className={`min-w-[200px] rounded-2xl ${
                     isOwn 
                       ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
-                      : `${user?.darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                      : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
                   } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? '#f0ddef' : undefined }}>
                   {message.type === 'image' && message.imageId ? (
                     <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
@@ -538,19 +538,31 @@ function MessagingApp() {
                   {/* Reaction button (shows on hover) */}
                   <button
                     onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
-                    className="reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs bg-gray-100 text-gray-600 hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={`reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs opacity-0 group-hover:opacity-100 transition-opacity ${
+                      user?.darkMode 
+                        ? 'bg-[#3a3a3a] text-gray-300 hover:bg-[#4a4a4a]' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                   >
                     😊
                   </button>
                   
                   {/* Reaction picker */}
                   {showReactionPicker === message.id && (
-                    <div className="reaction-picker absolute top-8 right-0 bg-white rounded-lg shadow-lg border p-2 flex gap-1 z-20">
+                    <div className={`reaction-picker absolute top-8 right-0 rounded-lg shadow-lg border p-2 flex gap-1 z-20 ${
+                      user?.darkMode 
+                        ? 'bg-[#2a2a2a] border-gray-600' 
+                        : 'bg-white border-gray-200'
+                    }`}>
                       {commonEmojis.map((emoji) => (
                         <button
                           key={emoji}
                           onClick={() => handleReaction(message.id, emoji)}
-                          className="hover:bg-gray-100 rounded p-1 text-lg transition-colors"
+                          className={`rounded p-1 text-lg transition-colors ${
+                            user?.darkMode 
+                              ? 'hover:bg-[#3a3a3a]' 
+                              : 'hover:bg-gray-100'
+                          }`}
                         >
                           {emoji}
                         </button>
@@ -589,7 +601,7 @@ function MessagingApp() {
       {/* Message Input - Floating at bottom with space for Bubble nav */}
       <div className={`fixed left-0 right-0 border-t z-10 ${
         user?.darkMode 
-          ? 'border-gray-600 bg-gray-800' 
+          ? 'border-gray-700 bg-[#2a2a2a]' 
           : 'border-gray-200 bg-white'
       }`} style={{ bottom: '81px' }}>
         <div className="max-w-[800px] mx-auto p-4">
@@ -604,7 +616,7 @@ function MessagingApp() {
           {/* Typing Indicators */}
           {typingUsers.length > 0 && (
             <div className={`mb-3 px-4 py-2 text-sm ${
-              user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
@@ -668,10 +680,10 @@ function MessagingApp() {
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder="Start typing here"
-              className={`input input-bordered w-full pr-12 rounded-full border-gray-300 focus:border-gray-300 focus:outline-none h-12 box-border ${
+              className={`input input-bordered w-full pr-12 rounded-full focus:outline-none h-12 box-border ${
                 user?.darkMode 
-                  ? 'bg-gray-700 text-white placeholder-gray-400' 
-                  : 'bg-gray-100 text-gray-700 placeholder-gray-500'
+                  ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
+                  : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
               }`}
             />
             <button 
@@ -689,7 +701,7 @@ function MessagingApp() {
 
       {/* Space for Bubble nav bar - 81px */}
       <div className={`h-[81px] ${
-        user?.darkMode ? 'bg-gray-900' : 'bg-white'
+        user?.darkMode ? 'bg-[#1a1a1a]' : 'bg-white'
       }`}></div>
 
       {/* Image Modal */}
