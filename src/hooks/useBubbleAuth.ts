@@ -20,6 +20,9 @@ export function useBubbleAuth(): AuthState {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      const startTime = Date.now();
+      const minLoadingTime = 800; // Minimum 800ms loading time for smooth experience
+      
       try {
         // Get token from URL
         const token = getTokenFromURL();
@@ -27,6 +30,15 @@ export function useBubbleAuth(): AuthState {
         if (token) {
           // Validate JWT token
           const user = await validateJWTToken(token);
+          
+          // Calculate remaining time to meet minimum loading duration
+          const elapsed = Date.now() - startTime;
+          const remainingTime = Math.max(0, minLoadingTime - elapsed);
+          
+          // Wait for remaining time if needed
+          if (remainingTime > 0) {
+            await new Promise(resolve => setTimeout(resolve, remainingTime));
+          }
           
           if (user) {
             setAuthState({
@@ -42,6 +54,15 @@ export function useBubbleAuth(): AuthState {
             });
           }
         } else {
+          // Calculate remaining time to meet minimum loading duration
+          const elapsed = Date.now() - startTime;
+          const remainingTime = Math.max(0, minLoadingTime - elapsed);
+          
+          // Wait for remaining time if needed
+          if (remainingTime > 0) {
+            await new Promise(resolve => setTimeout(resolve, remainingTime));
+          }
+          
           // No token provided
           setAuthState({
             user: null,
@@ -51,6 +72,16 @@ export function useBubbleAuth(): AuthState {
         }
       } catch (error) {
         console.error('❌ Authentication initialization failed:', error);
+        
+        // Calculate remaining time to meet minimum loading duration
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsed);
+        
+        // Wait for remaining time if needed
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+        
         setAuthState({
           user: null,
           isLoading: false,

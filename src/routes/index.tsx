@@ -80,17 +80,12 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { user, isLoading, error } = useBubbleAuth();
 
+  // Show loading animation while authenticating
   if (isLoading) {
-    return (
-      <div className="not-prose min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
-          <p className="text-gray-600">Authenticating...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Connecting..." />;
   }
 
+  // Only show error after we've finished loading and confirmed there's an issue
   if (error || !user) {
     return (
       <div className="not-prose min-h-screen flex flex-col items-center justify-center px-4">
@@ -112,6 +107,32 @@ function HomePage() {
   return (
     <div className="not-prose">
       <MessagingApp />
+    </div>
+  );
+}
+
+// Enhanced loading screen component
+function LoadingScreen({ message = "Loading..." }: { message?: string }) {
+  return (
+    <div className="not-prose min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div className="text-center">
+        {/* Animated logo/icon */}
+        <div className="relative mb-8">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <MessageCircle className="w-8 h-8 text-white" />
+          </div>
+          {/* Floating dots animation */}
+          <div className="flex justify-center space-x-1">
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          </div>
+        </div>
+        
+        {/* Loading text */}
+        <p className="text-lg font-medium text-gray-700 mb-2">{message}</p>
+        <p className="text-sm text-gray-500">Setting up your secure chat...</p>
+      </div>
     </div>
   );
 }
@@ -443,14 +464,7 @@ function MessagingApp() {
 
 
   if (isLoadingConversation) {
-    return (
-      <div className="relative h-full bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
-          <p className="text-gray-600">Loading conversation...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading conversation..." />;
   }
 
   if (!conversationId || !childId) {
@@ -535,16 +549,16 @@ function MessagingApp() {
                   )}
                   </div>
                   
-                  {/* Reaction button (shows on hover) */}
+                  {/* Reaction button (shows on hover on desktop, always visible on mobile) */}
                   <button
                     onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
-                    className={`reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs opacity-0 group-hover:opacity-100 transition-opacity ${
+                    className={`reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 sm:opacity-100 transition-opacity ${
                       user?.darkMode 
                         ? 'bg-[#3a3a3a] text-gray-300 hover:bg-[#4a4a4a]' 
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    😊
+                    <Plus className="w-3 h-3" />
                   </button>
                   
                   {/* Reaction picker */}
@@ -577,6 +591,7 @@ function MessagingApp() {
                         <button
                           key={reaction.emoji}
                           onClick={() => handleReaction(message.id, reaction.emoji)}
+                          title={`${reaction.userNames?.length === 1 ? reaction.userNames[0] : reaction.userNames?.slice(0, -1).join(', ') + ' and ' + reaction.userNames?.[reaction.userNames.length - 1]} reacted with ${reaction.emoji}`}
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors ${
                             reaction.users.includes(user?.id || '')
                               ? 'bg-purple-100 border-purple-300 text-purple-700'
