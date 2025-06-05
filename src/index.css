@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
   themes:
@@ -7,7 +7,11 @@
     dark --prefersdark;
 }
 
-/* Custom font family - using Poppins */
+/* Custom font family - using Poppins everywhere */
+* {
+  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+}
+
 body {
   font-family: 'Poppins', Arial, Helvetica, sans-serif;
 }

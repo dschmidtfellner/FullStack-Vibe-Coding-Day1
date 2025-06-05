@@ -475,28 +475,9 @@ function MessagingApp() {
   }
 
   return (
-    <div className="relative h-full bg-white">
-      {/* Conversation Header */}
-      <div className="border-b border-gray-200 p-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <MessageCircle className="w-6 h-6 text-purple-600" />
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                Chat for Child {childId}
-              </h1>
-              <p className="text-sm text-gray-500">{messages.length} messages</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.userType}</p>
-          </div>
-        </div>
-      </div>
-
+    <div className="relative h-full bg-white font-['Poppins']">
       {/* Messages Container */}
-      <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4" style={{ height: 'calc(100% - 80px)' }}>
+      <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4 h-full">
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
           return (
@@ -504,7 +485,7 @@ function MessagingApp() {
               <div className="max-w-[75%] flex flex-col">
                 {/* Sender name and timestamp */}
                 <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center`}>
-                  <span className="font-medium">{message.senderName}</span>
+                  <span>{message.senderName}</span>
                   <span>{formatTime(message.timestamp)}</span>
                 </div>
                 
@@ -512,9 +493,9 @@ function MessagingApp() {
                 <div className="relative group">
                   <div className={`min-w-[200px] rounded-2xl ${
                     isOwn 
-                      ? 'bg-purple-200 text-gray-800 rounded-br-md' 
+                      ? 'text-gray-800 rounded-br-md' 
                       : 'bg-gray-200 text-gray-800 rounded-bl-md'
-                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`}>
+                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? '#f0ddef' : undefined }}>
                   {message.type === 'image' && message.imageId ? (
                     <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
                   ) : message.type === 'audio' && message.audioId ? (
@@ -574,7 +555,7 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Floating at bottom with space for Bubble nav */}
-      <div className="fixed left-0 right-0 border-t border-gray-200 p-4 bg-white shadow-lg z-10" style={{ bottom: '81px' }}>
+      <div className="fixed left-0 right-0 border-t border-gray-200 p-4 bg-white z-10" style={{ bottom: '81px' }}>
         <input
           ref={fileInputRef}
           type="file"
@@ -608,7 +589,8 @@ function MessagingApp() {
           <button 
             onClick={handlePhotoSelect}
             disabled={isUploading}
-            className="btn btn-circle btn-sm bg-purple-100 border-none text-purple-600 hover:bg-purple-200 flex-shrink-0 disabled:opacity-50"
+            className="btn btn-circle btn-sm border-none text-white hover:opacity-90 flex-shrink-0 disabled:opacity-50"
+            style={{ backgroundColor: '#503460' }}
           >
             {isUploading ? (
               <div className="loading loading-spinner w-4 h-4"></div>
@@ -623,8 +605,9 @@ function MessagingApp() {
             className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
               isRecording 
                 ? 'bg-red-500 text-white hover:bg-red-600' 
-                : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                : 'text-white hover:opacity-90'
             }`}
+            style={{ backgroundColor: isRecording ? undefined : '#503460' }}
           >
             {isRecording ? (
               <Square className="w-4 h-4" />
@@ -645,7 +628,8 @@ function MessagingApp() {
             <button 
               onClick={handleSendWithTypingCleanup}
               disabled={isUploading || !newMessage.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 text-white hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#503460' }}
             >
               <Send className="w-4 h-4" />
             </button>
