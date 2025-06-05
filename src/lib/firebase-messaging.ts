@@ -203,8 +203,8 @@ export async function sendImageMessage(
     return messageRef.id;
   } catch (error) {
     console.error('Error sending image message:', error);
-    console.error('Error details:', error.message);
-    throw error;
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
 

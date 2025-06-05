@@ -79,4 +79,3 @@ export function getTokenFromURL(): string | null {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('token');
 }
-
