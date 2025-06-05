@@ -475,6 +475,12 @@ function MessagingApp() {
     userName: user?.name
   });
   
+  console.log('🎨 Dark Mode Debug:', {
+    darkMode: user?.darkMode,
+    needsSpacer: user?.needsSpacer,
+    userObject: user
+  });
+  
   if (!hasChildAccess) {
     return (
       <div className="relative h-full bg-white flex items-center justify-center">
@@ -495,7 +501,7 @@ function MessagingApp() {
 
   return (
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#1a1a1a]' : 'bg-white'
+      user?.darkMode || true ? 'bg-[#15111B]' : 'bg-white'
     }`}>
       {/* Spacer for free trial header */}
       {user?.needsSpacer && (
@@ -525,7 +531,7 @@ function MessagingApp() {
                     isOwn 
                       ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
                       : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? '#f0ddef' : undefined }}>
+                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}>
                   {message.type === 'image' && message.imageId ? (
                     <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
                   ) : message.type === 'audio' && message.audioId ? (
@@ -601,7 +607,7 @@ function MessagingApp() {
       {/* Message Input - Floating at bottom with space for Bubble nav */}
       <div className={`fixed left-0 right-0 border-t z-10 ${
         user?.darkMode 
-          ? 'border-gray-700 bg-[#2a2a2a]' 
+          ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
       }`} style={{ bottom: '81px' }}>
         <div className="max-w-[800px] mx-auto p-4">
@@ -701,7 +707,7 @@ function MessagingApp() {
 
       {/* Space for Bubble nav bar - 81px */}
       <div className={`h-[81px] ${
-        user?.darkMode ? 'bg-[#1a1a1a]' : 'bg-white'
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
 
       {/* Image Modal */}
