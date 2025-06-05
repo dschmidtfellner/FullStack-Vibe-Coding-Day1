@@ -475,12 +475,6 @@ function MessagingApp() {
     userName: user?.name
   });
   
-  console.log('🎨 Dark Mode Debug:', {
-    darkMode: user?.darkMode,
-    needsSpacer: user?.needsSpacer,
-    userObject: user
-  });
-  
   if (!hasChildAccess) {
     return (
       <div className="relative h-full bg-white flex items-center justify-center">
@@ -501,7 +495,7 @@ function MessagingApp() {
 
   return (
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode || true ? 'bg-[#15111B]' : 'bg-white'
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
       {/* Spacer for free trial header */}
       {user?.needsSpacer && (
