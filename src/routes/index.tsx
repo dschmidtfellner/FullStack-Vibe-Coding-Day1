@@ -141,19 +141,28 @@ function MessagingApp() {
     const childIdParam = urlParams.get('childId');
     const childNameParam = urlParams.get('childName');
     
+    console.log('🔍 Conversation initialization:', {
+      fullURL: window.location.href,
+      childIdParam,
+      childNameParam,
+    });
+    
     if (childIdParam) {
+      console.log('✅ Found childId, creating conversation...');
       // Create or get conversation for this child
       getOrCreateConversation(childIdParam, childNameParam || undefined)
         .then((convId) => {
+          console.log('🎉 Conversation created successfully:', convId);
           setConversationId(convId);
           setChildId(childIdParam);
           setIsLoadingConversation(false);
         })
         .catch((error) => {
-          console.error('Error initializing conversation:', error);
+          console.error('❌ Error initializing conversation:', error);
           setIsLoadingConversation(false);
         });
     } else {
+      console.log('❌ No childId parameter found');
       // Development mode - require childId parameter
       setIsLoadingConversation(false);
     }

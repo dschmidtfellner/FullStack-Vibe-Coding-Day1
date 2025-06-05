@@ -23,7 +23,7 @@ export interface BubbleUser {
 
 // JWT Secret - must match what your Bubble app uses
 // Set VITE_JWT_SECRET in your .env.local file
-const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'your-production-jwt-secret-here';
+const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'LKvxdhbxdyyGGGHvdqgkLkbXZADGjgfd';
 const secret = new TextEncoder().encode(JWT_SECRET);
 
 /**
