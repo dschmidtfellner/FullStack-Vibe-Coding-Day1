@@ -497,14 +497,14 @@ function MessagingApp() {
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
-      {/* Spacer for free trial header */}
-      {user?.needsSpacer && (
-        <div className="h-[36px]"></div>
-      )}
+      {/* Default top spacing (64px) + extra spacer for free trial header (36px) */}
+      <div className={`${
+        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
+      }`}></div>
       
       {/* Messages Container */}
       <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
-        user?.needsSpacer ? 'h-[calc(100%-36px)]' : 'h-full'
+        user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
       }`}>
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
