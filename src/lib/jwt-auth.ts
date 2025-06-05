@@ -31,6 +31,9 @@ const secret = new TextEncoder().encode(JWT_SECRET);
  */
 export async function validateJWTToken(token: string): Promise<BubbleUser | null> {
   try {
+    console.log('JWT_SECRET from env:', JWT_SECRET);
+    console.log('Token to validate:', token.substring(0, 50) + '...');
+    
     // Decode and verify the token
     const { payload } = await jwtVerify(token, secret);
     const decoded = payload as unknown as JWTPayload;
