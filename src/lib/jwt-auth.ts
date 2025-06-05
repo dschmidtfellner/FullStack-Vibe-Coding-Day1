@@ -7,6 +7,8 @@ export interface JWTPayload {
   email?: string;        // Optional email
   userType: string;      // "Coach" or "Parent"
   childIds: string[];    // Array of child IDs this user can access
+  darkMode?: boolean;    // Whether to use dark mode
+  needsSpacer?: boolean; // Whether to add extra top spacing for free trial header
   exp?: number;          // Token expiration
   iat?: number;          // Token issued at
 }
@@ -18,6 +20,8 @@ export interface BubbleUser {
   email?: string;
   userType: string;      // "Coach" or "Parent"
   childIds: string[];
+  darkMode: boolean;     // Whether to use dark mode
+  needsSpacer: boolean;  // Whether to add extra top spacing
   isAuthenticated: boolean;
 }
 
@@ -58,6 +62,8 @@ export async function validateJWTToken(token: string): Promise<BubbleUser | null
       email: decoded.email,
       userType: decoded.userType,
       childIds: childIds,
+      darkMode: decoded.darkMode || false,
+      needsSpacer: decoded.needsSpacer || false,
       isAuthenticated: true,
     };
   } catch (error) {

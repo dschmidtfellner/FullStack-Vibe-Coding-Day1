@@ -494,16 +494,27 @@ function MessagingApp() {
   }
 
   return (
-    <div className="relative h-full bg-white font-['Poppins'] max-w-[800px] mx-auto">
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-gray-900' : 'bg-white'
+    }`}>
+      {/* Spacer for free trial header */}
+      {user?.needsSpacer && (
+        <div className="h-[60px]"></div>
+      )}
+      
       {/* Messages Container */}
-      <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4 h-full">
+      <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
+        user?.needsSpacer ? 'h-[calc(100%-60px)]' : 'h-full'
+      }`}>
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);
           return (
             <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
               <div className="max-w-[75%] flex flex-col">
                 {/* Sender name and timestamp */}
-                <div className={`text-xs text-gray-600 mb-1 flex justify-between items-center`}>
+                <div className={`text-xs mb-1 flex justify-between items-center ${
+                  user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                   <span>{message.senderName}</span>
                   <span>{formatTime(message.timestamp)}</span>
                 </div>
@@ -512,8 +523,8 @@ function MessagingApp() {
                 <div className="relative group">
                   <div className={`min-w-[200px] rounded-2xl ${
                     isOwn 
-                      ? 'text-gray-800 rounded-br-md' 
-                      : 'bg-gray-200 text-gray-800 rounded-bl-md'
+                      ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                      : `${user?.darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
                   } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? '#f0ddef' : undefined }}>
                   {message.type === 'image' && message.imageId ? (
                     <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
@@ -576,7 +587,11 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Floating at bottom with space for Bubble nav */}
-      <div className="fixed left-0 right-0 border-t border-gray-200 bg-white z-10" style={{ bottom: '81px' }}>
+      <div className={`fixed left-0 right-0 border-t z-10 ${
+        user?.darkMode 
+          ? 'border-gray-600 bg-gray-800' 
+          : 'border-gray-200 bg-white'
+      }`} style={{ bottom: '81px' }}>
         <div className="max-w-[800px] mx-auto p-4">
           <input
             ref={fileInputRef}
@@ -588,12 +603,20 @@ function MessagingApp() {
           
           {/* Typing Indicators */}
           {typingUsers.length > 0 && (
-            <div className="mb-3 px-4 py-2 text-sm text-gray-600">
+            <div className={`mb-3 px-4 py-2 text-sm ${
+              user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
+                  }`}></div>
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
+                  }`} style={{ animationDelay: '0.1s' }}></div>
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
+                  }`} style={{ animationDelay: '0.2s' }}></div>
                 </div>
                 <span>
                   {typingUsers.length === 1 
@@ -645,7 +668,11 @@ function MessagingApp() {
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder="Start typing here"
-              className="input input-bordered w-full pr-12 rounded-full bg-gray-100 border-gray-300 focus:border-gray-300 focus:outline-none text-gray-700 placeholder-gray-500 h-12 box-border"
+              className={`input input-bordered w-full pr-12 rounded-full border-gray-300 focus:border-gray-300 focus:outline-none h-12 box-border ${
+                user?.darkMode 
+                  ? 'bg-gray-700 text-white placeholder-gray-400' 
+                  : 'bg-gray-100 text-gray-700 placeholder-gray-500'
+              }`}
             />
             <button 
               onClick={handleSendWithTypingCleanup}
@@ -660,8 +687,10 @@ function MessagingApp() {
         </div>
       </div>
 
-      {/* White space for Bubble nav bar - 81px */}
-      <div className="h-[81px] bg-white"></div>
+      {/* Space for Bubble nav bar - 81px */}
+      <div className={`h-[81px] ${
+        user?.darkMode ? 'bg-gray-900' : 'bg-white'
+      }`}></div>
 
       {/* Image Modal */}
       {selectedImage && (
