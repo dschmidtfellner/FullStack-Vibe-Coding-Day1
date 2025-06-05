@@ -475,7 +475,7 @@ function MessagingApp() {
   }
 
   return (
-    <div className="relative h-full bg-white font-['Poppins']">
+    <div className="relative h-full bg-white font-['Poppins'] max-w-[800px] mx-auto">
       {/* Messages Container */}
       <div className="overflow-y-auto px-4 py-6 pb-24 space-y-4 h-full">
         {messages.map((message) => {
@@ -555,43 +555,44 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Floating at bottom with space for Bubble nav */}
-      <div className="fixed left-0 right-0 border-t border-gray-200 p-4 bg-white z-10" style={{ bottom: '81px' }}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        
-        {/* Typing Indicators */}
-        {typingUsers.length > 0 && (
-          <div className="mb-3 px-4 py-2 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div className="fixed left-0 right-0 border-t border-gray-200 bg-white z-10" style={{ bottom: '81px' }}>
+        <div className="max-w-[800px] mx-auto p-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          
+          {/* Typing Indicators */}
+          {typingUsers.length > 0 && (
+            <div className="mb-3 px-4 py-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span>
+                  {typingUsers.length === 1 
+                    ? `${typingUsers[0].userName} is typing...`
+                    : typingUsers.length === 2
+                    ? `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing...`
+                    : `${typingUsers[0].userName} and ${typingUsers.length - 1} others are typing...`
+                  }
+                </span>
               </div>
-              <span>
-                {typingUsers.length === 1 
-                  ? `${typingUsers[0].userName} is typing...`
-                  : typingUsers.length === 2
-                  ? `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing...`
-                  : `${typingUsers[0].userName} and ${typingUsers.length - 1} others are typing...`
-                }
-              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex items-center gap-3 max-w-full">
-          <button 
-            onClick={handlePhotoSelect}
-            disabled={isUploading}
-            className="btn btn-circle btn-sm border-none text-white hover:opacity-90 flex-shrink-0 disabled:opacity-50"
-            style={{ backgroundColor: '#503460' }}
-          >
+          <div className="flex items-center gap-3 max-w-full">
+            <button 
+              onClick={handlePhotoSelect}
+              disabled={isUploading}
+              className="btn btn-circle btn-sm border-none text-white hover:opacity-90 flex-shrink-0 disabled:opacity-50"
+              style={{ backgroundColor: '#503460' }}
+            >
             {isUploading ? (
               <div className="loading loading-spinner w-4 h-4"></div>
             ) : (
@@ -599,16 +600,16 @@ function MessagingApp() {
             )}
           </button>
 
-          <button 
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={isUploading}
-            className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
-              isRecording 
-                ? 'bg-red-500 text-white hover:bg-red-600' 
-                : 'text-white hover:opacity-90'
-            }`}
-            style={{ backgroundColor: isRecording ? undefined : '#503460' }}
-          >
+            <button 
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isUploading}
+              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
+                isRecording 
+                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : 'text-white hover:opacity-90'
+              }`}
+              style={{ backgroundColor: isRecording ? undefined : '#503460' }}
+            >
             {isRecording ? (
               <Square className="w-4 h-4" />
             ) : (
@@ -633,6 +634,7 @@ function MessagingApp() {
             >
               <Send className="w-4 h-4" />
             </button>
+          </div>
           </div>
         </div>
       </div>
