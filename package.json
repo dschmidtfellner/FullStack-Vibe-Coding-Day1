@@ -4,22 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "init": "pnpm install && cp .env.example .env.local && convex dev --once && claude '/project:init-app'",
-    "dev": "npm-run-all --parallel dev:frontend dev:backend",
-    "dev:frontend": "vite --open",
-    "dev:backend": "convex dev",
+    "dev": "vite --open",
     "build": "tsc -b && vite build",
     "lint": "tsc && eslint .  --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.25.0",
-    "@convex-dev/react-query": "0.0.0-alpha.8",
     "@tanstack/react-form": "^1.9.0",
     "@tanstack/react-query": "^5.79.0",
     "@tanstack/react-router": "^1.119.0",
     "@tanstack/react-router-devtools": "^1.119.1",
-    "convex": "^1.23.0",
     "firebase": "^11.8.1",
     "jose": "^6.0.11",
     "lucide-react": "^0.511.0",
