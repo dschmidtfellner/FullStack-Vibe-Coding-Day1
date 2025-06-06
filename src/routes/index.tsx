@@ -20,7 +20,10 @@ function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageCli
       src={imageUrl} 
       alt="Shared image" 
       className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
-      onClick={() => onImageClick(imageUrl)}
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent triggering reaction picker
+        onImageClick(imageUrl);
+      }}
     />
   );
 }
@@ -45,7 +48,7 @@ function AudioMessage({ audioUrl }: { audioUrl: string }) {
   };
   
   return (
-    <div className="flex items-center gap-3 min-w-[200px]">
+    <div className="flex items-center gap-3 min-w-[200px]" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={togglePlay}
         className="btn btn-circle btn-sm text-white hover:opacity-90"
@@ -461,33 +464,25 @@ function MessagingApp() {
                   <span>{formatTime(message.timestamp)}</span>
                 </div>
                 
-                {/* Message bubble */}
+                {/* Message bubble - clickable to show reactions */}
                 <div className="relative group">
-                  <div className={`min-w-[200px] rounded-2xl ${
-                    isOwn 
-                      ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
-                      : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                  } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}>
-                  {message.type === 'image' && message.imageId ? (
-                    <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
-                  ) : message.type === 'audio' && message.audioId ? (
-                    <AudioMessage audioUrl={message.audioId} />
-                  ) : (
-                    <p className="text-base leading-relaxed">{message.text}</p>
-                  )}
-                  </div>
-                  
-                  {/* Reaction button (shows on hover on desktop, always visible on mobile) */}
-                  <button
+                  <div 
+                    className={`min-w-[200px] rounded-2xl cursor-pointer transition-opacity hover:opacity-90 ${
+                      isOwn 
+                        ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                        : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                    } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} 
+                    style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
                     onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
-                    className={`reaction-button absolute -top-2 -right-2 btn btn-circle btn-xs opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 sm:opacity-100 transition-opacity ${
-                      user?.darkMode 
-                        ? 'bg-[#3a3a3a] text-gray-300 hover:bg-[#4a4a4a]' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
                   >
-                    <Plus className="w-3 h-3" />
-                  </button>
+                    {message.type === 'image' && message.imageId ? (
+                      <ImageMessage imageUrl={message.imageId} onImageClick={handleImageClick} />
+                    ) : message.type === 'audio' && message.audioId ? (
+                      <AudioMessage audioUrl={message.audioId} />
+                    ) : (
+                      <p className="text-base leading-relaxed">{message.text}</p>
+                    )}
+                  </div>
                   
                   {/* Reaction picker */}
                   {showReactionPicker === message.id && (
@@ -523,7 +518,7 @@ function MessagingApp() {
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors ${
                             reaction.users.includes(user?.id || '')
                               ? user?.darkMode
-                                ? 'bg-purple-800 border-purple-600 text-white'
+                                ? 'bg-[#2d2637] border-gray-600 text-white'
                                 : 'bg-purple-100 border-purple-300 text-purple-700'
                               : user?.darkMode
                                 ? 'bg-[#3a3a3a] border-gray-600 text-white hover:bg-[#4a4a4a]'
