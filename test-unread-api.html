@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Firebase Unread Count API</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px; margin: 5px; background: #4285f4; color: white; border: none; cursor: pointer; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+        input { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Unread Count API Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Single Unread Count</h3>
+        <input type="text" id="userId1" placeholder="User ID (e.g., user123)" value="user123">
+        <input type="text" id="childId1" placeholder="Child ID (e.g., child456)" value="child456">
+        <button onclick="testSingleCount()">Get Unread Count</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test All Unread Counts for User</h3>
+        <input type="text" id="userId2" placeholder="User ID (e.g., user123)" value="user123">
+        <button onclick="testAllCounts()">Get All Unread Counts</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Mark as Read</h3>
+        <input type="text" id="userId3" placeholder="User ID (e.g., user123)" value="user123">
+        <input type="text" id="childId3" placeholder="Child ID (e.g., child456)" value="child456">
+        <button onclick="testMarkAsRead()">Mark as Read</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulate Data Creation</h3>
+        <p>Since Firebase Functions aren't deployed yet, here's what the API responses will look like:</p>
+        <button onclick="simulateData()">Show Sample API Response</button>
+        <div id="simulate" class="result"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9cgj5tKf0yvRD_jZaYCzpHGVH5XdZKzA",
+            authDomain: "doulaconnect-messaging.firebaseapp.com",
+            projectId: "doulaconnect-messaging",
+            storageBucket: "doulaconnect-messaging.firebasestorage.app",
+            messagingSenderId: "116606894688009814703",
+            appId: "1:116606894688009814703:web:89a8cf93b1b86e45651b18"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make functions available globally
+        window.testSingleCount = async function() {
+            const userId = document.getElementById('userId1').value;
+            const childId = document.getElementById('childId1').value;
+            
+            try {
+                // Simulate the Firebase Function API call by reading Firestore directly
+                const docRef = doc(db, 'unreadCounts', `${userId}_${childId}`);
+                const docSnap = await getDoc(docRef);
+                
+                const count = docSnap.exists() ? docSnap.data().count || 0 : 0;
+                
+                const result = {
+                    userId,
+                    childId,
+                    unreadCount: count,
+                    timestamp: Date.now(),
+                    note: "Reading directly from Firestore (simulating API)"
+                };
+                
+                document.getElementById('result1').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('result1').innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+            }
+        };
+
+        window.testAllCounts = async function() {
+            const userId = document.getElementById('userId2').value;
+            
+            try {
+                // Simulate the Firebase Function API call
+                const q = query(collection(db, 'unreadCounts'), where('userId', '==', userId));
+                const querySnapshot = await getDocs(q);
+                
+                const unreadCounts = {};
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    unreadCounts[data.childId] = data.count || 0;
+                });
+                
+                const result = {
+                    userId,
+                    unreadCounts,
+                    timestamp: Date.now(),
+                    note: "Reading directly from Firestore (simulating API)"
+                };
+                
+                document.getElementById('result2').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('result2').innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+            }
+        };
+
+        window.testMarkAsRead = async function() {
+            const userId = document.getElementById('userId3').value;
+            const childId = document.getElementById('childId3').value;
+            
+            try {
+                // Simulate marking as read by setting count to 0
+                const docRef = doc(db, 'unreadCounts', `${userId}_${childId}`);
+                await setDoc(docRef, {
+                    userId,
+                    childId,
+                    count: 0,
+                    lastUpdated: new Date()
+                });
+                
+                const result = {
+                    success: true,
+                    userId,
+                    childId,
+                    message: 'Marked as read',
+                    note: "Updated Firestore directly (simulating API)"
+                };
+                
+                document.getElementById('result3').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('result3').innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+            }
+        };
+
+        window.simulateData = async function() {
+            // Create some sample data
+            const sampleData = [
+                { userId: 'user123', childId: 'child456', count: 3 },
+                { userId: 'user123', childId: 'child789', count: 1 },
+                { userId: 'user456', childId: 'child123', count: 0 }
+            ];
+
+            try {
+                // Create sample unread count documents
+                for (const item of sampleData) {
+                    const docRef = doc(db, 'unreadCounts', `${item.userId}_${item.childId}`);
+                    await setDoc(docRef, {
+                        userId: item.userId,
+                        childId: item.childId,
+                        count: item.count,
+                        lastUpdated: new Date()
+                    });
+                }
+
+                document.getElementById('simulate').innerHTML = `
+                    <p><strong>Sample data created!</strong></p>
+                    <p>Try the API calls above with these values:</p>
+                    <ul>
+                        <li>User: user123, Child: child456 (should return count: 3)</li>
+                        <li>User: user123, Child: child789 (should return count: 1)</li>
+                        <li>User: user456, Child: child123 (should return count: 0)</li>
+                    </ul>
+                    <p><strong>For Bubble Integration:</strong></p>
+                    <p>Once Firebase Functions are deployed, Bubble will call:</p>
+                    <pre>GET https://us-central1-doulaconnect-messaging.cloudfunctions.net/getUnreadCount?userId=user123&childId=child456</pre>
+                    <p>Response:</p>
+                    <pre>${JSON.stringify({
+                        userId: "user123",
+                        childId: "child456", 
+                        unreadCount: 3,
+                        timestamp: Date.now()
+                    }, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('simulate').innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+            }
+        };
+    </script>
+</body>
+</html>
