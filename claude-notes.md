@@ -1,16 +1,17 @@
 # Claude Code Session Notes
 
 ## Session Start
-- Starting commit hash: d71b103 (fix: Align username/timestamp to far edges of chat bubbles)
-- Session commits: [3bc4155, bd949c0, d366f80, 353c4d7, 51747ea, 427aab3, c471899, f1983cd, df66c27, ddceb80, d92fc43, d9f7c73, e996e6f, ab1d0f3, e6487ab]
+- Starting commit hash: db94817 (feat: Make message bubbles clickable for reactions)
+- Session commits: [d9e8e15]
 
-## Current Status - FIREBASE MIGRATION COMPLETE ✅
+## Current Status - IMPLEMENTING UNREAD MESSAGE TRACKING 🚧
 - Firebase project "doulaconnect-messaging" created and configured
 - Firestore database with security rules deployed
 - Complete migration from Convex to Firebase accomplished
 - Real-time messaging working with Firebase listeners
 - Image and audio uploads using Firebase Storage
 - All messaging features preserved (text, image, audio)
+- **NEW: Implementing Firebase Cloud Functions API for Bubble integration**
 
 ## Firebase Migration Progress
 - ✅ Firebase CLI installed and authenticated
