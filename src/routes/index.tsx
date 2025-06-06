@@ -82,7 +82,7 @@ function HomePage() {
 
   // Show loading animation while authenticating or if there's an auth error
   if (isLoading || error || !user) {
-    return <LoadingScreen message="Connecting..." darkMode={user?.darkMode} />;
+    return <LoadingScreen message="Connecting..." />;
   }
 
   return (
@@ -92,15 +92,13 @@ function HomePage() {
   );
 }
 
-// Minimalist loading screen component
-function LoadingScreen({ message = "Loading...", darkMode = false }: { message?: string; darkMode?: boolean }) {
+// Minimalist loading screen component (dark mode by default to prevent white flash)
+function LoadingScreen({ message = "Loading..." }: { message?: string }) {
   return (
-    <div className={`not-prose min-h-screen flex items-center justify-center ${
-      darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
+    <div className="not-prose min-h-screen flex items-center justify-center bg-[#15111B]">
       <div className="text-center">
         <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
-        <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{message}</p>
+        <p className="text-gray-300">{message}</p>
       </div>
     </div>
   );
@@ -434,7 +432,7 @@ function MessagingApp() {
 
   // Show loading for any of these conditions
   if (isLoadingConversation || !conversationId || !childId || !hasChildAccess) {
-    return <LoadingScreen message="Loading conversation..." darkMode={user?.darkMode} />;
+    return <LoadingScreen message="Loading conversation..." />;
   }
 
   return (
@@ -524,8 +522,12 @@ function MessagingApp() {
                           title={`${reaction.userNames?.length === 1 ? reaction.userNames[0] : reaction.userNames?.slice(0, -1).join(', ') + ' and ' + reaction.userNames?.[reaction.userNames.length - 1]} reacted with ${reaction.emoji}`}
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors ${
                             reaction.users.includes(user?.id || '')
-                              ? 'bg-purple-100 border-purple-300 text-purple-700'
-                              : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                              ? user?.darkMode
+                                ? 'bg-purple-800 border-purple-600 text-white'
+                                : 'bg-purple-100 border-purple-300 text-purple-700'
+                              : user?.darkMode
+                                ? 'bg-[#3a3a3a] border-gray-600 text-white hover:bg-[#4a4a4a]'
+                                : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
                           <span>{reaction.emoji}</span>
