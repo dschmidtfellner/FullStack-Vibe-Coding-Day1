@@ -1,6 +1,6 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause } from "lucide-react";
+import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { FirebaseMessage } from "@/types/firebase";
 import {
@@ -12,6 +12,15 @@ import {
   listenToTypingIndicators,
   toggleMessageReaction,
   getOrCreateConversation,
+  // Log-related imports
+  SleepLog,
+  SleepEvent,
+  listenToLogs,
+  createSleepLog,
+  updateSleepLog,
+  getLog,
+  sendLogComment,
+  listenToLogComments,
 } from "@/lib/firebase-messaging";
 
 function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
@@ -88,9 +97,17 @@ function HomePage() {
     return <LoadingScreen message="Connecting..." />;
   }
 
+  // Get view parameter from URL to determine which app to show
+  const urlParams = new URLSearchParams(window.location.search);
+  const view = urlParams.get('view');
+
   return (
     <div className="not-prose">
-      <MessagingApp />
+      {view === 'logs' || view === 'log-sleep' || view === 'log-detail' ? (
+        <LogsApp />
+      ) : (
+        <MessagingApp />
+      )}
     </div>
   );
 }
@@ -686,6 +703,1183 @@ function MessagingApp() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Logs App Component - handles all log-related views
+function LogsApp() {
+  const [childId, setChildId] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<string>('America/New_York');
+  const [isLoadingChildData, setIsLoadingChildData] = useState(true);
+
+  // Check if user has access to the current child
+  const hasChildAccess = useChildAccess(childId);
+
+  // Get URL parameters for logs
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const childIdParam = urlParams.get('childId');
+    const timezoneParam = urlParams.get('timezone');
+    
+    console.log('🔍 Logs initialization:', {
+      fullURL: window.location.href,
+      childIdParam,
+      timezoneParam,
+    });
+    
+    if (childIdParam) {
+      setChildId(childIdParam);
+      if (timezoneParam) {
+        setTimezone(timezoneParam);
+      }
+      setIsLoadingChildData(false);
+    } else {
+      console.log('❌ No childId parameter found for logs');
+      setIsLoadingChildData(false);
+    }
+  }, []);
+
+  // Show loading for any of these conditions
+  if (isLoadingChildData || !childId || !hasChildAccess) {
+    return <LoadingScreen message="Loading logs..." />;
+  }
+
+  // Get view parameter to determine which logs view to show
+  const urlParams = new URLSearchParams(window.location.search);
+  const view = urlParams.get('view');
+  const logId = urlParams.get('logId');
+
+  // Route to appropriate logs view
+  if (view === 'log-detail' && logId) {
+    return <LogDetailView childId={childId} logId={logId} timezone={timezone} />;
+  } else if (view === 'log-sleep') {
+    return <SleepLogModal childId={childId} logId={logId} timezone={timezone} />;
+  } else {
+    // Default to logs list view
+    return <LogsListView childId={childId} timezone={timezone} />;
+  }
+}
+
+// Log List View Component with infinite scroll
+function LogsListView({ childId, timezone }: { childId: string; timezone: string }) {
+  const { user } = useBubbleAuth();
+  const [logs, setLogs] = useState<SleepLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Listen to logs with real-time updates
+  useEffect(() => {
+    if (!childId) return;
+
+    console.log('Setting up logs listener for child:', childId);
+    const unsubscribe = listenToLogs(childId, (newLogs) => {
+      console.log('Received logs update:', newLogs.length, 'logs');
+      setLogs(newLogs);
+      setIsLoading(false);
+    });
+
+    return unsubscribe;
+  }, [childId]);
+
+  // Format time in the baby's timezone
+  const formatTimeInTimezone = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
+
+  // Format date in the baby's timezone
+  const formatDateInTimezone = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      month: 'short',
+      day: 'numeric',
+      weekday: 'short'
+    }).format(date);
+  };
+
+  // Get sleep type icon
+  const getSleepTypeIcon = (sleepType?: string) => {
+    return sleepType === 'bedtime' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />;
+  };
+
+  // Get sleep duration text
+  const getDurationText = (log: SleepLog) => {
+    if (log.duration && log.duration > 0) {
+      const hours = Math.floor(log.duration / 60);
+      const minutes = log.duration % 60;
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m`;
+    }
+    return log.isComplete ? 'Complete' : 'In progress';
+  };
+
+  // Group logs by date
+  const groupedLogs = logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
+    const dateKey = log.localDate || formatDateInTimezone(log.timestamp);
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(log);
+    return groups;
+  }, {});
+
+  // Handle log click to open detail view
+  const handleLogClick = (logId: string) => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', 'log-detail');
+    newUrl.searchParams.set('logId', logId);
+    window.location.href = newUrl.toString();
+  };
+
+  // Handle new log button click
+  const handleNewLogClick = () => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', 'log-sleep');
+    newUrl.searchParams.delete('logId'); // Make sure we're creating, not editing
+    window.location.href = newUrl.toString();
+  };
+
+  if (isLoading) {
+    return <LoadingScreen message="Loading logs..." />;
+  }
+
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className={`${
+        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
+      }`}></div>
+      
+      {/* Header */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <h1 className={`text-xl font-bold ${
+          user?.darkMode ? 'text-white' : 'text-gray-800'
+        }`}>Sleep Logs</h1>
+        <p className={`text-sm ${
+          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+        }`}>Times shown in baby's timezone</p>
+      </div>
+
+      {/* Logs Container */}
+      <div className={`overflow-y-auto pb-32 ${
+        user?.needsSpacer ? 'h-[calc(100%-180px)]' : 'h-[calc(100%-144px)]'
+      }`}>
+        {Object.keys(groupedLogs).length === 0 ? (
+          // Empty state
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+              user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-100'
+            }`}>
+              <Moon className={`w-8 h-8 ${
+                user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+              }`} />
+            </div>
+            <h3 className={`text-lg font-semibold mb-2 ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>No sleep logs yet</h3>
+            <p className={`text-center mb-6 ${
+              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>Tap the plus button to start tracking sleep</p>
+          </div>
+        ) : (
+          // Logs list grouped by date
+          Object.entries(groupedLogs).map(([dateKey, dateLogs]) => (
+            <div key={dateKey} className="mb-6">
+              {/* Date separator */}
+              <div className={`sticky top-0 px-4 py-2 text-sm font-medium ${
+                user?.darkMode 
+                  ? 'bg-[#2a223a] text-gray-300 border-b border-gray-700' 
+                  : 'bg-gray-50 text-gray-700 border-b border-gray-200'
+              }`}>
+                {dateKey}
+              </div>
+              
+              {/* Logs for this date */}
+              <div className="space-y-2 px-4 pt-3">
+                {dateLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    onClick={() => handleLogClick(log.id)}
+                    className={`p-4 rounded-lg cursor-pointer transition-all hover:scale-[1.02] ${
+                      user?.darkMode 
+                        ? 'bg-[#3a2f4a] hover:bg-[#4a3f5a] border border-gray-600' 
+                        : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${
+                          user?.darkMode ? 'bg-[#2d2637]' : 'bg-white'
+                        }`}>
+                          {getSleepTypeIcon(log.sleepType)}
+                        </div>
+                        <div>
+                          <h3 className={`font-semibold capitalize ${
+                            user?.darkMode ? 'text-white' : 'text-gray-800'
+                          }`}>
+                            {log.sleepType || 'Sleep'}
+                          </h3>
+                          <p className={`text-sm ${
+                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            by {log.userName}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className={`text-sm font-medium ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {formatTimeInTimezone(log.timestamp)}
+                        </div>
+                        <div className={`text-xs ${
+                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {getDurationText(log)}
+                        </div>
+                        {log.commentCount > 0 && (
+                          <div className={`text-xs mt-1 flex items-center gap-1 ${
+                            user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+                          }`}>
+                            <MessageCircle className="w-3 h-3" />
+                            {log.commentCount}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Show first and last events for preview */}
+                    {log.events && log.events.length > 0 && (
+                      <div className={`mt-3 pt-3 border-t text-xs ${
+                        user?.darkMode 
+                          ? 'border-gray-600 text-gray-400' 
+                          : 'border-purple-200 text-gray-600'
+                      }`}>
+                        <div className="flex justify-between">
+                          <span>Started: {log.events[0]?.localTime}</span>
+                          {log.events.length > 1 && (
+                            <span>Last: {log.events[log.events.length - 1]?.localTime}</span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          {log.events.length} event{log.events.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-24 right-6 z-20">
+        <button
+          onClick={handleNewLogClick}
+          className={`btn btn-circle btn-lg shadow-lg border-none ${
+            user?.darkMode 
+              ? 'text-white hover:opacity-90' 
+              : 'text-white hover:opacity-90'
+          }`}
+          style={{ 
+            backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
+          }}
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Space for Bubble nav bar - 81px */}
+      <div className={`h-[81px] ${
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+      }`}></div>
+    </div>
+  );
+}
+
+function LogDetailView({ childId, logId, timezone }: { childId: string; logId: string; timezone: string }) {
+  const { user } = useBubbleAuth();
+  const [log, setLog] = useState<SleepLog | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [comments, setComments] = useState<FirebaseMessage[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+
+  // Load the log
+  useEffect(() => {
+    if (!logId) return;
+
+    setIsLoading(true);
+    getLog(logId)
+      .then((logData) => {
+        setLog(logData);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error loading log:', error);
+        setIsLoading(false);
+      });
+  }, [logId]);
+
+  // Get conversation ID for this child
+  useEffect(() => {
+    if (!childId) return;
+
+    getOrCreateConversation(childId)
+      .then((convId) => {
+        setConversationId(convId);
+      })
+      .catch((error) => {
+        console.error('Error getting conversation:', error);
+      });
+  }, [childId]);
+
+  // Listen to comments for this log
+  useEffect(() => {
+    if (!logId) return;
+
+    const unsubscribe = listenToLogComments(logId, (newComments) => {
+      setComments(newComments);
+    });
+
+    return unsubscribe;
+  }, [logId]);
+
+  // Auto-scroll to bottom when comments change
+  useEffect(() => {
+    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [comments]);
+
+  // Format time in the baby's timezone
+  const formatTimeInTimezone = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
+
+  // Format date in the baby's timezone
+  const formatDateInTimezone = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      month: 'short',
+      day: 'numeric',
+      weekday: 'short'
+    }).format(date);
+  };
+
+  // Get event type text
+  const getEventTypeText = (type: SleepEvent['type']): string => {
+    switch (type) {
+      case 'put_in_bed': return 'Put in bed';
+      case 'fell_asleep': return 'Fell asleep';
+      case 'woke_up': return 'Woke up';
+      case 'out_of_bed': return 'Out of bed';
+    }
+  };
+
+  // Get sleep duration text
+  const getDurationText = (log: SleepLog) => {
+    if (log.duration && log.duration > 0) {
+      const hours = Math.floor(log.duration / 60);
+      const minutes = log.duration % 60;
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m`;
+    }
+    return log.isComplete ? 'Complete' : 'In progress';
+  };
+
+  // Handle comment send
+  const handleSendComment = async () => {
+    if (!newComment.trim() || !user || !conversationId || !logId) return;
+
+    try {
+      await sendLogComment(
+        user.id,
+        user.name,
+        newComment.trim(),
+        conversationId,
+        childId,
+        logId
+      );
+      setNewComment("");
+    } catch (error) {
+      console.error("Failed to send comment:", error);
+      alert(`Failed to send comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Handle back navigation
+  const handleBack = () => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', 'logs');
+    newUrl.searchParams.delete('logId');
+    window.location.href = newUrl.toString();
+  };
+
+  // Handle edit navigation
+  const handleEdit = () => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', 'log-sleep');
+    newUrl.searchParams.set('logId', logId);
+    window.location.href = newUrl.toString();
+  };
+
+  if (isLoading || !log) {
+    return <LoadingScreen message="Loading log details..." />;
+  }
+
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className={`${
+        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
+      }`}></div>
+      
+      {/* Header */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBack}
+              className={`btn btn-circle btn-sm ${
+                user?.darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
+              }`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div>
+              <h1 className={`text-xl font-bold ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {log.sleepType === 'bedtime' ? 'Bedtime' : 'Nap'} Log
+              </h1>
+              <p className={`text-sm ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {formatDateInTimezone(log.timestamp)} • by {log.userName}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleEdit}
+            className={`btn btn-sm ${
+              user?.darkMode 
+                ? 'btn-outline border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white' 
+                : 'btn-outline border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white'
+            }`}
+          >
+            Edit
+          </button>
+        </div>
+      </div>
+
+      {/* Content Container */}
+      <div className={`flex flex-col h-full ${
+        user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
+      }`}>
+        
+        {/* Log Details - Fixed at top */}
+        <div className={`px-4 py-4 border-b ${
+          user?.darkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
+          {/* Sleep Summary */}
+          <div className={`p-4 rounded-lg mb-4 ${
+            user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-50'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {log.sleepType === 'bedtime' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                <span className={`font-semibold ${
+                  user?.darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  {getDurationText(log)}
+                </span>
+              </div>
+              <div className={`text-sm ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {log.events?.length || 0} events
+              </div>
+            </div>
+            
+            {/* Status indicator */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+              log.isComplete
+                ? user?.darkMode
+                  ? 'bg-green-900 text-green-300 border border-green-700'
+                  : 'bg-green-100 text-green-700 border border-green-200'
+                : user?.darkMode
+                  ? 'bg-yellow-900 text-yellow-300 border border-yellow-700'
+                  : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                log.isComplete ? 'bg-green-500' : 'bg-yellow-500'
+              }`}></div>
+              {log.isComplete ? 'Complete' : 'In progress'}
+            </div>
+          </div>
+
+          {/* Events Timeline */}
+          {log.events && log.events.length > 0 && (
+            <div>
+              <h3 className={`text-sm font-medium mb-3 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Timeline
+              </h3>
+              <div className="space-y-3">
+                {log.events
+                  .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
+                  .map((event, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        user?.darkMode ? 'bg-purple-400' : 'bg-purple-600'
+                      }`}></div>
+                      <div className="flex-1 flex justify-between items-center">
+                        <span className={`text-sm ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {getEventTypeText(event.type)}
+                        </span>
+                        <span className={`text-sm ${
+                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {event.localTime}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Comments Section - Scrollable */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className={`px-4 py-3 border-b ${
+            user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-gray-50'
+          }`}>
+            <h3 className={`text-sm font-medium ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              Comments ({comments.length})
+            </h3>
+          </div>
+
+          {/* Comments List */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {comments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <MessageCircle className={`w-12 h-12 mb-3 ${
+                  user?.darkMode ? 'text-gray-600' : 'text-gray-400'
+                }`} />
+                <p className={`text-sm text-center ${
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  No comments yet. Start a conversation about this log.
+                </p>
+              </div>
+            ) : (
+              comments.map((comment) => {
+                const isOwn = user?.id === comment.senderId;
+                return (
+                  <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                    <div className="max-w-[75%] flex flex-col">
+                      {/* Sender name and timestamp */}
+                      <div className={`text-xs mb-1 flex justify-between items-center ${
+                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        <span>{comment.senderName}</span>
+                        <span>{formatTimeInTimezone(comment.timestamp)}</span>
+                      </div>
+                      
+                      {/* Comment bubble */}
+                      <div 
+                        className={`min-w-[100px] rounded-2xl px-4 py-3 ${
+                          isOwn 
+                            ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                            : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                        }`} 
+                        style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                      >
+                        <p className="text-sm leading-relaxed">{comment.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={commentsEndRef} />
+          </div>
+
+          {/* Comment Input - Fixed at bottom */}
+          <div className={`border-t px-4 py-3 ${
+            user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
+                  placeholder="Add a comment..."
+                  className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
+                      : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
+                  }`}
+                />
+                <button 
+                  onClick={handleSendComment}
+                  disabled={!newComment.trim()}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+                    user?.darkMode ? '' : 'text-white'
+                  }`}
+                  style={{ 
+                    backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                    color: user?.darkMode ? '#503460' : 'white'
+                  }}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Space for Bubble nav bar - 81px */}
+      <div className={`h-[81px] ${
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+      }`}></div>
+    </div>
+  );
+}
+
+function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: string | null; timezone: string }) {
+  const { user } = useBubbleAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [sleepType, setSleepType] = useState<'nap' | 'bedtime'>('nap');
+  const [events, setEvents] = useState<Array<{ type: SleepEvent['type']; timestamp: Date }>>([]);
+  const [currentEventType, setCurrentEventType] = useState<SleepEvent['type']>('put_in_bed');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isComplete, setIsComplete] = useState(false);
+  const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
+
+  // Load existing log if editing
+  useEffect(() => {
+    if (logId) {
+      setIsLoading(true);
+      getLog(logId)
+        .then((log) => {
+          if (log) {
+            setExistingLog(log);
+            setSleepType(log.sleepType || 'nap');
+            setIsComplete(log.isComplete || false);
+            if (log.events) {
+              const eventsWithDates = log.events.map(event => ({
+                type: event.type,
+                timestamp: event.timestamp.toDate()
+              }));
+              setEvents(eventsWithDates);
+            }
+          }
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error loading log:', error);
+          setIsLoading(false);
+        });
+    }
+  }, [logId]);
+
+  // Get valid next event types based on current sequence
+  const getValidNextEventTypes = (): SleepEvent['type'][] => {
+    if (events.length === 0) {
+      return ['put_in_bed', 'fell_asleep']; // Any valid first event
+    }
+
+    const lastEvent = events[events.length - 1];
+    switch (lastEvent.type) {
+      case 'put_in_bed':
+        return ['fell_asleep', 'out_of_bed'];
+      case 'fell_asleep':
+        return ['woke_up', 'out_of_bed'];
+      case 'woke_up':
+        return ['fell_asleep', 'out_of_bed'];
+      case 'out_of_bed':
+        return []; // Session complete
+      default:
+        return [];
+    }
+  };
+
+  // Get display text for event types
+  const getEventTypeText = (type: SleepEvent['type']): string => {
+    switch (type) {
+      case 'put_in_bed': return 'Put in bed';
+      case 'fell_asleep': return 'Fell asleep';
+      case 'woke_up': return 'Woke up';
+      case 'out_of_bed': return 'Out of bed';
+    }
+  };
+
+  // Format time for input
+  const formatTimeForInput = (date: Date): string => {
+    return date.toLocaleTimeString('en-US', { 
+      timeZone: timezone,
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Format time for display
+  const formatTimeForDisplay = (date: Date): string => {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
+
+  // Handle time input change
+  const handleTimeChange = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const newTime = new Date(currentTime);
+    newTime.setHours(hours, minutes, 0, 0);
+    
+    // Smart overnight handling - if time seems to go backwards significantly, assume next day
+    if (events.length > 0) {
+      const lastEventTime = events[events.length - 1].timestamp;
+      const timeDiff = newTime.getTime() - lastEventTime.getTime();
+      
+      // If new time is more than 12 hours earlier, assume it's the next day
+      if (timeDiff < -12 * 60 * 60 * 1000) {
+        newTime.setDate(newTime.getDate() + 1);
+      }
+    }
+    
+    setCurrentTime(newTime);
+  };
+
+  // Add event to the sequence
+  const handleAddEvent = () => {
+    if (!user) return;
+
+    const newEvent = {
+      type: currentEventType,
+      timestamp: new Date(currentTime)
+    };
+
+    const updatedEvents = [...events, newEvent];
+    setEvents(updatedEvents);
+
+    // Auto-advance time by 5 minutes for next event
+    const nextTime = new Date(currentTime.getTime() + 5 * 60 * 1000);
+    setCurrentTime(nextTime);
+
+    // Check if session should be marked complete
+    if (currentEventType === 'out_of_bed') {
+      setIsComplete(true);
+    } else {
+      // Set default next event type
+      const validNext = getValidNextEventTypes();
+      if (validNext.length > 0) {
+        setCurrentEventType(validNext[0]);
+      }
+    }
+  };
+
+  // Remove last event
+  const handleRemoveLastEvent = () => {
+    if (events.length > 0) {
+      const updatedEvents = events.slice(0, -1);
+      setEvents(updatedEvents);
+      setIsComplete(false);
+
+      // Update validNextEvents based on new events state
+      // We need to manually calculate since getValidNextEventTypes uses current events state
+      let validNext: SleepEvent['type'][] = [];
+      if (updatedEvents.length === 0) {
+        validNext = ['put_in_bed', 'fell_asleep'];
+      } else {
+        const lastEvent = updatedEvents[updatedEvents.length - 1];
+        switch (lastEvent.type) {
+          case 'put_in_bed':
+            validNext = ['fell_asleep', 'out_of_bed'];
+            break;
+          case 'fell_asleep':
+            validNext = ['woke_up', 'out_of_bed'];
+            break;
+          case 'woke_up':
+            validNext = ['fell_asleep', 'out_of_bed'];
+            break;
+          case 'out_of_bed':
+            validNext = [];
+            break;
+        }
+      }
+
+      // Reset current event type to a valid option
+      if (validNext.length > 0) {
+        setCurrentEventType(validNext[0]);
+      } else if (updatedEvents.length === 0) {
+        setCurrentEventType('put_in_bed');
+      }
+    }
+  };
+
+  // Save the log
+  const handleSave = async () => {
+    if (!user || events.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      if (logId && existingLog) {
+        // Update existing log
+        await updateSleepLog(logId, events, timezone, isComplete);
+      } else {
+        // Create new log with first event
+        const newLogId = await createSleepLog(
+          childId,
+          user.id,
+          user.name,
+          sleepType,
+          events[0],
+          timezone
+        );
+
+        // If there are multiple events, update the log with all events
+        if (events.length > 1) {
+          await updateSleepLog(newLogId, events, timezone, isComplete);
+        }
+      }
+
+      // Navigate back to logs list
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('view', 'logs');
+      newUrl.searchParams.delete('logId');
+      window.location.href = newUrl.toString();
+    } catch (error) {
+      console.error('Error saving log:', error);
+      alert('Failed to save log. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Cancel and go back
+  const handleCancel = () => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', 'logs');
+    newUrl.searchParams.delete('logId');
+    window.location.href = newUrl.toString();
+  };
+
+  const validNextEvents = getValidNextEventTypes();
+  const canAddEvent = validNextEvents.includes(currentEventType);
+  const canSave = events.length > 0;
+
+  if (isLoading) {
+    return <LoadingScreen message={logId ? "Loading log..." : "Creating log..."} />;
+  }
+
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className={`${
+        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
+      }`}></div>
+      
+      {/* Header */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className={`text-xl font-bold ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              {logId ? 'Edit Sleep Log' : 'New Sleep Log'}
+            </h1>
+            <p className={`text-sm ${
+              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>Times in baby's timezone</p>
+          </div>
+          <button
+            onClick={handleCancel}
+            className={`btn btn-circle btn-sm ${
+              user?.darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
+            }`}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className={`overflow-y-auto pb-32 px-4 py-6 ${
+        user?.needsSpacer ? 'h-[calc(100%-180px)]' : 'h-[calc(100%-144px)]'
+      }`}>
+        
+        {/* Sleep Type Selection */}
+        <div className="mb-6">
+          <label className={`block text-sm font-medium mb-3 ${
+            user?.darkMode ? 'text-white' : 'text-gray-800'
+          }`}>
+            Sleep Type
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSleepType('nap')}
+              className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                sleepType === 'nap'
+                  ? user?.darkMode
+                    ? 'border-purple-400 bg-[#3a2f4a] text-white'
+                    : 'border-purple-500 bg-purple-50 text-purple-700'
+                  : user?.darkMode
+                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Sun className="w-5 h-5 mx-auto mb-1" />
+              <div className="text-sm font-medium">Nap</div>
+            </button>
+            <button
+              onClick={() => setSleepType('bedtime')}
+              className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                sleepType === 'bedtime'
+                  ? user?.darkMode
+                    ? 'border-purple-400 bg-[#3a2f4a] text-white'
+                    : 'border-purple-500 bg-purple-50 text-purple-700'
+                  : user?.darkMode
+                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Moon className="w-5 h-5 mx-auto mb-1" />
+              <div className="text-sm font-medium">Bedtime</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Events List */}
+        {events.length > 0 && (
+          <div className="mb-6">
+            <label className={`block text-sm font-medium mb-3 ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              Events ({events.length})
+            </label>
+            <div className="space-y-2">
+              {events.map((event, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg border ${
+                    user?.darkMode
+                      ? 'border-gray-600 bg-[#2a223a]'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className={`font-medium ${
+                        user?.darkMode ? 'text-white' : 'text-gray-800'
+                      }`}>
+                        {getEventTypeText(event.type)}
+                      </span>
+                    </div>
+                    <span className={`text-sm ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {formatTimeForDisplay(event.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Remove last event button */}
+            <button
+              onClick={handleRemoveLastEvent}
+              className={`mt-3 text-sm underline ${
+                user?.darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'
+              }`}
+            >
+              Remove last event
+            </button>
+          </div>
+        )}
+
+        {/* Add New Event */}
+        {!isComplete && validNextEvents.length > 0 && (
+          <div className="mb-6">
+            <label className={`block text-sm font-medium mb-3 ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              Add Event
+            </label>
+            
+            {/* Event type selection */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {validNextEvents.map((eventType) => (
+                <button
+                  key={eventType}
+                  onClick={() => setCurrentEventType(eventType)}
+                  className={`p-3 rounded-lg border-2 text-sm transition-all ${
+                    currentEventType === eventType
+                      ? user?.darkMode
+                        ? 'border-purple-400 bg-[#3a2f4a] text-white'
+                        : 'border-purple-500 bg-purple-50 text-purple-700'
+                      : user?.darkMode
+                        ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                  }`}
+                >
+                  {getEventTypeText(eventType)}
+                </button>
+              ))}
+            </div>
+
+            {/* Time input */}
+            <div className="mb-4">
+              <label className={`block text-xs font-medium mb-2 ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Time
+              </label>
+              <input
+                type="time"
+                value={formatTimeForInput(currentTime)}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className={`input input-bordered w-full ${
+                  user?.darkMode 
+                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              />
+              <p className={`text-xs mt-1 ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {formatTimeForDisplay(currentTime)}
+              </p>
+            </div>
+
+            {/* Add event button */}
+            <button
+              onClick={handleAddEvent}
+              disabled={!canAddEvent}
+              className={`btn w-full ${
+                user?.darkMode 
+                  ? 'btn-outline border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white' 
+                  : 'btn-outline border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white'
+              }`}
+            >
+              Add {getEventTypeText(currentEventType)}
+            </button>
+          </div>
+        )}
+
+        {/* Complete session toggle */}
+        {events.length > 0 && (
+          <div className="mb-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isComplete}
+                onChange={(e) => setIsComplete(e.target.checked)}
+                className="checkbox checkbox-primary"
+              />
+              <span className={`text-sm ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Mark session as complete
+              </span>
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Fixed bottom actions */}
+      <div className={`fixed left-0 right-0 border-t z-10 ${
+        user?.darkMode 
+          ? 'border-gray-700 bg-[#2d2637]' 
+          : 'border-gray-200 bg-white'
+      }`} style={{ bottom: '81px' }}>
+        <div className="max-w-[800px] mx-auto p-4 flex gap-3">
+          <button
+            onClick={handleCancel}
+            className={`btn flex-1 ${
+              user?.darkMode 
+                ? 'btn-outline border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-600' 
+                : 'btn-outline border-gray-400 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!canSave || isLoading}
+            className={`btn flex-1 text-white ${
+              user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
+            }`}
+            style={{ 
+              backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
+            }}
+          >
+            {isLoading ? (
+              <div className="loading loading-spinner w-4 h-4"></div>
+            ) : (
+              logId ? 'Update Log' : 'Save Log'
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Space for Bubble nav bar - 81px */}
+      <div className={`h-[81px] ${
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+      }`}></div>
     </div>
   );
 }

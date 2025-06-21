@@ -12,6 +12,8 @@ import {
   setDoc,
   getDoc,
   limit,
+  startAfter,
+  Timestamp,
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -411,4 +413,407 @@ export async function toggleMessageReaction(
     console.error('Error toggling message reaction:', error);
     throw error;
   }
+}
+
+// =============================================================================
+// LOG-RELATED FUNCTIONS
+// =============================================================================
+
+export interface SleepEvent {
+  timestamp: Timestamp;
+  type: 'put_in_bed' | 'fell_asleep' | 'woke_up' | 'out_of_bed';
+  localTime: string; // HH:MM AM/PM in baby's timezone for display
+}
+
+export interface SleepLog {
+  id: string;
+  childId: string;
+  userId: string;
+  userName: string;
+  logType: 'sleep' | 'feeding' | 'diaper' | 'pump' | 'note';
+  timestamp: Timestamp; // UTC timestamp of log creation
+  
+  // Sleep-specific fields
+  sleepType?: 'nap' | 'bedtime';
+  events?: SleepEvent[];
+  isComplete?: boolean;
+  duration?: number; // Total sleep duration in minutes (calculated)
+  
+  // Common calculated fields
+  localDate: string; // YYYY-MM-DD in baby's timezone for queries
+  sortTimestamp: number; // For efficient ordering
+  
+  // Metadata
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  commentCount: number;
+  lastCommentAt?: Timestamp;
+}
+
+/**
+ * Helper function to convert timezone and format local date
+ */
+function formatLocalDate(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { 
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
+}
+
+/**
+ * Helper function to format time in baby's timezone
+ */
+function formatLocalTime(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date);
+}
+
+/**
+ * Create a new sleep log
+ */
+export async function createSleepLog(
+  childId: string,
+  userId: string,
+  userName: string,
+  sleepType: 'nap' | 'bedtime',
+  initialEvent: { type: SleepEvent['type']; timestamp: Date },
+  timezone: string
+): Promise<string> {
+  try {
+    console.log('Creating sleep log:', { childId, userId, userName, sleepType, initialEvent, timezone });
+    
+    const now = new Date();
+    const eventTimestamp = Timestamp.fromDate(initialEvent.timestamp);
+    
+    const sleepEvent: SleepEvent = {
+      timestamp: eventTimestamp,
+      type: initialEvent.type,
+      localTime: formatLocalTime(initialEvent.timestamp, timezone)
+    };
+    
+    const logData: Omit<SleepLog, 'id'> = {
+      childId,
+      userId,
+      userName,
+      logType: 'sleep',
+      timestamp: Timestamp.fromDate(now),
+      sleepType,
+      events: [sleepEvent],
+      isComplete: false,
+      localDate: formatLocalDate(initialEvent.timestamp, timezone),
+      sortTimestamp: initialEvent.timestamp.getTime(),
+      createdAt: serverTimestamp() as any,
+      updatedAt: serverTimestamp() as any,
+      commentCount: 0,
+    };
+    
+    console.log('Adding sleep log to Firestore:', logData);
+    const logRef = await addDoc(collection(db, 'logs'), logData);
+    console.log('Sleep log created successfully:', logRef.id);
+    
+    return logRef.id;
+  } catch (error) {
+    console.error('Error creating sleep log:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Add an event to an existing sleep log
+ */
+export async function addSleepEvent(
+  logId: string,
+  event: { type: SleepEvent['type']; timestamp: Date },
+  timezone: string,
+  isComplete?: boolean
+): Promise<void> {
+  try {
+    console.log('Adding sleep event:', { logId, event, timezone, isComplete });
+    
+    const logRef = doc(db, 'logs', logId);
+    const logDoc = await getDoc(logRef);
+    
+    if (!logDoc.exists()) {
+      throw new Error('Sleep log not found');
+    }
+    
+    const sleepEvent: SleepEvent = {
+      timestamp: Timestamp.fromDate(event.timestamp),
+      type: event.type,
+      localTime: formatLocalTime(event.timestamp, timezone)
+    };
+    
+    const updateData: any = {
+      events: arrayUnion(sleepEvent),
+      updatedAt: serverTimestamp(),
+    };
+    
+    if (isComplete !== undefined) {
+      updateData.isComplete = isComplete;
+    }
+    
+    await updateDoc(logRef, updateData);
+    console.log('Sleep event added successfully');
+  } catch (error) {
+    console.error('Error adding sleep event:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Update an entire sleep log (for editing)
+ */
+export async function updateSleepLog(
+  logId: string,
+  events: { type: SleepEvent['type']; timestamp: Date }[],
+  timezone: string,
+  isComplete: boolean
+): Promise<void> {
+  try {
+    console.log('Updating sleep log:', { logId, events, timezone, isComplete });
+    
+    const sleepEvents: SleepEvent[] = events.map(event => ({
+      timestamp: Timestamp.fromDate(event.timestamp),
+      type: event.type,
+      localTime: formatLocalTime(event.timestamp, timezone)
+    }));
+    
+    // Calculate duration if log is complete
+    let duration: number | undefined;
+    if (isComplete && sleepEvents.length >= 2) {
+      const sleepPeriods = calculateSleepDuration(sleepEvents);
+      duration = sleepPeriods.totalSleepMinutes;
+    }
+    
+    const logRef = doc(db, 'logs', logId);
+    await updateDoc(logRef, {
+      events: sleepEvents,
+      isComplete,
+      duration,
+      updatedAt: serverTimestamp(),
+    });
+    
+    console.log('Sleep log updated successfully');
+  } catch (error) {
+    console.error('Error updating sleep log:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Calculate sleep duration from events
+ */
+function calculateSleepDuration(events: SleepEvent[]): {
+  totalSleepMinutes: number;
+  totalAwakeMinutes: number;
+} {
+  if (events.length < 2) {
+    return { totalSleepMinutes: 0, totalAwakeMinutes: 0 };
+  }
+  
+  // Sort events by timestamp
+  const sortedEvents = [...events].sort((a, b) => 
+    a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime()
+  );
+  
+  let totalSleepMs = 0;
+  let totalAwakeMs = 0;
+  let currentState: 'asleep' | 'awake' | 'out' = 'out';
+  let stateStartTime: Date | null = null;
+  
+  for (const event of sortedEvents) {
+    const eventTime = event.timestamp.toDate();
+    
+    if (stateStartTime && currentState !== 'out') {
+      const duration = eventTime.getTime() - stateStartTime.getTime();
+      if (currentState === 'asleep') {
+        totalSleepMs += duration;
+      } else if (currentState === 'awake') {
+        totalAwakeMs += duration;
+      }
+    }
+    
+    // Update state based on event type
+    switch (event.type) {
+      case 'put_in_bed':
+        currentState = 'awake';
+        stateStartTime = eventTime;
+        break;
+      case 'fell_asleep':
+        currentState = 'asleep';
+        stateStartTime = eventTime;
+        break;
+      case 'woke_up':
+        currentState = 'awake';
+        stateStartTime = eventTime;
+        break;
+      case 'out_of_bed':
+        currentState = 'out';
+        stateStartTime = null;
+        break;
+    }
+  }
+  
+  return {
+    totalSleepMinutes: Math.round(totalSleepMs / (1000 * 60)),
+    totalAwakeMinutes: Math.round(totalAwakeMs / (1000 * 60)),
+  };
+}
+
+/**
+ * Listen to logs for a specific child with pagination
+ */
+export function listenToLogs(
+  childId: string,
+  callback: (logs: SleepLog[]) => void,
+  limitCount: number = 20,
+  lastVisible?: any
+) {
+  console.log('Setting up logs listener:', { childId, limitCount, lastVisible });
+  
+  let q = query(
+    collection(db, 'logs'),
+    where('childId', '==', childId),
+    orderBy('sortTimestamp', 'desc'),
+    limit(limitCount)
+  );
+  
+  if (lastVisible) {
+    q = query(
+      collection(db, 'logs'),
+      where('childId', '==', childId),
+      orderBy('sortTimestamp', 'desc'),
+      startAfter(lastVisible),
+      limit(limitCount)
+    );
+  }
+
+  return onSnapshot(q, (snapshot) => {
+    console.log('Logs snapshot received:', snapshot.docs.length, 'logs');
+    const logs = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as SleepLog[];
+    
+    callback(logs);
+  }, (error) => {
+    console.error('Error listening to logs:', error);
+  });
+}
+
+/**
+ * Get a specific log by ID
+ */
+export async function getLog(logId: string): Promise<SleepLog | null> {
+  try {
+    const logRef = doc(db, 'logs', logId);
+    const logDoc = await getDoc(logRef);
+    
+    if (!logDoc.exists()) {
+      return null;
+    }
+    
+    return {
+      id: logDoc.id,
+      ...logDoc.data(),
+    } as SleepLog;
+  } catch (error) {
+    console.error('Error getting log:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Send a message with logId for log comments
+ */
+export async function sendLogComment(
+  senderId: string,
+  senderName: string,
+  text: string,
+  conversationId: string,
+  childId: string,
+  logId: string
+) {
+  try {
+    console.log('Firebase sendLogComment called with:', { senderId, senderName, text, conversationId, childId, logId });
+    
+    const messageData = {
+      text,
+      senderId,
+      senderName,
+      conversationId,
+      childId,
+      logId, // Add logId for log comments
+      type: 'text',
+      timestamp: serverTimestamp(),
+      read: false,
+    };
+    
+    console.log('Adding log comment to Firestore:', messageData);
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
+    console.log('Log comment added successfully with ID:', messageRef.id);
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, text, serverTimestamp());
+    
+    // Update log comment count
+    await updateLogCommentCount(logId);
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error sending log comment:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Update log comment count
+ */
+async function updateLogCommentCount(logId: string) {
+  try {
+    const logRef = doc(db, 'logs', logId);
+    const logDoc = await getDoc(logRef);
+    
+    if (logDoc.exists()) {
+      // For now, just increment - we can optimize later with a cloud function
+      const currentData = logDoc.data() as SleepLog;
+      await updateDoc(logRef, {
+        commentCount: (currentData.commentCount || 0) + 1,
+        lastCommentAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    console.error('Error updating log comment count:', error);
+    // Don't throw - this is not critical
+  }
+}
+
+/**
+ * Listen to messages for a specific log
+ */
+export function listenToLogComments(
+  logId: string,
+  callback: (messages: FirebaseMessage[]) => void
+) {
+  const q = query(
+    collection(db, 'messages'),
+    where('logId', '==', logId),
+    orderBy('timestamp', 'asc'),
+    limit(50)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const messages = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as FirebaseMessage[];
+    
+    callback(messages);
+  });
 }
