@@ -675,8 +675,8 @@ function MessagingApp() {
         </div>
       </div>
 
-      {/* Space for Bubble nav bar - 81px */}
-      <div className={`h-[81px] ${
+      {/* Minimal bottom spacing for iframe */}
+      <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
 
@@ -859,10 +859,8 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
-      {/* Top spacing */}
-      <div className={`${
-        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
-      }`}></div>
+      {/* Top spacing - minimal for iframe embedding */}
+      <div className="h-[20px]"></div>
       
       {/* Header */}
       <div className={`px-4 py-4 border-b ${
@@ -877,9 +875,7 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
       </div>
 
       {/* Logs Container */}
-      <div className={`overflow-y-auto pb-32 ${
-        user?.needsSpacer ? 'h-[calc(100%-180px)]' : 'h-[calc(100%-144px)]'
-      }`}>
+      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
         {Object.keys(groupedLogs).length === 0 ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -1008,8 +1004,8 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
         </button>
       </div>
 
-      {/* Space for Bubble nav bar - 81px */}
-      <div className={`h-[81px] ${
+      {/* Minimal bottom spacing for iframe */}
+      <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
     </div>
@@ -1163,10 +1159,8 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
-      {/* Top spacing */}
-      <div className={`${
-        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
-      }`}></div>
+      {/* Top spacing - minimal for iframe embedding */}
+      <div className="h-[20px]"></div>
       
       {/* Header */}
       <div className={`px-4 py-4 border-b ${
@@ -1209,9 +1203,7 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
       </div>
 
       {/* Content Container */}
-      <div className={`flex flex-col h-full ${
-        user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
-      }`}>
+      <div className="flex flex-col h-full h-[calc(100%-100px)]">
         
         {/* Log Details - Fixed at top */}
         <div className={`px-4 py-4 border-b ${
@@ -1384,8 +1376,8 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
         </div>
       </div>
 
-      {/* Space for Bubble nav bar - 81px */}
-      <div className={`h-[81px] ${
+      {/* Minimal bottom spacing for iframe */}
+      <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
     </div>
@@ -1626,10 +1618,8 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
     <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
-      {/* Top spacing */}
-      <div className={`${
-        user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'
-      }`}></div>
+      {/* Top spacing - minimal for iframe embedding */}
+      <div className="h-[20px]"></div>
       
       {/* Header */}
       <div className={`px-4 py-4 border-b ${
@@ -1658,9 +1648,7 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
       </div>
 
       {/* Content */}
-      <div className={`overflow-y-auto pb-32 px-4 py-6 ${
-        user?.needsSpacer ? 'h-[calc(100%-180px)]' : 'h-[calc(100%-144px)]'
-      }`}>
+      <div className="overflow-y-auto pb-32 px-4 py-6 h-[calc(100%-120px)]">
         
         {/* Sleep Type Selection */}
         <div className="mb-6">
@@ -1876,8 +1864,8 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
         </div>
       </div>
 
-      {/* Space for Bubble nav bar - 81px */}
-      <div className={`h-[81px] ${
+      {/* Minimal bottom spacing for iframe */}
+      <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
     </div>
