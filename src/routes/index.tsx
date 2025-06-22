@@ -1599,7 +1599,17 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
   };
 
   // Cancel and go back
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    // If there are events, auto-save before leaving
+    if (events.length > 0 && user) {
+      const shouldSave = confirm('You have unsaved changes. Save this log before leaving?');
+      if (shouldSave) {
+        await handleSave();
+        return; // handleSave will navigate away
+      }
+    }
+    
+    // Navigate back without saving
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('view', 'logs');
     newUrl.searchParams.delete('logId');
