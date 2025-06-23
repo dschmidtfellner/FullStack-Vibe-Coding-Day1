@@ -1657,8 +1657,8 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
         </div>
       </div>
 
-      {/* Content */}
-      <div className="overflow-y-auto pb-32 px-4 py-6 h-[calc(100%-120px)]">
+      {/* Content - Ensure space for fixed buttons */}
+      <div className="overflow-y-auto px-4 py-6" style={{ paddingBottom: '120px', height: 'calc(100vh - 180px)' }}>
         
         {/* Sleep Type Selection */}
         <div className="mb-6">
@@ -1839,11 +1839,11 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
       </div>
 
       {/* Fixed bottom actions */}
-      <div className={`fixed left-0 right-0 border-t z-10 ${
+      <div className={`fixed left-0 right-0 border-t z-50 ${
         user?.darkMode 
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '81px' }}>
+      }`} style={{ bottom: '20px' }}>
         <div className="max-w-[800px] mx-auto p-4 flex gap-3">
           <button
             onClick={handleCancel}
