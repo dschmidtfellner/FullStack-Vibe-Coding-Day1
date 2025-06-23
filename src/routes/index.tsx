@@ -2015,8 +2015,8 @@ function SleepLogModal() {
 
   return (
     <>
-      {/* Modal Backdrop - semi-transparent overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={handleCancel}></div>
+      {/* Modal Backdrop - invisible overlay for click handling only */}
+      <div className="fixed inset-0 z-40" onClick={handleCancel}></div>
       
       {/* Modal Container */}
       <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 pt-16">
