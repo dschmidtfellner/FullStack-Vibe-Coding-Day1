@@ -825,6 +825,22 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     return log.isComplete ? 'Complete' : 'In progress';
   };
 
+  // Get time range for log display (e.g., "11:45 am—1:50 pm")
+  const getTimeRange = (log: SleepLog) => {
+    if (!log.events || log.events.length === 0) {
+      return formatTimeInTimezone(log.timestamp);
+    }
+
+    const firstEvent = log.events[0];
+    const lastEvent = log.events[log.events.length - 1];
+    
+    if (log.events.length === 1 || !log.isComplete) {
+      return firstEvent.localTime;
+    }
+
+    return `${firstEvent.localTime}—${lastEvent.localTime}`;
+  };
+
   // Group logs by date
   const groupedLogs = logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
     const dateKey = log.localDate || formatDateInTimezone(log.timestamp);
@@ -907,78 +923,47 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
               </div>
               
               {/* Logs for this date */}
-              <div className="space-y-2 px-4 pt-3">
+              <div className="space-y-3 px-4 pt-3">
                 {dateLogs.map((log) => (
                   <div
                     key={log.id}
                     onClick={() => handleLogClick(log.id)}
-                    className={`p-4 rounded-lg cursor-pointer transition-all hover:scale-[1.02] ${
+                    className={`p-4 rounded-2xl cursor-pointer transition-all hover:opacity-90 relative ${
                       user?.darkMode 
-                        ? 'bg-[#3a2f4a] hover:bg-[#4a3f5a] border border-gray-600' 
-                        : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                        ? 'bg-[#4a3f5a]' 
+                        : log.logType === 'sleep' 
+                          ? 'bg-[#E8D5F2]'  // Purple background for sleep logs
+                          : 'bg-gray-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${
-                          user?.darkMode ? 'bg-[#2d2637]' : 'bg-white'
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        {/* Time range in smaller purple text */}
+                        <div className={`text-sm mb-1 ${
+                          user?.darkMode ? 'text-purple-300' : 'text-purple-600'
                         }`}>
-                          {getSleepTypeIcon(log.sleepType)}
+                          {getTimeRange(log)}
                         </div>
-                        <div>
-                          <h3 className={`font-semibold capitalize ${
-                            user?.darkMode ? 'text-white' : 'text-gray-800'
-                          }`}>
-                            {log.sleepType || 'Sleep'}
-                          </h3>
-                          <p className={`text-sm ${
-                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            by {log.userName}
-                          </p>
+                        
+                        {/* Log type in larger text */}
+                        <div className={`text-lg font-medium ${
+                          user?.darkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {log.sleepType === 'bedtime' ? 'Bedtime' : 
+                           log.sleepType === 'nap' ? 'Nap' : 'Sleep'}
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <div className={`text-sm font-medium ${
-                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                      {/* Comment indicator */}
+                      {log.commentCount > 0 && (
+                        <div className={`flex items-center gap-1 ${
+                          user?.darkMode ? 'text-white' : 'text-gray-700'
                         }`}>
-                          {formatTimeInTimezone(log.timestamp)}
+                          <MessageCircle className="w-4 h-4" />
+                          <span className="text-sm">{log.commentCount}</span>
                         </div>
-                        <div className={`text-xs ${
-                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          {getDurationText(log)}
-                        </div>
-                        {log.commentCount > 0 && (
-                          <div className={`text-xs mt-1 flex items-center gap-1 ${
-                            user?.darkMode ? 'text-purple-400' : 'text-purple-600'
-                          }`}>
-                            <MessageCircle className="w-3 h-3" />
-                            {log.commentCount}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    
-                    {/* Show first and last events for preview */}
-                    {log.events && log.events.length > 0 && (
-                      <div className={`mt-3 pt-3 border-t text-xs ${
-                        user?.darkMode 
-                          ? 'border-gray-600 text-gray-400' 
-                          : 'border-purple-200 text-gray-600'
-                      }`}>
-                        <div className="flex justify-between">
-                          <span>Started: {log.events[0]?.localTime}</span>
-                          {log.events.length > 1 && (
-                            <span>Last: {log.events[log.events.length - 1]?.localTime}</span>
-                          )}
-                        </div>
-                        <div className="mt-1">
-                          {log.events.length} event{log.events.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
