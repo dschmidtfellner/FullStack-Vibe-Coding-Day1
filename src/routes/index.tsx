@@ -1760,6 +1760,8 @@ function SleepLogModal() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isComplete, setIsComplete] = useState(false);
   const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
+  const [showEndOfSleep, setShowEndOfSleep] = useState(false);
+  const [currentLogId, setCurrentLogId] = useState<string | null>(null);
   
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
@@ -1849,6 +1851,60 @@ function SleepLogModal() {
       case 'fell_asleep': return 'Fell asleep';
       case 'woke_up': return 'Woke up';
       case 'out_of_bed': return 'Out of bed';
+    }
+  };
+
+  // Get question text for sleep consulting flow
+  const getQuestionText = (): string => {
+    if (showEndOfSleep) {
+      return `What time did the ${sleepType} end?`;
+    }
+    
+    if (events.length === 0) {
+      return "When were they put in bed?";
+    }
+    
+    const lastEvent = events[events.length - 1];
+    switch (lastEvent.type) {
+      case 'put_in_bed':
+        return "When did they fall asleep?";
+      case 'fell_asleep':
+        return "When did they wake up?";
+      case 'woke_up':
+        return "When did they fall asleep?";
+      default:
+        return "When did they fall asleep?";
+    }
+  };
+
+  // Get supporting text for end of sleep
+  const getSupportingText = (): string | null => {
+    if (showEndOfSleep) {
+      return "(i.e. when were they taken out of bed)";
+    }
+    return null;
+  };
+
+  // Get next event type for sleep consulting flow
+  const getNextEventType = (): SleepEvent['type'] => {
+    if (showEndOfSleep) {
+      return 'out_of_bed';
+    }
+    
+    if (events.length === 0) {
+      return 'put_in_bed';
+    }
+    
+    const lastEvent = events[events.length - 1];
+    switch (lastEvent.type) {
+      case 'put_in_bed':
+        return 'fell_asleep';
+      case 'fell_asleep':
+        return 'woke_up';
+      case 'woke_up':
+        return 'fell_asleep';
+      default:
+        return 'fell_asleep';
     }
   };
 
@@ -1985,8 +2041,42 @@ function SleepLogModal() {
           state.timezone
         );
         
+        // Store the log ID for subsequent events
+        setCurrentLogId(newLogId);
+        
         // Add event to state for next screen
         setEvents([putInBedEvent]);
+        
+        // Reset time to current time for next event and don't navigate back
+        setCurrentTime(new Date());
+        setIsLoading(false);
+        return;
+      } else if (clientType === 'sleep-consulting' && events.length > 0) {
+        // For sleep consulting subsequent events - add event to existing log
+        const nextEventType = getNextEventType();
+        const newEvent = {
+          type: nextEventType,
+          timestamp: new Date(currentTime)
+        };
+
+        const updatedEvents = [...events, newEvent];
+        
+        // Update the existing log
+        const logIdToUse = state.logId || currentLogId;
+        await updateSleepLog(logIdToUse!, updatedEvents, state.timezone, nextEventType === 'out_of_bed');
+        
+        if (nextEventType === 'out_of_bed') {
+          // If this was the final event, navigate back
+          navigateBack();
+          return;
+        } else {
+          // Add event to state and continue to next screen
+          setEvents(updatedEvents);
+          setCurrentTime(new Date());
+          setShowEndOfSleep(false); // Reset end of sleep toggle
+          setIsLoading(false);
+          return;
+        }
       } else if (state.logId && existingLog) {
         // Update existing log
         await updateSleepLog(state.logId, events, state.timezone, isComplete);
@@ -2199,8 +2289,76 @@ function SleepLogModal() {
             </div>
           </div>
         )}
-        
-        {/* TODO: Add other flows and continuation screens here */}
+
+        {/* Sleep Consulting Client Flow - Subsequent Screens */}
+        {clientType === 'sleep-consulting' && events.length > 0 && (
+          <div className="space-y-8">
+            {/* Title */}
+            <div className="text-center">
+              <h2 className={`text-2xl font-medium mb-2 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {getQuestionText()}
+              </h2>
+              {getSupportingText() && (
+                <p className={`text-sm ${
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {getSupportingText()}
+                </p>
+              )}
+            </div>
+
+            {/* Time Input Only - No Date */}
+            <div className="mb-8">
+              <label className={`block text-lg font-medium mb-4 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Time
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  value={formatTimeForInput(currentTime)}
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                  className={`input input-bordered w-full text-lg py-4 h-16 ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
+                />
+                {/* Show "Now" if current time is selected (within 1 minute) */}
+                {(() => {
+                  const now = new Date();
+                  const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                  const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                  
+                  return isCurrentTime && (
+                    <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Now
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Add end of sleep option - only show if not already showing end */}
+            {!showEndOfSleep && (
+              <div className="text-center">
+                <button
+                  onClick={() => setShowEndOfSleep(true)}
+                  className={`text-sm underline ${
+                    user?.darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'
+                  }`}
+                >
+                  or Add end of sleep
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         
       </div>
 
