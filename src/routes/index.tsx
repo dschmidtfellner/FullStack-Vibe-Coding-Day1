@@ -1764,6 +1764,17 @@ function SleepLogModal() {
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
   const clientType = urlParams.get('clientType') || 'sleep-consulting';
+  
+  // Set default sleep type based on time
+  useEffect(() => {
+    const hour = currentTime.getHours();
+    // If between 4:00am and 6:00pm, default to nap, otherwise bedtime
+    if (hour >= 4 && hour < 18) {
+      setSleepType('nap');
+    } else {
+      setSleepType('bedtime');
+    }
+  }, [currentTime]);
 
   // Load existing log if editing
   useEffect(() => {
@@ -2045,13 +2056,25 @@ function SleepLogModal() {
       {/* Modal Container */}
       <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 pt-16">
         <div 
-          className={`w-full max-w-[800px] h-[75vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl ${
+          className={`w-full max-w-[800px] h-[75vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
             animation: 'slideUp 0.3s ease-out'
           }}
         >
+          {/* Close button - X in upper right */}
+          <button
+            onClick={handleCancel}
+            className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-60 transition-colors ${
+              user?.darkMode 
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
           {/* Top spacing for modal */}
           <div className="h-[20px]"></div>
 
@@ -2060,7 +2083,7 @@ function SleepLogModal() {
         
         {/* Sleep Consulting Client Flow - First Screen */}
         {clientType === 'sleep-consulting' && events.length === 0 && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Title */}
             <div className="text-center">
               <h2 className={`text-2xl font-medium mb-2 ${
@@ -2070,12 +2093,81 @@ function SleepLogModal() {
               </h2>
             </div>
 
-            {/* Sleep Type Selection - Simple */}
+            {/* Date Input - Bigger and Friendlier */}
+            <div className="mb-8">
+              <label className={`block text-lg font-medium mb-4 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Date
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={currentDate.toISOString().split('T')[0]}
+                  onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                  className={`input input-bordered w-full text-lg py-4 h-16 ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
+                />
+                {/* Show "Today" if current date is selected */}
+                {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
+                    user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Today
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Time Input - Bigger and Friendlier */}
+            <div className="mb-8">
+              <label className={`block text-lg font-medium mb-4 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Time
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  value={formatTimeForInput(currentTime)}
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                  className={`input input-bordered w-full text-lg py-4 h-16 ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
+                />
+                {/* Show "Now" if current time is selected (within 1 minute) */}
+                {(() => {
+                  const now = new Date();
+                  const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                  const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                  
+                  return isCurrentTime && (
+                    <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Now
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Sleep Type Selection - Moved Below Date/Time */}
             <div className="mb-6">
-              <div className="flex gap-2">
+              <label className={`block text-lg font-medium mb-4 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Sleep Type
+              </label>
+              <div className="flex gap-3">
                 <button
                   onClick={() => setSleepType('nap')}
-                  className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     sleepType === 'nap'
                       ? user?.darkMode
                         ? 'border-purple-400 bg-[#3a2f4a] text-white'
@@ -2085,12 +2177,12 @@ function SleepLogModal() {
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  <Sun className="w-5 h-5 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Nap</div>
+                  <Sun className="w-6 h-6 mx-auto mb-2" />
+                  <div className="text-base font-medium">Nap</div>
                 </button>
                 <button
                   onClick={() => setSleepType('bedtime')}
-                  className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     sleepType === 'bedtime'
                       ? user?.darkMode
                         ? 'border-purple-400 bg-[#3a2f4a] text-white'
@@ -2100,48 +2192,10 @@ function SleepLogModal() {
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  <Moon className="w-5 h-5 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Bedtime</div>
+                  <Moon className="w-6 h-6 mx-auto mb-2" />
+                  <div className="text-base font-medium">Bedtime</div>
                 </button>
               </div>
-            </div>
-
-            {/* Date Input */}
-            <div className="mb-6">
-              <label className={`block text-sm font-medium mb-3 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Date
-              </label>
-              <input
-                type="date"
-                value={currentDate.toISOString().split('T')[0]}
-                onChange={(e) => setCurrentDate(new Date(e.target.value))}
-                className={`input input-bordered w-full ${
-                  user?.darkMode 
-                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-              />
-            </div>
-
-            {/* Time Input */}
-            <div className="mb-6">
-              <label className={`block text-sm font-medium mb-3 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Time
-              </label>
-              <input
-                type="time"
-                value={formatTimeForInput(currentTime)}
-                onChange={(e) => handleTimeChange(e.target.value)}
-                className={`input input-bordered w-full ${
-                  user?.darkMode 
-                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-              />
             </div>
           </div>
         )}
@@ -2156,21 +2210,11 @@ function SleepLogModal() {
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
       }`} style={{ bottom: '20px' }}>
-        <div className="max-w-[800px] mx-auto p-4 flex gap-3">
-          <button
-            onClick={handleCancel}
-            className={`btn flex-1 ${
-              user?.darkMode 
-                ? 'btn-outline border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-600' 
-                : 'btn-outline border-gray-400 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Cancel
-          </button>
+        <div className="max-w-[800px] mx-auto p-4">
           <button
             onClick={handleSave}
             disabled={!canSave || isLoading}
-            className={`btn flex-1 text-white ${
+            className={`btn w-full text-white text-lg py-4 h-14 ${
               user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
             }`}
             style={{ 
@@ -2178,9 +2222,9 @@ function SleepLogModal() {
             }}
           >
             {isLoading ? (
-              <div className="loading loading-spinner w-4 h-4"></div>
+              <div className="loading loading-spinner w-5 h-5"></div>
             ) : (
-              state.logId ? 'Update Log' : 'Save Log'
+              'Save Log'
             )}
           </button>
         </div>
