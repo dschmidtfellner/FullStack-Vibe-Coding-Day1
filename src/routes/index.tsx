@@ -1,6 +1,6 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun } from "lucide-react";
+import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { FirebaseMessage } from "@/types/firebase";
 import {
@@ -805,24 +805,6 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
       day: 'numeric',
       weekday: 'short'
     }).format(date);
-  };
-
-  // Get sleep type icon
-  const getSleepTypeIcon = (sleepType?: string) => {
-    return sleepType === 'bedtime' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />;
-  };
-
-  // Get sleep duration text
-  const getDurationText = (log: SleepLog) => {
-    if (log.duration && log.duration > 0) {
-      const hours = Math.floor(log.duration / 60);
-      const minutes = log.duration % 60;
-      if (hours > 0) {
-        return `${hours}h ${minutes}m`;
-      }
-      return `${minutes}m`;
-    }
-    return log.isComplete ? 'Complete' : 'In progress';
   };
 
   // Get time range for log display (e.g., "11:45 am—1:50 pm")
