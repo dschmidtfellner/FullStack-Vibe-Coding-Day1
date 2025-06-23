@@ -1,7 +1,8 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun } from "lucide-react";
+import { useState, useRef, useEffect, createContext, useContext } from "react";
+import { Timestamp } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
 import {
   sendMessage,
@@ -22,6 +23,140 @@ import {
   sendLogComment,
   listenToLogComments,
 } from "@/lib/firebase-messaging";
+
+// Navigation Context for client-side routing
+type NavigationState = {
+  view: 'messaging' | 'logs' | 'log-detail' | 'log-sleep';
+  logId?: string | null;
+  childId: string | null;
+  timezone: string;
+  logs: SleepLog[];
+  logCache: Map<string, SleepLog>;
+  isLoading: boolean;
+};
+
+type NavigationContextType = {
+  state: NavigationState;
+  navigateToLogs: () => void;
+  navigateToLogDetail: (logId: string) => void;
+  navigateToNewLog: () => void;
+  navigateToEditLog: (logId: string) => void;
+  navigateToMessaging: () => void;
+  navigateBack: () => void;
+  updateLog: (log: SleepLog) => void;
+  setLogs: (logs: SleepLog[]) => void;
+};
+
+const NavigationContext = createContext<NavigationContextType | null>(null);
+
+function useNavigation() {
+  const context = useContext(NavigationContext);
+  if (!context) {
+    throw new Error('useNavigation must be used within NavigationProvider');
+  }
+  return context;
+}
+
+function NavigationProvider({ children, initialChildId, initialTimezone }: { 
+  children: React.ReactNode; 
+  initialChildId: string | null;
+  initialTimezone: string;
+}) {
+  // Parse initial view from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialView = urlParams.get('view') as NavigationState['view'] || 'logs';
+  const initialLogId = urlParams.get('logId');
+
+  const [state, setState] = useState<NavigationState>({
+    view: initialView,
+    logId: initialLogId,
+    childId: initialChildId,
+    timezone: initialTimezone,
+    logs: [],
+    logCache: new Map(),
+    isLoading: false,
+  });
+
+  // Update URL without page reload
+  const updateURL = (view: string, logId?: string | null) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', view);
+    if (logId) {
+      url.searchParams.set('logId', logId);
+    } else {
+      url.searchParams.delete('logId');
+    }
+    window.history.replaceState({}, '', url.toString());
+  };
+
+  const navigateToLogs = () => {
+    setState(prev => ({ ...prev, view: 'logs', logId: null }));
+    updateURL('logs');
+  };
+
+  const navigateToLogDetail = (logId: string) => {
+    setState(prev => ({ ...prev, view: 'log-detail', logId }));
+    updateURL('log-detail', logId);
+  };
+
+  const navigateToNewLog = () => {
+    setState(prev => ({ ...prev, view: 'log-sleep', logId: null }));
+    updateURL('log-sleep');
+  };
+
+  const navigateToEditLog = (logId: string) => {
+    setState(prev => ({ ...prev, view: 'log-sleep', logId }));
+    updateURL('log-sleep', logId);
+  };
+
+  const navigateToMessaging = () => {
+    setState(prev => ({ ...prev, view: 'messaging', logId: null }));
+    updateURL('messaging');
+  };
+
+  const navigateBack = () => {
+    // Smart back navigation
+    if (state.view === 'log-detail' || state.view === 'log-sleep') {
+      navigateToLogs();
+    } else {
+      navigateToLogs(); // Default fallback
+    }
+  };
+
+  const updateLog = (log: SleepLog) => {
+    setState(prev => ({
+      ...prev,
+      logCache: new Map(prev.logCache).set(log.id, log),
+      logs: prev.logs.map(l => l.id === log.id ? log : l)
+    }));
+  };
+
+  const setLogs = (logs: SleepLog[]) => {
+    setState(prev => ({ ...prev, logs }));
+    // Update cache with new logs
+    const newCache = new Map(state.logCache);
+    logs.forEach(log => newCache.set(log.id, log));
+    setState(prev => ({ ...prev, logCache: newCache }));
+  };
+
+  const contextValue: NavigationContextType = {
+    state,
+    navigateToLogs,
+    navigateToLogDetail,
+    navigateToNewLog,
+    navigateToEditLog,
+    navigateToMessaging,
+    navigateBack,
+    updateLog,
+    setLogs,
+  };
+
+  return (
+    <NavigationContext.Provider value={contextValue}>
+      {children}
+    </NavigationContext.Provider>
+  );
+}
 
 function ImageMessage({ imageUrl, onImageClick }: { imageUrl: string; onImageClick: (imageUrl: string) => void }) {
   return (
@@ -97,22 +232,290 @@ function HomePage() {
     return <LoadingScreen message="Connecting..." />;
   }
 
-  // Get view parameter from URL to determine which app to show
+  // Parse URL parameters for NavigationProvider
   const urlParams = new URLSearchParams(window.location.search);
-  const view = urlParams.get('view');
+  const childId = urlParams.get('childId');
+  const timezone = urlParams.get('timezone') || 'America/New_York';
+
+  // Only show loading if we don't have required data
+  if (!childId) {
+    return <LoadingScreen message="Missing child ID..." />;
+  }
 
   return (
     <div className="not-prose">
-      {view === 'logs' || view === 'log-sleep' || view === 'log-detail' ? (
-        <LogsApp />
-      ) : (
-        <MessagingApp />
-      )}
+      <NavigationProvider initialChildId={childId} initialTimezone={timezone}>
+        <AppRouter />
+      </NavigationProvider>
     </div>
   );
 }
 
-// Minimalist loading screen component (dark mode by default to prevent white flash)
+// Main app router that switches views based on navigation state
+function AppRouter() {
+  const { state } = useNavigation();
+  
+  // Check if user has access to the current child
+  const hasChildAccess = useChildAccess(state.childId);
+  
+  if (!hasChildAccess) {
+    return <LoadingScreen message="Checking permissions..." />;
+  }
+
+  // Route to appropriate view based on navigation state
+  const renderMainView = () => {
+    switch (state.view) {
+      case 'messaging':
+        return <MessagingApp />;
+      case 'logs':
+        return <LogsListView />;
+      case 'log-detail':
+        return <LogDetailView />;
+      case 'log-sleep':
+        // When modal is open, we need to determine what to show behind it
+        if (state.logId) {
+          // If editing an existing log, show the log detail view
+          return <LogDetailView />;
+        } else {
+          // If creating a new log, show the logs list
+          return <LogsListView />;
+        }
+      default:
+        return <LogsListView />;
+    }
+  };
+
+  return (
+    <>
+      {renderMainView()}
+      {state.view === 'log-sleep' && <SleepLogModal />}
+    </>
+  );
+}
+
+// Skeleton loading components that match content shape
+function LogsListSkeleton({ user }: { user: any }) {
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className="h-[20px]"></div>
+      
+      {/* Header skeleton */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className={`h-6 w-24 rounded animate-pulse mb-2 ${
+          user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+        }`}></div>
+        <div className={`h-4 w-48 rounded animate-pulse ${
+          user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`}></div>
+      </div>
+
+      {/* Log tiles skeleton */}
+      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
+        <div className="mb-6">
+          {/* Date header skeleton */}
+          <div className={`sticky top-0 px-4 py-2 ${
+            user?.darkMode ? 'bg-[#2a223a] border-b border-gray-700' : 'bg-gray-50 border-b border-gray-200'
+          }`}>
+            <div className={`h-4 w-20 rounded animate-pulse ${
+              user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
+            }`}></div>
+          </div>
+          
+          {/* Log tile skeletons */}
+          <div className="space-y-3 px-4 pt-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className={`p-4 rounded-2xl ${
+                user?.darkMode ? 'bg-[#4a3f5a]' : 'bg-[#E8D5F2]'
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    {/* Time skeleton */}
+                    <div className="h-4 w-32 rounded animate-pulse mb-2" style={{ backgroundColor: '#745288' }}></div>
+                    {/* Title skeleton */}
+                    <div className={`h-6 w-16 rounded animate-pulse ${
+                      user?.darkMode ? 'bg-gray-300' : 'bg-gray-700'
+                    }`}></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogDetailSkeleton({ user }: { user: any }) {
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className="h-[20px]"></div>
+      
+      {/* Header skeleton */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full animate-pulse ${
+              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+            }`}></div>
+            <div>
+              <div className={`h-6 w-24 rounded animate-pulse mb-2 ${
+                user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+              }`}></div>
+              <div className={`h-4 w-36 rounded animate-pulse ${
+                user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}></div>
+            </div>
+          </div>
+          <div className={`h-8 w-16 rounded animate-pulse ${
+            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}></div>
+        </div>
+      </div>
+
+      {/* Content skeleton */}
+      <div className="px-4 py-4">
+        <div className={`p-4 rounded-lg mb-4 ${
+          user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-50'
+        }`}>
+          <div className={`h-6 w-20 rounded animate-pulse mb-3 ${
+            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}></div>
+          <div className={`h-4 w-16 rounded animate-pulse ${
+            user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+          }`}></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SleepLogModalSkeleton({ user }: { user: any }) {
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className="h-[20px]"></div>
+      
+      {/* Header skeleton */}
+      <div className={`px-4 py-4 border-b ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className={`h-6 w-32 rounded animate-pulse mb-2 ${
+              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+            }`}></div>
+            <div className={`h-4 w-40 rounded animate-pulse ${
+              user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+            }`}></div>
+          </div>
+          <div className={`w-8 h-8 rounded-full animate-pulse ${
+            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}></div>
+        </div>
+      </div>
+
+      {/* Form skeleton */}
+      <div className="px-4 py-6">
+        <div className="mb-6">
+          <div className={`h-4 w-20 rounded animate-pulse mb-3 ${
+            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}></div>
+          <div className="flex gap-2">
+            {[1, 2].map((i) => (
+              <div key={i} className={`flex-1 p-3 rounded-lg border-2 ${
+                user?.darkMode ? 'border-gray-600 bg-[#2a223a]' : 'border-gray-300 bg-white'
+              }`}>
+                <div className={`w-5 h-5 rounded animate-pulse mx-auto mb-1 ${
+                  user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                }`}></div>
+                <div className={`h-4 w-12 rounded animate-pulse mx-auto ${
+                  user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                }`}></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessagingSkeleton({ user }: { user: any }) {
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className={`${user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'}`}></div>
+      
+      {/* Messages Container */}
+      <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
+        user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
+      }`}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'items-end' : 'items-start'}`}>
+            <div className="max-w-[75%] flex flex-col">
+              {/* Sender name skeleton */}
+              <div className={`h-3 w-20 rounded animate-pulse mb-1 ${
+                user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
+              
+              {/* Message bubble skeleton */}
+              <div 
+                className={`min-w-[200px] rounded-2xl px-4 py-3 ${
+                  i % 2 === 0 
+                    ? `rounded-br-md` 
+                    : `${user?.darkMode ? 'bg-[#3a3a3a]' : 'bg-gray-200'} rounded-bl-md`
+                }`} 
+                style={{ backgroundColor: i % 2 === 0 ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+              >
+                <div className={`h-4 w-32 rounded animate-pulse ${
+                  user?.darkMode ? 'bg-gray-600' : 'bg-gray-400'
+                }`}></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Message Input skeleton */}
+      <div className={`fixed left-0 right-0 border-t z-10 ${
+        user?.darkMode 
+          ? 'border-gray-700 bg-[#2d2637]' 
+          : 'border-gray-200 bg-white'
+      }`} style={{ bottom: '81px' }}>
+        <div className="max-w-[800px] mx-auto p-4">
+          <div className="flex items-center gap-3 max-w-full">
+            <div className={`w-10 h-10 rounded-full animate-pulse ${
+              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+            }`}></div>
+            <div className={`w-10 h-10 rounded-full animate-pulse ${
+              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
+            }`}></div>
+            <div className={`flex-1 h-12 rounded-full animate-pulse ${
+              user?.darkMode ? 'bg-[#3a3a3a]' : 'bg-gray-100'
+            }`}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Fallback loading screen for initial auth
 function LoadingScreen({ message = "Loading..." }: { message?: string }) {
   return (
     <div className="not-prose min-h-screen flex items-center justify-center bg-[#15111B]">
@@ -452,7 +855,7 @@ function MessagingApp() {
 
   // Show loading for any of these conditions
   if (isLoadingConversation || !conversationId || !childId || !hasChildAccess) {
-    return <LoadingScreen message="Loading conversation..." />;
+    return <MessagingSkeleton user={user || { darkMode: false }} />;
   }
 
   return (
@@ -707,79 +1110,33 @@ function MessagingApp() {
   );
 }
 
-// Logs App Component - handles all log-related views
-function LogsApp() {
-  const [childId, setChildId] = useState<string | null>(null);
-  const [timezone, setTimezone] = useState<string>('America/New_York');
-  const [isLoadingChildData, setIsLoadingChildData] = useState(true);
 
-  // Check if user has access to the current child
-  const hasChildAccess = useChildAccess(childId);
-
-  // Get URL parameters for logs
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const childIdParam = urlParams.get('childId');
-    const timezoneParam = urlParams.get('timezone');
-    
-    console.log('🔍 Logs initialization:', {
-      fullURL: window.location.href,
-      childIdParam,
-      timezoneParam,
-    });
-    
-    if (childIdParam) {
-      setChildId(childIdParam);
-      if (timezoneParam) {
-        setTimezone(timezoneParam);
-      }
-      setIsLoadingChildData(false);
-    } else {
-      console.log('❌ No childId parameter found for logs');
-      setIsLoadingChildData(false);
-    }
-  }, []);
-
-  // Show loading for any of these conditions
-  if (isLoadingChildData || !childId || !hasChildAccess) {
-    return <LoadingScreen message="Loading logs..." />;
-  }
-
-  // Get view parameter to determine which logs view to show
-  const urlParams = new URLSearchParams(window.location.search);
-  const view = urlParams.get('view');
-  const logId = urlParams.get('logId');
-
-  // Route to appropriate logs view
-  if (view === 'log-detail' && logId) {
-    return <LogDetailView childId={childId} logId={logId} timezone={timezone} />;
-  } else if (view === 'log-sleep') {
-    return <SleepLogModal childId={childId} logId={logId} timezone={timezone} />;
-  } else {
-    // Default to logs list view
-    return <LogsListView childId={childId} timezone={timezone} />;
-  }
-}
-
-// Log List View Component with infinite scroll
-function LogsListView({ childId, timezone }: { childId: string; timezone: string }) {
+// Log List View Component - now uses navigation context
+function LogsListView() {
   const { user } = useBubbleAuth();
-  const [logs, setLogs] = useState<SleepLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Listen to logs with real-time updates
   useEffect(() => {
-    if (!childId) return;
+    if (!state.childId) return;
 
-    console.log('Setting up logs listener for child:', childId);
-    const unsubscribe = listenToLogs(childId, (newLogs) => {
+    // Only show loading if we haven't loaded data before AND no cached data
+    if (!hasLoadedOnce && state.logs.length === 0) {
+      setIsLoading(true);
+    }
+
+    console.log('Setting up logs listener for child:', state.childId);
+    const unsubscribe = listenToLogs(state.childId, (newLogs) => {
       console.log('Received logs update:', newLogs.length, 'logs');
-      setLogs(newLogs);
+      setLogs(newLogs); // Update navigation state
       setIsLoading(false);
+      setHasLoadedOnce(true);
     });
 
     return unsubscribe;
-  }, [childId]);
+  }, [state.childId, setLogs]);
 
   // Format time in the baby's timezone
   const formatTimeInTimezone = (timestamp: any) => {
@@ -787,7 +1144,7 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
+      timeZone: state.timezone,
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -800,7 +1157,7 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
+      timeZone: state.timezone,
       month: 'short',
       day: 'numeric',
       weekday: 'short'
@@ -823,8 +1180,8 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     return `${firstEvent.localTime}—${lastEvent.localTime}`;
   };
 
-  // Group logs by date
-  const groupedLogs = logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
+  // Group logs by date - use state.logs from navigation context
+  const groupedLogs = state.logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
     const dateKey = log.localDate || formatDateInTimezone(log.timestamp);
     if (!groups[dateKey]) {
       groups[dateKey] = [];
@@ -833,24 +1190,9 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     return groups;
   }, {});
 
-  // Handle log click to open detail view
-  const handleLogClick = (logId: string) => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', 'log-detail');
-    newUrl.searchParams.set('logId', logId);
-    window.location.href = newUrl.toString();
-  };
-
-  // Handle new log button click
-  const handleNewLogClick = () => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', 'log-sleep');
-    newUrl.searchParams.delete('logId'); // Make sure we're creating, not editing
-    window.location.href = newUrl.toString();
-  };
-
-  if (isLoading) {
-    return <LoadingScreen message="Loading logs..." />;
+  // Only show skeleton if we're loading AND have no data to show
+  if (isLoading && state.logs.length === 0) {
+    return <LogsListSkeleton user={user} />;
   }
 
   return (
@@ -859,21 +1201,9 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
     }`}>
       {/* Top spacing - minimal for iframe embedding */}
       <div className="h-[20px]"></div>
-      
-      {/* Header */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
-        <h1 className={`text-xl font-bold ${
-          user?.darkMode ? 'text-white' : 'text-gray-800'
-        }`}>Sleep Logs</h1>
-        <p className={`text-sm ${
-          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-        }`}>Times shown in baby's timezone</p>
-      </div>
 
       {/* Logs Container */}
-      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
+      <div className="overflow-y-auto pb-32 h-[calc(100%-40px)]">
         {Object.keys(groupedLogs).length === 0 ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -915,46 +1245,68 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
                   return (
                     <div
                       key={log.id}
-                      onClick={() => handleLogClick(log.id)}
-                      className={`p-4 rounded-2xl cursor-pointer transition-all hover:opacity-90 relative ${
+                      className={`p-4 rounded-2xl relative ${
                         user?.darkMode 
                           ? 'bg-[#4a3f5a]' 
                           : 'bg-[#E8D5F2]'  // Purple background for all logs
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          {/* Time range - smaller purple text */}
-                          <div className={`text-sm mb-1 ${
-                            user?.darkMode ? 'text-purple-300' : 'text-purple-600'
-                          }`}>
-                            {getTimeRange(log)}
+                      <div 
+                        onClick={() => navigateToLogDetail(log.id)}
+                        className="cursor-pointer transition-all hover:opacity-90"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            {/* Time range - smaller purple text */}
+                            <div className={`text-sm mb-1`} style={{
+                              color: '#745288'
+                            }}>
+                              {getTimeRange(log)}
+                            </div>
+                            
+                            {/* Log type with number - Domine font, size 22, weight 400 */}
+                            <div 
+                              className={`font-domine ${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
+                              style={{ 
+                                fontSize: '22px',
+                                fontWeight: '400',
+                                lineHeight: '1.2'
+                              }}
+                            >
+                              {log.sleepType === 'bedtime' ? 'Bedtime' : 
+                               log.sleepType === 'nap' ? `Nap ${napNumber}` : 'Sleep'}
+                            </div>
                           </div>
                           
-                          {/* Log type with number - Domine font, size 22, weight 400 */}
-                          <div 
-                            className={`${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
-                            style={{ 
-                              fontFamily: 'Domine, serif',
-                              fontSize: '22px',
-                              fontWeight: '400',
-                              lineHeight: '1.2'
-                            }}
-                          >
-                            {log.sleepType === 'bedtime' ? 'Bedtime' : 
-                             log.sleepType === 'nap' ? `Nap ${napNumber}` : 'Sleep'}
+                          <div className="flex items-center gap-3 ml-4">
+                            {/* Continue Logging button - only show if log is not complete */}
+                            {!log.isComplete && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent tile click
+                                  navigateToEditLog(log.id);
+                                }}
+                                className="px-4 py-2 rounded-full font-karla transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
+                                style={{
+                                  fontSize: '14px',
+                                  fontWeight: '400'
+                                }}
+                              >
+                                Continue Logging
+                              </button>
+                            )}
+                            
+                            {/* Comment indicator - far right */}
+                            {log.commentCount > 0 && (
+                              <div className={`flex items-center gap-1 ${
+                                user?.darkMode ? 'text-white' : 'text-gray-700'
+                              }`}>
+                                <MessageCircle className="w-4 h-4" />
+                                <span className="text-sm">{log.commentCount}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        {/* Comment indicator - far right */}
-                        {log.commentCount > 0 && (
-                          <div className={`flex items-center gap-1 ml-4 ${
-                            user?.darkMode ? 'text-white' : 'text-gray-700'
-                          }`}>
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-sm">{log.commentCount}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
@@ -965,20 +1317,22 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
         )}
       </div>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-6 z-20">
+      {/* Floating Action Button - Centered and Bigger */}
+      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-20">
         <button
-          onClick={handleNewLogClick}
-          className={`btn btn-circle btn-lg shadow-lg border-none ${
+          onClick={navigateToNewLog}
+          className={`btn btn-circle shadow-lg border-none ${
             user?.darkMode 
               ? 'text-white hover:opacity-90' 
               : 'text-white hover:opacity-90'
           }`}
           style={{ 
-            backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
+            backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460',
+            width: '64px',
+            height: '64px'
           }}
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-8 h-8" />
         </button>
       </div>
 
@@ -990,54 +1344,66 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
   );
 }
 
-function LogDetailView({ childId, logId, timezone }: { childId: string; logId: string; timezone: string }) {
+function LogDetailView() {
   const { user } = useBubbleAuth();
+  const { state, navigateBack, navigateToEditLog, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
   const [newComment, setNewComment] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
-  // Load the log
+  // Get current log from cache or fetch it
   useEffect(() => {
-    if (!logId) return;
+    if (!state.logId) return;
 
+    // First check cache
+    const cachedLog = state.logCache.get(state.logId);
+    if (cachedLog) {
+      setLog(cachedLog);
+      return;
+    }
+
+    // If not in cache, fetch it
     setIsLoading(true);
-    getLog(logId)
+    getLog(state.logId)
       .then((logData) => {
-        setLog(logData);
+        if (logData) {
+          setLog(logData);
+          updateLog(logData); // Add to cache
+        }
         setIsLoading(false);
       })
       .catch((error) => {
         console.error('Error loading log:', error);
         setIsLoading(false);
       });
-  }, [logId]);
+  }, [state.logId, state.logCache, updateLog]);
 
   // Get conversation ID for this child
   useEffect(() => {
-    if (!childId) return;
+    if (!state.childId) return;
 
-    getOrCreateConversation(childId)
+    getOrCreateConversation(state.childId)
       .then((convId) => {
         setConversationId(convId);
       })
       .catch((error) => {
         console.error('Error getting conversation:', error);
       });
-  }, [childId]);
+  }, [state.childId]);
 
   // Listen to comments for this log
   useEffect(() => {
-    if (!logId) return;
+    if (!state.logId) return;
 
-    const unsubscribe = listenToLogComments(logId, (newComments) => {
+    const unsubscribe = listenToLogComments(state.logId, (newComments) => {
       setComments(newComments);
     });
 
     return unsubscribe;
-  }, [logId]);
+  }, [state.logId]);
 
   // Auto-scroll to bottom when comments change
   useEffect(() => {
@@ -1050,7 +1416,7 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
     
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
+      timeZone: state.timezone,
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -1063,7 +1429,7 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
     
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
+      timeZone: state.timezone,
       month: 'short',
       day: 'numeric',
       weekday: 'short'
@@ -1095,7 +1461,7 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
 
   // Handle comment send
   const handleSendComment = async () => {
-    if (!newComment.trim() || !user || !conversationId || !logId) return;
+    if (!newComment.trim() || !user || !conversationId || !state.logId) return;
 
     try {
       await sendLogComment(
@@ -1103,8 +1469,8 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
         user.name,
         newComment.trim(),
         conversationId,
-        childId,
-        logId
+        state.childId!,
+        state.logId
       );
       setNewComment("");
     } catch (error) {
@@ -1113,24 +1479,45 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
     }
   };
 
-  // Handle back navigation
+  // Handle back navigation - use navigation context
   const handleBack = () => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', 'logs');
-    newUrl.searchParams.delete('logId');
-    window.location.href = newUrl.toString();
+    navigateBack();
   };
 
-  // Handle edit navigation
+  // Handle edit navigation - use navigation context
   const handleEdit = () => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', 'log-sleep');
-    newUrl.searchParams.set('logId', logId);
-    window.location.href = newUrl.toString();
+    if (state.logId) {
+      navigateToEditLog(state.logId);
+    }
   };
 
-  if (isLoading || !log) {
-    return <LoadingScreen message="Loading log details..." />;
+  // Only show skeleton if we're loading AND have no log data
+  if (isLoading && !log) {
+    return <LogDetailSkeleton user={user} />;
+  }
+  
+  // If we don't have log data but aren't loading, show error state
+  if (!log) {
+    return (
+      <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto flex items-center justify-center ${
+        user?.darkMode ? 'bg-[#15111B] text-white' : 'bg-white text-gray-800'
+      }`}>
+        <div className="text-center">
+          <p>Log not found</p>
+          <button 
+            onClick={() => {
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.set('view', 'logs');
+              newUrl.searchParams.delete('logId');
+              window.location.href = newUrl.toString();
+            }}
+            className="btn btn-primary mt-4"
+          >
+            Back to Logs
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1139,90 +1526,90 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
     }`}>
       {/* Top spacing - minimal for iframe embedding */}
       <div className="h-[20px]"></div>
-      
-      {/* Header */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBack}
-              className={`btn btn-circle btn-sm ${
-                user?.darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
-              }`}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div>
-              <h1 className={`text-xl font-bold ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                {log.sleepType === 'bedtime' ? 'Bedtime' : 'Nap'} Log
-              </h1>
-              <p className={`text-sm ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {formatDateInTimezone(log.timestamp)} • by {log.userName}
-              </p>
+
+      {/* Log Tile - Visual Continuity from List View */}
+      <div className="px-4 py-4">
+        <div className={`p-4 rounded-2xl ${
+          user?.darkMode 
+            ? 'bg-[#4a3f5a]' 
+            : 'bg-[#E8D5F2]'  // Purple background to match list
+        }`}>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              {/* Time range - smaller purple text */}
+              <div className="text-sm mb-1" style={{
+                color: '#745288'
+              }}>
+                {(() => {
+                  if (!log.events || log.events.length === 0) {
+                    return formatTimeInTimezone(log.timestamp);
+                  }
+                  const firstEvent = log.events[0];
+                  const lastEvent = log.events[log.events.length - 1];
+                  if (log.events.length === 1 || !log.isComplete) {
+                    return firstEvent.localTime;
+                  }
+                  return `${firstEvent.localTime}—${lastEvent.localTime}`;
+                })()}
+              </div>
+              
+              {/* Log type with number - Domine font, size 22, weight 400 */}
+              <div 
+                className={`font-domine ${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
+                style={{ 
+                  fontSize: '22px',
+                  fontWeight: '400',
+                  lineHeight: '1.2'
+                }}
+              >
+                {(() => {
+                  if (log.sleepType === 'bedtime') return 'Bedtime';
+                  if (log.sleepType === 'nap') {
+                    // Calculate nap number - this is a simplified version
+                    // In a real app, you'd want to pass this from the list or calculate based on date
+                    return 'Nap 1'; // You could make this dynamic if needed
+                  }
+                  return 'Sleep';
+                })()}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 ml-4">
+              {/* Continue Logging button - only show if log is not complete */}
+              {!log.isComplete && (
+                <button
+                  onClick={() => navigateToEditLog(state.logId!)}
+                  className="px-4 py-2 rounded-full font-karla transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '400'
+                  }}
+                >
+                  Continue Logging
+                </button>
+              )}
+              
+              {/* Comment indicator - far right */}
+              {log.commentCount > 0 && (
+                <div className={`flex items-center gap-1 ${
+                  user?.darkMode ? 'text-white' : 'text-gray-700'
+                }`}>
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="text-sm">{log.commentCount}</span>
+                </div>
+              )}
             </div>
           </div>
-          <button
-            onClick={handleEdit}
-            className={`btn btn-sm ${
-              user?.darkMode 
-                ? 'btn-outline border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white' 
-                : 'btn-outline border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white'
-            }`}
-          >
-            Edit
-          </button>
         </div>
       </div>
 
       {/* Content Container */}
-      <div className="flex flex-col h-full h-[calc(100%-100px)]">
+      <div className="flex flex-col h-full h-[calc(100%-180px)]">
         
         {/* Log Details - Fixed at top */}
         <div className={`px-4 py-4 border-b ${
           user?.darkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
-          {/* Sleep Summary */}
-          <div className={`p-4 rounded-lg mb-4 ${
-            user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-50'
-          }`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                {log.sleepType === 'bedtime' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                <span className={`font-semibold ${
-                  user?.darkMode ? 'text-white' : 'text-gray-800'
-                }`}>
-                  {getDurationText(log)}
-                </span>
-              </div>
-              <div className={`text-sm ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {log.events?.length || 0} events
-              </div>
-            </div>
-            
-            {/* Status indicator */}
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-              log.isComplete
-                ? user?.darkMode
-                  ? 'bg-green-900 text-green-300 border border-green-700'
-                  : 'bg-green-100 text-green-700 border border-green-200'
-                : user?.darkMode
-                  ? 'bg-yellow-900 text-yellow-300 border border-yellow-700'
-                  : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                log.isComplete ? 'bg-green-500' : 'bg-yellow-500'
-              }`}></div>
-              {log.isComplete ? 'Complete' : 'In progress'}
-            </div>
-          </div>
 
           {/* Events Timeline */}
           {log.events && log.events.length > 0 && (
@@ -1362,8 +1749,9 @@ function LogDetailView({ childId, logId, timezone }: { childId: string; logId: s
   );
 }
 
-function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: string | null; timezone: string }) {
+function SleepLogModal() {
   const { user } = useBubbleAuth();
+  const { state, navigateBack, updateLog } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [sleepType, setSleepType] = useState<'nap' | 'bedtime'>('nap');
   const [events, setEvents] = useState<Array<{ type: SleepEvent['type']; timestamp: Date }>>([]);
@@ -1374,9 +1762,26 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
 
   // Load existing log if editing
   useEffect(() => {
-    if (logId) {
+    if (state.logId) {
+      // First check cache
+      const cachedLog = state.logCache.get(state.logId);
+      if (cachedLog) {
+        setExistingLog(cachedLog);
+        setSleepType(cachedLog.sleepType || 'nap');
+        setIsComplete(cachedLog.isComplete || false);
+        if (cachedLog.events) {
+          const eventsWithDates = cachedLog.events.map(event => ({
+            type: event.type,
+            timestamp: event.timestamp.toDate()
+          }));
+          setEvents(eventsWithDates);
+        }
+        return;
+      }
+
+      // If not in cache, fetch it
       setIsLoading(true);
-      getLog(logId)
+      getLog(state.logId)
         .then((log) => {
           if (log) {
             setExistingLog(log);
@@ -1389,6 +1794,7 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
               }));
               setEvents(eventsWithDates);
             }
+            updateLog(log); // Add to cache
           }
           setIsLoading(false);
         })
@@ -1397,7 +1803,7 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
           setIsLoading(false);
         });
     }
-  }, [logId]);
+  }, [state.logId, state.logCache, updateLog]);
 
   // Get valid next event types based on current sequence
   const getValidNextEventTypes = (): SleepEvent['type'][] => {
@@ -1433,7 +1839,7 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
   // Format time for input
   const formatTimeForInput = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
-      timeZone: timezone,
+      timeZone: state.timezone,
       hour12: false,
       hour: '2-digit',
       minute: '2-digit'
@@ -1443,7 +1849,7 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
   // Format time for display
   const formatTimeForDisplay = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
+      timeZone: state.timezone,
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -1539,35 +1945,44 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
 
   // Save the log
   const handleSave = async () => {
-    if (!user || events.length === 0) return;
+    if (!user || events.length === 0 || !state.childId) return;
 
     setIsLoading(true);
     try {
-      if (logId && existingLog) {
+      if (state.logId && existingLog) {
         // Update existing log
-        await updateSleepLog(logId, events, timezone, isComplete);
+        await updateSleepLog(state.logId, events, state.timezone, isComplete);
+        
+        // Update the cache with new data - need to convert Date to Timestamp and include localTime
+        const eventsWithLocalTime = events.map(e => ({
+          type: e.type,
+          timestamp: Timestamp.fromDate(e.timestamp),
+          localTime: formatTimeForDisplay(e.timestamp)
+        }));
+        const updatedLog = { ...existingLog, events: eventsWithLocalTime, isComplete };
+        updateLog(updatedLog);
       } else {
         // Create new log with first event
         const newLogId = await createSleepLog(
-          childId,
+          state.childId,
           user.id,
           user.name,
           sleepType,
           events[0],
-          timezone
+          state.timezone
         );
 
         // If there are multiple events, update the log with all events
         if (events.length > 1) {
-          await updateSleepLog(newLogId, events, timezone, isComplete);
+          await updateSleepLog(newLogId, events, state.timezone, isComplete);
         }
+        
+        // Refresh the logs list to include the new log
+        // The real-time listener will pick this up automatically
       }
 
-      // Navigate back to logs list
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('view', 'logs');
-      newUrl.searchParams.delete('logId');
-      window.location.href = newUrl.toString();
+      // Navigate back to logs list using navigation context
+      navigateBack();
     } catch (error) {
       console.error('Error saving log:', error);
       alert('Failed to save log. Please try again.');
@@ -1577,21 +1992,17 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
   };
 
   // Cancel and go back
-  const handleCancel = async () => {
-    // If there are events, auto-save before leaving
+  const handleCancel = () => {
+    // If there are events, ask user what to do with simpler options
     if (events.length > 0 && user) {
-      const shouldSave = confirm('You have unsaved changes. Save this log before leaving?');
-      if (shouldSave) {
-        await handleSave();
-        return; // handleSave will navigate away
+      const leave = confirm('You have unsaved changes. Are you sure you want to leave without saving?');
+      if (!leave) {
+        return; // Stay on page
       }
     }
     
-    // Navigate back without saving
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('view', 'logs');
-    newUrl.searchParams.delete('logId');
-    window.location.href = newUrl.toString();
+    // Navigate back without saving using navigation context
+    navigateBack();
   };
 
   const validNextEvents = getValidNextEventTypes();
@@ -1599,44 +2010,29 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
   const canSave = events.length > 0;
 
   if (isLoading) {
-    return <LoadingScreen message={logId ? "Loading log..." : "Creating log..."} />;
+    return <SleepLogModalSkeleton user={user} />;
   }
 
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
-      {/* Top spacing - minimal for iframe embedding */}
-      <div className="h-[20px]"></div>
+    <>
+      {/* Modal Backdrop - semi-transparent overlay */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={handleCancel}></div>
       
-      {/* Header */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className={`text-xl font-bold ${
-              user?.darkMode ? 'text-white' : 'text-gray-800'
-            }`}>
-              {logId ? 'Edit Sleep Log' : 'New Sleep Log'}
-            </h1>
-            <p className={`text-sm ${
-              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>Times in baby's timezone</p>
-          </div>
-          <button
-            onClick={handleCancel}
-            className={`btn btn-circle btn-sm ${
-              user?.darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
-            }`}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 pt-16">
+        <div 
+          className={`w-full max-w-[800px] h-[75vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl ${
+            user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+          }`}
+          style={{
+            animation: 'slideUp 0.3s ease-out'
+          }}
+        >
+          {/* Top spacing for modal */}
+          <div className="h-[20px]"></div>
 
       {/* Content - Ensure space for fixed buttons */}
-      <div className="overflow-y-auto px-4 py-6" style={{ paddingBottom: '120px', height: 'calc(100vh - 180px)' }}>
+      <div className="overflow-y-auto px-4 py-6" style={{ paddingBottom: '120px', height: 'calc(75vh - 100px)' }}>
         
         {/* Sleep Type Selection */}
         <div className="mb-6">
@@ -1846,16 +2242,13 @@ function SleepLogModal({ childId, logId, timezone }: { childId: string; logId?: 
             {isLoading ? (
               <div className="loading loading-spinner w-4 h-4"></div>
             ) : (
-              logId ? 'Update Log' : 'Save Log'
+              state.logId ? 'Update Log' : 'Save Log'
             )}
           </button>
         </div>
       </div>
-
-      {/* Minimal bottom spacing for iframe */}
-      <div className={`h-[20px] ${
-        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-      }`}></div>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
