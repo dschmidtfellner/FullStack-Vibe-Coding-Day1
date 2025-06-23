@@ -924,48 +924,59 @@ function LogsListView({ childId, timezone }: { childId: string; timezone: string
               
               {/* Logs for this date */}
               <div className="space-y-3 px-4 pt-3">
-                {dateLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    onClick={() => handleLogClick(log.id)}
-                    className={`p-4 rounded-2xl cursor-pointer transition-all hover:opacity-90 relative ${
-                      user?.darkMode 
-                        ? 'bg-[#4a3f5a]' 
-                        : log.logType === 'sleep' 
-                          ? 'bg-[#E8D5F2]'  // Purple background for sleep logs
-                          : 'bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        {/* Time range in smaller purple text */}
-                        <div className={`text-sm mb-1 ${
-                          user?.darkMode ? 'text-purple-300' : 'text-purple-600'
-                        }`}>
-                          {getTimeRange(log)}
+                {dateLogs.map((log, index) => {
+                  // Count naps for numbering (only count naps before this one in the same day)
+                  const napNumber = dateLogs
+                    .slice(0, index + 1)
+                    .filter(l => l.sleepType === 'nap').length;
+                  
+                  return (
+                    <div
+                      key={log.id}
+                      onClick={() => handleLogClick(log.id)}
+                      className={`p-4 rounded-2xl cursor-pointer transition-all hover:opacity-90 relative ${
+                        user?.darkMode 
+                          ? 'bg-[#4a3f5a]' 
+                          : 'bg-[#E8D5F2]'  // Purple background for all logs
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          {/* Time range - smaller purple text */}
+                          <div className={`text-sm mb-1 ${
+                            user?.darkMode ? 'text-purple-300' : 'text-purple-600'
+                          }`}>
+                            {getTimeRange(log)}
+                          </div>
+                          
+                          {/* Log type with number - Domine font, size 22, weight 400 */}
+                          <div 
+                            className={`${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
+                            style={{ 
+                              fontFamily: 'Domine, serif',
+                              fontSize: '22px',
+                              fontWeight: '400',
+                              lineHeight: '1.2'
+                            }}
+                          >
+                            {log.sleepType === 'bedtime' ? 'Bedtime' : 
+                             log.sleepType === 'nap' ? `Nap ${napNumber}` : 'Sleep'}
+                          </div>
                         </div>
                         
-                        {/* Log type in larger text */}
-                        <div className={`text-lg font-medium ${
-                          user?.darkMode ? 'text-white' : 'text-gray-900'
-                        }`}>
-                          {log.sleepType === 'bedtime' ? 'Bedtime' : 
-                           log.sleepType === 'nap' ? 'Nap' : 'Sleep'}
-                        </div>
+                        {/* Comment indicator - far right */}
+                        {log.commentCount > 0 && (
+                          <div className={`flex items-center gap-1 ml-4 ${
+                            user?.darkMode ? 'text-white' : 'text-gray-700'
+                          }`}>
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-sm">{log.commentCount}</span>
+                          </div>
+                        )}
                       </div>
-                      
-                      {/* Comment indicator */}
-                      {log.commentCount > 0 && (
-                        <div className={`flex items-center gap-1 ${
-                          user?.darkMode ? 'text-white' : 'text-gray-700'
-                        }`}>
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-sm">{log.commentCount}</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))
