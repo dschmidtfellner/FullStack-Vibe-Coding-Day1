@@ -4,6 +4,7 @@
 
 - Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend), Clerk (auth)
 - Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
+- **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
 - Import alias: `@/` maps to `src/` directory
 - Tailwind CSS 4, daisyUI 5: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
 - Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
