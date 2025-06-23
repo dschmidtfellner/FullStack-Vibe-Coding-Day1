@@ -1757,8 +1757,13 @@ function SleepLogModal() {
   const [events, setEvents] = useState<Array<{ type: SleepEvent['type']; timestamp: Date }>>([]);
   const [currentEventType, setCurrentEventType] = useState<SleepEvent['type']>('put_in_bed');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isComplete, setIsComplete] = useState(false);
   const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
+  
+  // Determine client type from URL (default to sleep consulting)
+  const urlParams = new URLSearchParams(window.location.search);
+  const clientType = urlParams.get('clientType') || 'sleep-consulting';
 
   // Load existing log if editing
   useEffect(() => {
@@ -1945,11 +1950,33 @@ function SleepLogModal() {
 
   // Save the log
   const handleSave = async () => {
-    if (!user || events.length === 0 || !state.childId) return;
+    if (!user || !state.childId) return;
 
     setIsLoading(true);
     try {
-      if (state.logId && existingLog) {
+      if (clientType === 'sleep-consulting' && events.length === 0) {
+        // For sleep consulting first screen - create "Put In Bed" event
+        const combinedDateTime = new Date(currentDate);
+        combinedDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        
+        const putInBedEvent = {
+          type: 'put_in_bed' as SleepEvent['type'],
+          timestamp: combinedDateTime
+        };
+
+        // Create new log with put in bed event
+        const newLogId = await createSleepLog(
+          state.childId,
+          user.id,
+          user.name,
+          sleepType,
+          putInBedEvent,
+          state.timezone
+        );
+        
+        // Add event to state for next screen
+        setEvents([putInBedEvent]);
+      } else if (state.logId && existingLog) {
         // Update existing log
         await updateSleepLog(state.logId, events, state.timezone, isComplete);
         
@@ -1961,8 +1988,8 @@ function SleepLogModal() {
         }));
         const updatedLog = { ...existingLog, events: eventsWithLocalTime, isComplete };
         updateLog(updatedLog);
-      } else {
-        // Create new log with first event
+      } else if (events.length > 0) {
+        // Create new log with existing events
         const newLogId = await createSleepLog(
           state.childId,
           user.id,
@@ -1976,9 +2003,6 @@ function SleepLogModal() {
         if (events.length > 1) {
           await updateSleepLog(newLogId, events, state.timezone, isComplete);
         }
-        
-        // Refresh the logs list to include the new log
-        // The real-time listener will pick this up automatically
       }
 
       // Navigate back to logs list using navigation context
@@ -2007,7 +2031,7 @@ function SleepLogModal() {
 
   const validNextEvents = getValidNextEventTypes();
   const canAddEvent = validNextEvents.includes(currentEventType);
-  const canSave = events.length > 0;
+  const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
   if (isLoading) {
     return <SleepLogModalSkeleton user={user} />;
@@ -2015,8 +2039,8 @@ function SleepLogModal() {
 
   return (
     <>
-      {/* Modal Backdrop - invisible overlay for click handling only */}
-      <div className="fixed inset-0 z-40" onClick={handleCancel}></div>
+      {/* Modal Backdrop - subtle overlay for click handling */}
+      <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
       
       {/* Modal Container */}
       <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 pt-16">
@@ -2034,112 +2058,25 @@ function SleepLogModal() {
       {/* Content - Ensure space for fixed buttons */}
       <div className="overflow-y-auto px-4 py-6" style={{ paddingBottom: '120px', height: 'calc(75vh - 100px)' }}>
         
-        {/* Sleep Type Selection */}
-        <div className="mb-6">
-          <label className={`block text-sm font-medium mb-3 ${
-            user?.darkMode ? 'text-white' : 'text-gray-800'
-          }`}>
-            Sleep Type
-          </label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSleepType('nap')}
-              className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                sleepType === 'nap'
-                  ? user?.darkMode
-                    ? 'border-purple-400 bg-[#3a2f4a] text-white'
-                    : 'border-purple-500 bg-purple-50 text-purple-700'
-                  : user?.darkMode
-                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              <Sun className="w-5 h-5 mx-auto mb-1" />
-              <div className="text-sm font-medium">Nap</div>
-            </button>
-            <button
-              onClick={() => setSleepType('bedtime')}
-              className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                sleepType === 'bedtime'
-                  ? user?.darkMode
-                    ? 'border-purple-400 bg-[#3a2f4a] text-white'
-                    : 'border-purple-500 bg-purple-50 text-purple-700'
-                  : user?.darkMode
-                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              <Moon className="w-5 h-5 mx-auto mb-1" />
-              <div className="text-sm font-medium">Bedtime</div>
-            </button>
-          </div>
-        </div>
-
-        {/* Events List */}
-        {events.length > 0 && (
-          <div className="mb-6">
-            <label className={`block text-sm font-medium mb-3 ${
-              user?.darkMode ? 'text-white' : 'text-gray-800'
-            }`}>
-              Events ({events.length})
-            </label>
-            <div className="space-y-2">
-              {events.map((event, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg border ${
-                    user?.darkMode
-                      ? 'border-gray-600 bg-[#2a223a]'
-                      : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className={`font-medium ${
-                        user?.darkMode ? 'text-white' : 'text-gray-800'
-                      }`}>
-                        {getEventTypeText(event.type)}
-                      </span>
-                    </div>
-                    <span className={`text-sm ${
-                      user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                      {formatTimeForDisplay(event.timestamp)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+        {/* Sleep Consulting Client Flow - First Screen */}
+        {clientType === 'sleep-consulting' && events.length === 0 && (
+          <div className="space-y-6">
+            {/* Title */}
+            <div className="text-center">
+              <h2 className={`text-2xl font-medium mb-2 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                When were they put in bed?
+              </h2>
             </div>
-            
-            {/* Remove last event button */}
-            <button
-              onClick={handleRemoveLastEvent}
-              className={`mt-3 text-sm underline ${
-                user?.darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'
-              }`}
-            >
-              Remove last event
-            </button>
-          </div>
-        )}
 
-        {/* Add New Event */}
-        {!isComplete && validNextEvents.length > 0 && (
-          <div className="mb-6">
-            <label className={`block text-sm font-medium mb-3 ${
-              user?.darkMode ? 'text-white' : 'text-gray-800'
-            }`}>
-              Add Event
-            </label>
-            
-            {/* Event type selection */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {validNextEvents.map((eventType) => (
+            {/* Sleep Type Selection - Simple */}
+            <div className="mb-6">
+              <div className="flex gap-2">
                 <button
-                  key={eventType}
-                  onClick={() => setCurrentEventType(eventType)}
-                  className={`p-3 rounded-lg border-2 text-sm transition-all ${
-                    currentEventType === eventType
+                  onClick={() => setSleepType('nap')}
+                  className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                    sleepType === 'nap'
                       ? user?.darkMode
                         ? 'border-purple-400 bg-[#3a2f4a] text-white'
                         : 'border-purple-500 bg-purple-50 text-purple-700'
@@ -2148,15 +2085,50 @@ function SleepLogModal() {
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  {getEventTypeText(eventType)}
+                  <Sun className="w-5 h-5 mx-auto mb-1" />
+                  <div className="text-sm font-medium">Nap</div>
                 </button>
-              ))}
+                <button
+                  onClick={() => setSleepType('bedtime')}
+                  className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                    sleepType === 'bedtime'
+                      ? user?.darkMode
+                        ? 'border-purple-400 bg-[#3a2f4a] text-white'
+                        : 'border-purple-500 bg-purple-50 text-purple-700'
+                      : user?.darkMode
+                        ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                  }`}
+                >
+                  <Moon className="w-5 h-5 mx-auto mb-1" />
+                  <div className="text-sm font-medium">Bedtime</div>
+                </button>
+              </div>
             </div>
 
-            {/* Time input */}
-            <div className="mb-4">
-              <label className={`block text-xs font-medium mb-2 ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+            {/* Date Input */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-3 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Date
+              </label>
+              <input
+                type="date"
+                value={currentDate.toISOString().split('T')[0]}
+                onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                className={`input input-bordered w-full ${
+                  user?.darkMode 
+                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              />
+            </div>
+
+            {/* Time Input */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-3 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Time
               </label>
@@ -2170,46 +2142,12 @@ function SleepLogModal() {
                     : 'bg-white border-gray-300 text-gray-800'
                 }`}
               />
-              <p className={`text-xs mt-1 ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {formatTimeForDisplay(currentTime)}
-              </p>
             </div>
-
-            {/* Add event button */}
-            <button
-              onClick={handleAddEvent}
-              disabled={!canAddEvent}
-              className={`btn w-full ${
-                user?.darkMode 
-                  ? 'btn-outline border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white' 
-                  : 'btn-outline border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white'
-              }`}
-            >
-              Add {getEventTypeText(currentEventType)}
-            </button>
           </div>
         )}
-
-        {/* Complete session toggle */}
-        {events.length > 0 && (
-          <div className="mb-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isComplete}
-                onChange={(e) => setIsComplete(e.target.checked)}
-                className="checkbox checkbox-primary"
-              />
-              <span className={`text-sm ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Mark session as complete
-              </span>
-            </label>
-          </div>
-        )}
+        
+        {/* TODO: Add other flows and continuation screens here */}
+        
       </div>
 
       {/* Fixed bottom actions */}
