@@ -1462,7 +1462,7 @@ function LogDetailView() {
             </div>
           </button>
           
-          {headlinesExpanded && (
+          {headlinesExpanded && log && (
             <div className="px-4 pb-4">
               <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 {(() => {
