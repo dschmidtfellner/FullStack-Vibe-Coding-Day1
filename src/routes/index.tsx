@@ -1,6 +1,6 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun } from "lucide-react";
+import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucide-react";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
@@ -1353,6 +1353,11 @@ function LogDetailView() {
   const [newComment, setNewComment] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  
+  // Section collapse states - Headlines collapsed by default, Log and Comments expanded
+  const [headlinesExpanded, setHeadlinesExpanded] = useState(false);
+  const [logExpanded, setLogExpanded] = useState(true);
+  const [commentsExpanded, setCommentsExpanded] = useState(true);
 
   // Get current log from cache or fetch it
   useEffect(() => {
@@ -1603,42 +1608,84 @@ function LogDetailView() {
         </div>
       </div>
 
-      {/* Content Container */}
+      {/* Content Container with Collapsible Sections */}
       <div className="flex flex-col h-full h-[calc(100%-180px)]">
         
-        {/* Log Details - Fixed at top */}
-        <div className={`px-4 py-4 border-b ${
+        {/* Headlines Section */}
+        <div className={`border-b ${
           user?.darkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
+          <button
+            onClick={() => setHeadlinesExpanded(!headlinesExpanded)}
+            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+              user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
+            }`}
+          >
+            <h2 className={`font-domine text-xl ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              Headlines
+            </h2>
+            <div className={`w-6 h-6 ${
+              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`}>
+              {headlinesExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+            </div>
+          </button>
+          
+          {headlinesExpanded && (
+            <div className={`px-4 pb-4 ${
+              user?.darkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              {/* Placeholder for headlines content */}
+              <div className="space-y-2">
+                <p className="text-sm">Sleep Quality: Good</p>
+                <p className="text-sm">Total Sleep Time: 2h 15m</p>
+                <p className="text-sm">Time to Fall Asleep: 12 minutes</p>
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* Events Timeline */}
-          {log.events && log.events.length > 0 && (
-            <div>
-              <h3 className={`text-sm font-medium mb-3 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Timeline
-              </h3>
+        {/* Log Section */}
+        <div className={`border-b ${
+          user?.darkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
+          <button
+            onClick={() => setLogExpanded(!logExpanded)}
+            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+              user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
+            }`}
+          >
+            <h2 className={`font-domine text-xl ${
+              user?.darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              Log
+            </h2>
+            <div className={`w-6 h-6 ${
+              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`}>
+              {logExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+            </div>
+          </button>
+          
+          {logExpanded && log.events && log.events.length > 0 && (
+            <div className="px-4 pb-4">
               <div className="space-y-3">
                 {log.events
                   .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
                   .map((event, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        user?.darkMode ? 'bg-purple-400' : 'bg-purple-600'
-                      }`}></div>
-                      <div className="flex-1 flex justify-between items-center">
-                        <span className={`text-sm ${
-                          user?.darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>
-                          {getEventTypeText(event.type)}
-                        </span>
-                        <span className={`text-sm ${
-                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          {event.localTime}
-                        </span>
-                      </div>
+                    <div key={index} className="flex justify-between items-center">
+                      <span className={`text-base ${
+                        user?.darkMode ? 'text-white' : 'text-gray-800'
+                      }`}>
+                        {getEventTypeText(event.type)}
+                      </span>
+                      <span className={`text-base ${
+                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {event.localTime}
+                      </span>
                     </div>
                   ))}
               </div>
@@ -1646,98 +1693,105 @@ function LogDetailView() {
           )}
         </div>
 
-        {/* Comments Section - Scrollable */}
+        {/* Comments Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className={`px-4 py-3 border-b ${
-            user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-gray-50'
-          }`}>
-            <h3 className={`text-sm font-medium ${
+          <button
+            onClick={() => setCommentsExpanded(!commentsExpanded)}
+            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+              user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
+            }`}
+          >
+            <h2 className={`font-domine text-xl ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
             }`}>
-              Comments ({comments.length})
-            </h3>
-          </div>
-
-          {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {comments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <MessageCircle className={`w-12 h-12 mb-3 ${
-                  user?.darkMode ? 'text-gray-600' : 'text-gray-400'
-                }`} />
-                <p className={`text-sm text-center ${
-                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  No comments yet. Start a conversation about this log.
-                </p>
-              </div>
-            ) : (
-              comments.map((comment) => {
-                const isOwn = user?.id === comment.senderId;
-                return (
-                  <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                    <div className="max-w-[75%] flex flex-col">
-                      {/* Sender name and timestamp */}
-                      <div className={`text-xs mb-1 flex justify-between items-center ${
-                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        <span>{comment.senderName}</span>
-                        <span>{formatTimeInTimezone(comment.timestamp)}</span>
-                      </div>
-                      
-                      {/* Comment bubble */}
-                      <div 
-                        className={`min-w-[100px] rounded-2xl px-4 py-3 ${
-                          isOwn 
-                            ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
-                            : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                        }`} 
-                        style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
-                      >
-                        <p className="text-sm leading-relaxed">{comment.text}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <div ref={commentsEndRef} />
-          </div>
-
-          {/* Comment Input - Fixed at bottom */}
-          <div className={`border-t px-4 py-3 ${
-            user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-          }`}>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
-                  placeholder="Add a comment..."
-                  className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
-                      : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
-                  }`}
-                />
-                <button 
-                  onClick={handleSendComment}
-                  disabled={!newComment.trim()}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
-                    user?.darkMode ? '' : 'text-white'
-                  }`}
-                  style={{ 
-                    backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
-                    color: user?.darkMode ? '#503460' : 'white'
-                  }}
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
+              Comments
+            </h2>
+            <div className={`w-6 h-6 ${
+              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`}>
+              {commentsExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </div>
-          </div>
+          </button>
+
+          {commentsExpanded && (
+            <>
+              {/* Comments List */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                {comments.length === 0 ? (
+                  <div className={`text-sm italic ${
+                    user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    No comments yet
+                  </div>
+                ) : (
+                  comments.map((comment) => {
+                    const isOwn = user?.id === comment.senderId;
+                    return (
+                      <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className="max-w-[75%] flex flex-col">
+                          {/* Sender name and timestamp */}
+                          <div className={`text-xs mb-1 flex justify-between items-center ${
+                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            <span>{comment.senderName}</span>
+                            <span>{formatTimeInTimezone(comment.timestamp)}</span>
+                          </div>
+                          
+                          {/* Comment bubble */}
+                          <div 
+                            className={`min-w-[100px] rounded-2xl px-4 py-3 ${
+                              isOwn 
+                                ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                                : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                            }`} 
+                            style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                          >
+                            <p className="text-sm leading-relaxed">{comment.text}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={commentsEndRef} />
+              </div>
+
+              {/* Comment Input - Fixed at bottom */}
+              <div className={`border-t px-4 py-3 ${
+                user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
+                      placeholder="Add a comment..."
+                      className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
+                        user?.darkMode 
+                          ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
+                          : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
+                      }`}
+                    />
+                    <button 
+                      onClick={handleSendComment}
+                      disabled={!newComment.trim()}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+                        user?.darkMode ? '' : 'text-white'
+                      }`}
+                      style={{ 
+                        backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                        color: user?.darkMode ? '#503460' : 'white'
+                      }}
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
