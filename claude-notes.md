@@ -2,7 +2,7 @@
 
 ## Session Start
 - Starting commit hash: d9229dd (fix: Remove unused functions and imports causing TypeScript build errors)
-- Session commits: [cleanup commit]
+- Session commits: [cleanup commit, a58681b (sleep statistics implementation)]
 
 ## Current Status - CONVEX CLEANUP COMPLETE ✅
 - **COMPLETED: Convex completely removed from project**
@@ -38,6 +38,7 @@
 - **COMPLETED: Message reactions** ✅ - emoji reactions with picker, real-time updates, and user tracking
 - **COMPLETED: Conversation-based messaging** ✅ - child-specific conversations with URL routing
 - **COMPLETED: JWT authentication system** ✅ - replaced Clerk with Bubble-compatible JWT tokens
+- **COMPLETED: Sleep statistics calculations** ✅ - comprehensive sleep analytics for Sleep Consulting children with 5 key metrics
 - Ready for integration as module in Bubble app
 
 ## Important Context
