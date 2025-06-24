@@ -1806,6 +1806,13 @@ function SleepLogModal() {
             timestamp: event.timestamp.toDate()
           }));
           setEvents(eventsWithDates);
+          
+          // Set currentTime to a reasonable time on the original log date (not today's date)
+          const originalDate = eventsWithDates[0].timestamp;
+          const timeOnOriginalDate = new Date(originalDate);
+          timeOnOriginalDate.setHours(new Date().getHours(), new Date().getMinutes()); // Use current time of day but original date
+          setCurrentTime(timeOnOriginalDate);
+          setCurrentDate(new Date(originalDate));
         }
         return;
       }
@@ -1824,6 +1831,13 @@ function SleepLogModal() {
                 timestamp: event.timestamp.toDate()
               }));
               setEvents(eventsWithDates);
+              
+              // Set currentTime to a reasonable time on the original log date (not today's date)
+              const originalDate = eventsWithDates[0].timestamp;
+              const timeOnOriginalDate = new Date(originalDate);
+              timeOnOriginalDate.setHours(new Date().getHours(), new Date().getMinutes()); // Use current time of day but original date
+              setCurrentTime(timeOnOriginalDate);
+              setCurrentDate(new Date(originalDate));
             }
             updateLog(log); // Add to cache
           }
@@ -1997,9 +2011,15 @@ function SleepLogModal() {
       } else if (clientType === 'sleep-consulting' && events.length > 0) {
         // For sleep consulting subsequent events - add event to existing log
         const nextEventType = getNextEventType();
+        
+        // Ensure the new event uses the same date as the original log, only updating time
+        const originalDate = events[0].timestamp; // Get date from first event
+        const eventTimestamp = new Date(originalDate);
+        eventTimestamp.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        
         const newEvent = {
           type: nextEventType,
-          timestamp: new Date(currentTime)
+          timestamp: eventTimestamp
         };
 
         const updatedEvents = [...events, newEvent];
