@@ -1893,6 +1893,8 @@ function SleepLogModal() {
           state.timezone
         );
         
+        console.log('Created new sleep log with ID:', newLogId);
+        
         // Store the log ID for subsequent events
         setCurrentLogId(newLogId);
         
@@ -1915,7 +1917,13 @@ function SleepLogModal() {
         
         // Update the existing log
         const logIdToUse = state.logId || currentLogId;
-        await updateSleepLog(logIdToUse!, updatedEvents, state.timezone, nextEventType === 'out_of_bed');
+        console.log('Updating sleep log with:', { logIdToUse, stateLogId: state.logId, currentLogId, eventsLength: updatedEvents.length });
+        
+        if (!logIdToUse) {
+          throw new Error('No log ID available for update');
+        }
+        
+        await updateSleepLog(logIdToUse, updatedEvents, state.timezone, nextEventType === 'out_of_bed');
         
         if (nextEventType === 'out_of_bed') {
           // If this was the final event, navigate back
