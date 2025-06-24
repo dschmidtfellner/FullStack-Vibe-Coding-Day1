@@ -330,7 +330,7 @@ function LogsListSkeleton({ user }: { user: any }) {
           <div className="space-y-3 px-4 pt-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className={`p-4 rounded-2xl ${
-                user?.darkMode ? 'bg-[#4a3f5a]' : 'bg-[#E8D5F2]'
+                user?.darkMode ? 'bg-[#4a3f5a]' : 'bg-[#F0DDEF]'
               }`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -480,7 +480,7 @@ function MessagingSkeleton({ user }: { user: any }) {
                     ? `rounded-br-md` 
                     : `${user?.darkMode ? 'bg-[#3a3a3a]' : 'bg-gray-200'} rounded-bl-md`
                 }`} 
-                style={{ backgroundColor: i % 2 === 0 ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                style={{ backgroundColor: i % 2 === 0 ? (user?.darkMode ? '#2d2637' : '#F0DDEF') : undefined }}
               >
                 <div className={`h-4 w-32 rounded animate-pulse ${
                   user?.darkMode ? 'bg-gray-600' : 'bg-gray-400'
@@ -892,7 +892,7 @@ function MessagingApp() {
                         ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
                         : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
                     } ${message.type === 'image' ? 'p-2' : 'px-4 py-3'}`} 
-                    style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                    style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#F0DDEF') : undefined }}
                     onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
                   >
                     {message.type === 'image' && message.imageId ? (
@@ -1014,7 +1014,7 @@ function MessagingApp() {
                   : 'text-white hover:opacity-90'
               }`}
               style={{ 
-                backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
                 color: user?.darkMode ? '#503460' : 'white'
               }}
             >
@@ -1036,7 +1036,7 @@ function MessagingApp() {
                   : 'text-white hover:opacity-90'
               }`}
               style={{ 
-                backgroundColor: isRecording ? undefined : (user?.darkMode ? '#f0ddef' : '#503460'),
+                backgroundColor: isRecording ? undefined : (user?.darkMode ? '#F0DDEF' : '#503460'),
                 color: isRecording ? undefined : (user?.darkMode ? '#503460' : 'white')
               }}
             >
@@ -1067,7 +1067,7 @@ function MessagingApp() {
                 user?.darkMode ? '' : 'text-white'
               }`}
               style={{ 
-                backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
                 color: user?.darkMode ? '#503460' : 'white'
               }}
             >
@@ -1248,7 +1248,7 @@ function LogsListView() {
                       className={`p-4 rounded-2xl relative ${
                         user?.darkMode 
                           ? 'bg-[#4a3f5a]' 
-                          : 'bg-[#E8D5F2]'  // Purple background for all logs
+                          : 'bg-[#F0DDEF]'  // Purple background for all logs
                       }`}
                     >
                       <div 
@@ -1537,7 +1537,7 @@ function LogDetailView() {
         <div className={`p-4 rounded-2xl ${
           user?.darkMode 
             ? 'bg-[#4a3f5a]' 
-            : 'bg-[#E8D5F2]'  // Purple background to match list
+            : 'bg-[#F0DDEF]'  // Purple background to match list
         }`}>
           <div className="flex justify-between items-start">
             <div className="flex-1">
@@ -1633,7 +1633,7 @@ function LogDetailView() {
           
           {headlinesExpanded && (
             <div className="px-4 pb-4">
-              <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
+              <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 <div className="flex justify-between items-center">
                   <span className={`text-base ${
                     user?.darkMode ? 'text-white' : 'text-gray-800'
@@ -1682,7 +1682,7 @@ function LogDetailView() {
           
           {logExpanded && log.events && log.events.length > 0 && (
             <div className="px-4 pb-4">
-              <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
+              <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 {log.events
                   .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
                   .map((event, index) => (
@@ -1725,7 +1725,7 @@ function LogDetailView() {
           {commentsExpanded && (
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               {comments.length === 0 ? (
-                <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
+                <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                   <div className="flex justify-between items-center">
                     <span className={`text-base italic ${
                       user?.darkMode ? 'text-gray-400' : 'text-gray-600'
@@ -1735,7 +1735,7 @@ function LogDetailView() {
                   </div>
                 </div>
               ) : (
-                <div className="border-l-4 pl-4 ml-4 space-y-4" style={{ borderColor: '#E8D5F2' }}>
+                <div className="border-l-4 pl-4 space-y-4" style={{ borderColor: '#F0DDEF' }}>
                   {comments.map((comment) => {
                     const isOwn = user?.id === comment.senderId;
                     return (
@@ -1758,7 +1758,7 @@ function LogDetailView() {
                                 ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
                                 : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
                             }`} 
-                            style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                            style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#F0DDEF') : undefined }}
                           >
                             <p className="text-sm leading-relaxed">{comment.text}</p>
                           </div>
@@ -1800,7 +1800,7 @@ function LogDetailView() {
                   user?.darkMode ? '' : 'text-white'
                 }`}
                 style={{ 
-                  backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                  backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
                   color: user?.darkMode ? '#503460' : 'white'
                 }}
               >
@@ -2338,7 +2338,7 @@ function SleepLogModal() {
                   }`}
                   style={{
                     borderColor: sleepType === 'nap' ? '#745288' : undefined,
-                    backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#f3f0f6' : undefined
+                    backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#F0DDEF' : undefined
                   }}
                 >
                   <Sun className="w-6 h-6 mx-auto mb-2" />
@@ -2357,7 +2357,7 @@ function SleepLogModal() {
                   }`}
                   style={{
                     borderColor: sleepType === 'bedtime' ? '#745288' : undefined,
-                    backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#f3f0f6' : undefined
+                    backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#F0DDEF' : undefined
                   }}
                 >
                   <Moon className="w-6 h-6 mx-auto mb-2" />
