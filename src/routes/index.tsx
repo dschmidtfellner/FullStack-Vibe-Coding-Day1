@@ -5,6 +5,7 @@ import { SleepLogTile } from "@/components/SleepLogTile";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
+import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import {
   sendMessage,
   sendImageMessage,
@@ -1464,27 +1465,48 @@ function LogDetailView() {
           {headlinesExpanded && (
             <div className="px-4 pb-4">
               <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
-                <div className="flex justify-between items-center">
-                  <span className={`text-base ${
-                    user?.darkMode ? 'text-white' : 'text-gray-800'
-                  }`}>
-                    Sleep Quality: Good
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-base ${
-                    user?.darkMode ? 'text-white' : 'text-gray-800'
-                  }`}>
-                    Total Sleep Time: 2h 15m
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-base ${
-                    user?.darkMode ? 'text-white' : 'text-gray-800'
-                  }`}>
-                    Time to Fall Asleep: 12 minutes
-                  </span>
-                </div>
+                {(() => {
+                  const stats = calculateSleepStatistics(log);
+                  return (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          Total duration ({stats.timeRange}): {stats.totalDuration}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          Total time asleep: {stats.totalTimeAsleep}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          Total time awake in bed: {stats.totalTimeAwakeInBed}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          Total number of wake-ups: {stats.numberOfWakeUps}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          Average wake-up duration: {stats.averageWakeUpDuration}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
