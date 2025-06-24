@@ -332,7 +332,7 @@ function LogsListSkeleton({ user }: { user: any }) {
               <div key={i} className={`p-4 rounded-2xl ${
                 user?.darkMode ? 'bg-[#4a3f5a]' : 'bg-[#F0DDEF]'
               }`}>
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center">
                   <div className="flex-1">
                     {/* Time skeleton */}
                     <div className="h-4 w-32 rounded animate-pulse mb-2" style={{ backgroundColor: '#745288' }}></div>
@@ -1255,7 +1255,7 @@ function LogsListView() {
                         onClick={() => navigateToLogDetail(log.id)}
                         className="cursor-pointer transition-all hover:opacity-90"
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-center">
                           <div className="flex-1">
                             {/* Time range - smaller purple text */}
                             <div className={`text-sm mb-1`} style={{
