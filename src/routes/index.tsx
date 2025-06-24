@@ -2013,6 +2013,28 @@ function SleepLogModal() {
         
         await updateSleepLog(logIdToUse, updatedEvents, state.timezone, nextEventType === 'out_of_bed');
         
+        // Immediately update the cache so changes appear in log view behind modal
+        const currentLog = state.logCache.get(logIdToUse);
+        if (currentLog) {
+          const eventsWithLocalTime = updatedEvents.map(e => ({
+            type: e.type,
+            timestamp: Timestamp.fromDate(e.timestamp),
+            localTime: new Intl.DateTimeFormat('en-US', {
+              timeZone: state.timezone,
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            }).format(e.timestamp)
+          }));
+          const updatedLog = { 
+            ...currentLog, 
+            events: eventsWithLocalTime, 
+            isComplete: nextEventType === 'out_of_bed',
+            updatedAt: Timestamp.fromDate(new Date())
+          };
+          updateLog(updatedLog);
+        }
+        
         if (nextEventType === 'out_of_bed') {
           // If this was the final event, navigate back
           navigateBack();
