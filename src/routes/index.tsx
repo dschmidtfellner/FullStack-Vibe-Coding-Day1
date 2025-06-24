@@ -2312,8 +2312,8 @@ function SleepLogModal() {
       </div>
 
       {/* Fixed bottom actions */}
-      <div className="fixed left-1/2 transform -translate-x-1/2 z-50" style={{ bottom: '16px', width: '100%', maxWidth: '600px', padding: '0 16px' }}>
-        <div className={`border-t p-4 rounded-b-3xl ${
+      <div className="fixed left-1/2 transform -translate-x-1/2 z-50" style={{ bottom: '0px', width: '100%', maxWidth: '600px', padding: '0 16px' }}>
+        <div className={`border-t p-4 ${
           user?.darkMode 
             ? 'border-gray-700 bg-[#2d2637]' 
             : 'border-gray-200 bg-white'
