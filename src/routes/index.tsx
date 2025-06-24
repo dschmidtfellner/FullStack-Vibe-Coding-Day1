@@ -1612,16 +1612,14 @@ function LogDetailView() {
       <div className="flex flex-col h-full h-[calc(100%-180px)]">
         
         {/* Headlines Section */}
-        <div className={`border-b ${
-          user?.darkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+        <div>
           <button
             onClick={() => setHeadlinesExpanded(!headlinesExpanded)}
             className={`w-full px-4 py-4 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
-            <h2 className={`font-domine text-xl ${
+            <h2 className={`font-domine text-2xl ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
             }`}>
               Headlines
@@ -1648,16 +1646,14 @@ function LogDetailView() {
         </div>
 
         {/* Log Section */}
-        <div className={`border-b ${
-          user?.darkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+        <div>
           <button
             onClick={() => setLogExpanded(!logExpanded)}
             className={`w-full px-4 py-4 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
-            <h2 className={`font-domine text-xl ${
+            <h2 className={`font-domine text-2xl ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
             }`}>
               Log
@@ -1694,14 +1690,14 @@ function LogDetailView() {
         </div>
 
         {/* Comments Section */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 pb-20">
           <button
             onClick={() => setCommentsExpanded(!commentsExpanded)}
             className={`w-full px-4 py-4 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
-            <h2 className={`font-domine text-xl ${
+            <h2 className={`font-domine text-2xl ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
             }`}>
               Comments
@@ -1714,84 +1710,83 @@ function LogDetailView() {
           </button>
 
           {commentsExpanded && (
-            <>
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                {comments.length === 0 ? (
-                  <div className={`text-sm italic ${
-                    user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    No comments yet
-                  </div>
-                ) : (
-                  comments.map((comment) => {
-                    const isOwn = user?.id === comment.senderId;
-                    return (
-                      <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                        <div className="max-w-[75%] flex flex-col">
-                          {/* Sender name and timestamp */}
-                          <div className={`text-xs mb-1 flex justify-between items-center ${
-                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            <span>{comment.senderName}</span>
-                            <span>{formatTimeInTimezone(comment.timestamp)}</span>
-                          </div>
-                          
-                          {/* Comment bubble */}
-                          <div 
-                            className={`min-w-[100px] rounded-2xl px-4 py-3 ${
-                              isOwn 
-                                ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
-                                : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                            }`} 
-                            style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
-                          >
-                            <p className="text-sm leading-relaxed">{comment.text}</p>
-                          </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {comments.length === 0 ? (
+                <div className={`text-sm italic ${
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  No comments yet
+                </div>
+              ) : (
+                comments.map((comment) => {
+                  const isOwn = user?.id === comment.senderId;
+                  return (
+                    <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                      <div className="max-w-[75%] flex flex-col">
+                        {/* Sender name and timestamp */}
+                        <div className={`text-xs mb-1 flex justify-between items-center ${
+                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <span>{comment.senderName}</span>
+                          <span>{formatTimeInTimezone(comment.timestamp)}</span>
+                        </div>
+                        
+                        {/* Comment bubble */}
+                        <div 
+                          className={`min-w-[100px] rounded-2xl px-4 py-3 ${
+                            isOwn 
+                              ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                              : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                          }`} 
+                          style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                        >
+                          <p className="text-sm leading-relaxed">{comment.text}</p>
                         </div>
                       </div>
-                    );
-                  })
-                )}
-                <div ref={commentsEndRef} />
-              </div>
-
-              {/* Comment Input - Fixed at bottom */}
-              <div className={`border-t px-4 py-3 ${
-                user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
-                      placeholder="Add a comment..."
-                      className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
-                        user?.darkMode 
-                          ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
-                          : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
-                      }`}
-                    />
-                    <button 
-                      onClick={handleSendComment}
-                      disabled={!newComment.trim()}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
-                        user?.darkMode ? '' : 'text-white'
-                      }`}
-                      style={{ 
-                        backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
-                        color: user?.darkMode ? '#503460' : 'white'
-                      }}
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={commentsEndRef} />
+            </div>
           )}
+        </div>
+      </div>
+
+      {/* Comment Input - Pinned to bottom */}
+      <div className={`fixed left-0 right-0 bottom-0 border-t z-10 ${
+        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
+      }`}>
+        <div className="max-w-[800px] mx-auto p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
+                placeholder="Add a comment..."
+                className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
+                  user?.darkMode 
+                    ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
+                    : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
+                }`}
+              />
+              <button 
+                onClick={handleSendComment}
+                disabled={!newComment.trim()}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+                  user?.darkMode ? '' : 'text-white'
+                }`}
+                style={{ 
+                  backgroundColor: user?.darkMode ? '#f0ddef' : '#503460',
+                  color: user?.darkMode ? '#503460' : 'white'
+                }}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
