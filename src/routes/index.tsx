@@ -1,6 +1,7 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucide-react";
+import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucide-react";
+import { SleepLogTile } from "@/components/SleepLogTile";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
@@ -1164,21 +1165,6 @@ function LogsListView() {
     }).format(date);
   };
 
-  // Get time range for log display (e.g., "11:45 am—1:50 pm")
-  const getTimeRange = (log: SleepLog) => {
-    if (!log.events || log.events.length === 0) {
-      return formatTimeInTimezone(log.timestamp);
-    }
-
-    const firstEvent = log.events[0];
-    const lastEvent = log.events[log.events.length - 1];
-    
-    if (log.events.length === 1 || !log.isComplete) {
-      return firstEvent.localTime;
-    }
-
-    return `${firstEvent.localTime}—${lastEvent.localTime}`;
-  };
 
   // Group logs by date - use state.logs from navigation context
   const groupedLogs = state.logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
@@ -1243,72 +1229,16 @@ function LogsListView() {
                     .filter(l => l.sleepType === 'nap').length;
                   
                   return (
-                    <div
+                    <SleepLogTile
                       key={log.id}
-                      className={`p-4 rounded-2xl relative ${
-                        user?.darkMode 
-                          ? 'bg-[#4a3f5a]' 
-                          : 'bg-[#F0DDEF]'  // Purple background for all logs
-                      }`}
-                    >
-                      <div 
-                        onClick={() => navigateToLogDetail(log.id)}
-                        className="cursor-pointer transition-all hover:opacity-90"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            {/* Time range - smaller purple text */}
-                            <div className={`text-sm mb-1`} style={{
-                              color: '#745288'
-                            }}>
-                              {getTimeRange(log)}
-                            </div>
-                            
-                            {/* Log type with number - Domine font, size 22, weight 400 */}
-                            <div 
-                              className={`font-domine ${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
-                              style={{ 
-                                fontSize: '22px',
-                                fontWeight: '400',
-                                lineHeight: '1.2'
-                              }}
-                            >
-                              {log.sleepType === 'bedtime' ? 'Bedtime' : 
-                               log.sleepType === 'nap' ? `Nap ${napNumber}` : 'Sleep'}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3 ml-4">
-                            {/* Continue Logging button - only show if log is not complete */}
-                            {!log.isComplete && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent tile click
-                                  navigateToEditLog(log.id);
-                                }}
-                                className="px-4 py-2 rounded-full font-karla transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
-                                style={{
-                                  fontSize: '14px',
-                                  fontWeight: '400'
-                                }}
-                              >
-                                Continue Logging
-                              </button>
-                            )}
-                            
-                            {/* Comment indicator - far right */}
-                            {log.commentCount > 0 && (
-                              <div className={`flex items-center gap-1 ${
-                                user?.darkMode ? 'text-white' : 'text-gray-700'
-                              }`}>
-                                <MessageCircle className="w-4 h-4" />
-                                <span className="text-sm">{log.commentCount}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      log={log}
+                      user={user}
+                      napNumber={napNumber}
+                      onClick={() => navigateToLogDetail(log.id)}
+                      onContinueLogging={() => navigateToEditLog(log.id)}
+                      formatTimeInTimezone={formatTimeInTimezone}
+                      showClickable={true}
+                    />
                   );
                 })}
               </div>
@@ -1346,7 +1276,7 @@ function LogsListView() {
 
 function LogDetailView() {
   const { user } = useBubbleAuth();
-  const { state, navigateBack, navigateToEditLog, updateLog } = useNavigation();
+  const { state, navigateToEditLog, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
@@ -1428,19 +1358,6 @@ function LogDetailView() {
     }).format(date);
   };
 
-  // Format date in the baby's timezone
-  const formatDateInTimezone = (timestamp: any) => {
-    if (!timestamp) return '';
-    
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: state.timezone,
-      month: 'short',
-      day: 'numeric',
-      weekday: 'short'
-    }).format(date);
-  };
-
   // Get event type text
   const getEventTypeText = (type: SleepEvent['type']): string => {
     switch (type) {
@@ -1451,18 +1368,6 @@ function LogDetailView() {
     }
   };
 
-  // Get sleep duration text
-  const getDurationText = (log: SleepLog) => {
-    if (log.duration && log.duration > 0) {
-      const hours = Math.floor(log.duration / 60);
-      const minutes = log.duration % 60;
-      if (hours > 0) {
-        return `${hours}h ${minutes}m`;
-      }
-      return `${minutes}m`;
-    }
-    return log.isComplete ? 'Complete' : 'In progress';
-  };
 
   // Handle comment send
   const handleSendComment = async () => {
@@ -1484,17 +1389,6 @@ function LogDetailView() {
     }
   };
 
-  // Handle back navigation - use navigation context
-  const handleBack = () => {
-    navigateBack();
-  };
-
-  // Handle edit navigation - use navigation context
-  const handleEdit = () => {
-    if (state.logId) {
-      navigateToEditLog(state.logId);
-    }
-  };
 
   // Only show skeleton if we're loading AND have no log data
   if (isLoading && !log) {
@@ -1534,78 +1428,14 @@ function LogDetailView() {
 
       {/* Log Tile - Visual Continuity from List View */}
       <div className="px-4 py-4">
-        <div className={`p-4 rounded-2xl ${
-          user?.darkMode 
-            ? 'bg-[#4a3f5a]' 
-            : 'bg-[#F0DDEF]'  // Purple background to match list
-        }`}>
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              {/* Time range - smaller purple text */}
-              <div className="text-sm mb-1" style={{
-                color: '#745288'
-              }}>
-                {(() => {
-                  if (!log.events || log.events.length === 0) {
-                    return formatTimeInTimezone(log.timestamp);
-                  }
-                  const firstEvent = log.events[0];
-                  const lastEvent = log.events[log.events.length - 1];
-                  if (log.events.length === 1 || !log.isComplete) {
-                    return firstEvent.localTime;
-                  }
-                  return `${firstEvent.localTime}—${lastEvent.localTime}`;
-                })()}
-              </div>
-              
-              {/* Log type with number - Domine font, size 22, weight 400 */}
-              <div 
-                className={`font-domine ${user?.darkMode ? 'text-white' : 'text-gray-900'}`}
-                style={{ 
-                  fontSize: '22px',
-                  fontWeight: '400',
-                  lineHeight: '1.2'
-                }}
-              >
-                {(() => {
-                  if (log.sleepType === 'bedtime') return 'Bedtime';
-                  if (log.sleepType === 'nap') {
-                    // Calculate nap number - this is a simplified version
-                    // In a real app, you'd want to pass this from the list or calculate based on date
-                    return 'Nap 1'; // You could make this dynamic if needed
-                  }
-                  return 'Sleep';
-                })()}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 ml-4">
-              {/* Continue Logging button - only show if log is not complete */}
-              {!log.isComplete && (
-                <button
-                  onClick={() => navigateToEditLog(state.logId!)}
-                  className="px-4 py-2 rounded-full font-karla transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: '400'
-                  }}
-                >
-                  Continue Logging
-                </button>
-              )}
-              
-              {/* Comment indicator - far right */}
-              {log.commentCount > 0 && (
-                <div className={`flex items-center gap-1 ${
-                  user?.darkMode ? 'text-white' : 'text-gray-700'
-                }`}>
-                  <MessageCircle className="w-4 h-4" />
-                  <span className="text-sm">{log.commentCount}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <SleepLogTile
+          log={log}
+          user={user}
+          napNumber={1} // Simplified for detail view - could be made dynamic
+          onContinueLogging={() => navigateToEditLog(state.logId!)}
+          formatTimeInTimezone={formatTimeInTimezone}
+          showClickable={false}
+        />
       </div>
 
       {/* Content Container with Collapsible Sections */}
@@ -1914,15 +1744,6 @@ function SleepLogModal() {
     }
   };
 
-  // Get display text for event types
-  const getEventTypeText = (type: SleepEvent['type']): string => {
-    switch (type) {
-      case 'put_in_bed': return 'Put in bed';
-      case 'fell_asleep': return 'Fell asleep';
-      case 'woke_up': return 'Woke up';
-      case 'out_of_bed': return 'Out of bed';
-    }
-  };
 
   // Get question text for sleep consulting flow
   const getQuestionText = (): string => {
@@ -2018,72 +1839,11 @@ function SleepLogModal() {
     setCurrentTime(newTime);
   };
 
-  // Add event to the sequence
-  const handleAddEvent = () => {
-    if (!user) return;
+  // TODO: handleAddEvent function was removed as it appeared unused
+  // If needed, this function would add an event to the sequence
 
-    const newEvent = {
-      type: currentEventType,
-      timestamp: new Date(currentTime)
-    };
-
-    const updatedEvents = [...events, newEvent];
-    setEvents(updatedEvents);
-
-    // Auto-advance time by 5 minutes for next event
-    const nextTime = new Date(currentTime.getTime() + 5 * 60 * 1000);
-    setCurrentTime(nextTime);
-
-    // Check if session should be marked complete
-    if (currentEventType === 'out_of_bed') {
-      setIsComplete(true);
-    } else {
-      // Set default next event type
-      const validNext = getValidNextEventTypes();
-      if (validNext.length > 0) {
-        setCurrentEventType(validNext[0]);
-      }
-    }
-  };
-
-  // Remove last event
-  const handleRemoveLastEvent = () => {
-    if (events.length > 0) {
-      const updatedEvents = events.slice(0, -1);
-      setEvents(updatedEvents);
-      setIsComplete(false);
-
-      // Update validNextEvents based on new events state
-      // We need to manually calculate since getValidNextEventTypes uses current events state
-      let validNext: SleepEvent['type'][] = [];
-      if (updatedEvents.length === 0) {
-        validNext = ['put_in_bed', 'fell_asleep'];
-      } else {
-        const lastEvent = updatedEvents[updatedEvents.length - 1];
-        switch (lastEvent.type) {
-          case 'put_in_bed':
-            validNext = ['fell_asleep', 'out_of_bed'];
-            break;
-          case 'fell_asleep':
-            validNext = ['woke_up', 'out_of_bed'];
-            break;
-          case 'woke_up':
-            validNext = ['fell_asleep', 'out_of_bed'];
-            break;
-          case 'out_of_bed':
-            validNext = [];
-            break;
-        }
-      }
-
-      // Reset current event type to a valid option
-      if (validNext.length > 0) {
-        setCurrentEventType(validNext[0]);
-      } else if (updatedEvents.length === 0) {
-        setCurrentEventType('put_in_bed');
-      }
-    }
-  };
+  // TODO: handleRemoveLastEvent function was removed as it appeared unused
+  // If needed, this function would remove the last event from the sequence
 
   // Save the log
   const handleSave = async () => {
@@ -2201,7 +1961,7 @@ function SleepLogModal() {
   };
 
   const validNextEvents = getValidNextEventTypes();
-  const canAddEvent = validNextEvents.includes(currentEventType);
+  // TODO: canAddEvent variable was removed as it appeared unused
   const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
   if (isLoading) {
