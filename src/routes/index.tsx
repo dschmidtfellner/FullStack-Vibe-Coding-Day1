@@ -1129,16 +1129,14 @@ function LogsListView() {
       setIsLoading(true);
     }
 
-    console.log('Setting up logs listener for child:', state.childId);
     const unsubscribe = listenToLogs(state.childId, (newLogs) => {
-      console.log('Received logs update:', newLogs.length, 'logs');
       setLogs(newLogs); // Update navigation state
       setIsLoading(false);
       setHasLoadedOnce(true);
     });
 
     return unsubscribe;
-  }, [state.childId, setLogs]);
+  }, [state.childId]);
 
   // Format time in the baby's timezone
   const formatTimeInTimezone = (timestamp: any) => {
