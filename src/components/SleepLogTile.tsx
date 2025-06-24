@@ -76,7 +76,7 @@ export function SleepLogTile({
               e.stopPropagation(); // Prevent tile click
               onContinueLogging();
             }}
-            className="px-4 py-2 rounded-full font-karla transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
+            className="px-4 py-2 rounded-full transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
             style={{
               fontSize: '14px',
               fontWeight: '400'

@@ -1412,6 +1412,28 @@ function LogDetailView() {
     }
   };
 
+  // Temporary delete function for testing
+  const handleDeleteLog = async () => {
+    if (!log || !state.logId) return;
+    
+    const confirmDelete = confirm('Are you sure you want to delete this log? This action cannot be undone.');
+    if (!confirmDelete) return;
+    
+    try {
+      // Simple Firebase delete
+      const { deleteDoc, doc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      
+      await deleteDoc(doc(db, 'logs', state.logId));
+      
+      // Navigate back to logs list
+      navigateBack();
+    } catch (error) {
+      console.error('Error deleting log:', error);
+      alert('Failed to delete log. Please try again.');
+    }
+  };
+
 
   // Only show skeleton if we're loading AND have no log data
   if (isLoading && !log) {
@@ -1449,8 +1471,8 @@ function LogDetailView() {
       {/* Top spacing - minimal for iframe embedding */}
       <div className="h-[20px]"></div>
 
-      {/* Back Button */}
-      <div className="px-4 py-2">
+      {/* Back Button and Delete Button */}
+      <div className="px-4 py-2 flex items-center justify-between">
         <button
           onClick={navigateBack}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
@@ -1463,6 +1485,17 @@ function LogDetailView() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           <span className="text-sm font-medium">Back</span>
+        </button>
+        
+        {/* Temporary Delete Button */}
+        <button
+          onClick={handleDeleteLog}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span className="text-sm font-medium">Delete</span>
         </button>
       </div>
 
@@ -1724,6 +1757,7 @@ function SleepLogModal() {
   const [showEndOfSleep, setShowEndOfSleep] = useState(false);
   const [currentLogId, setCurrentLogId] = useState<string | null>(null);
   const [isInitialMount, setIsInitialMount] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
@@ -1745,7 +1779,16 @@ function SleepLogModal() {
     const timer = setTimeout(() => {
       setIsInitialMount(false);
     }, 350); // Slightly longer than animation duration
-    return () => clearTimeout(timer);
+    
+    // Also set initial loading to false after a short delay
+    const loadingTimer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(loadingTimer);
+    };
   }, []);
 
   // Load existing log if editing
@@ -2023,14 +2066,7 @@ function SleepLogModal() {
 
   // Cancel and go back
   const handleCancel = () => {
-    // If there are events, ask user what to do with simpler options
-    if (events.length > 0 && user) {
-      const leave = confirm('You have unsaved changes. Are you sure you want to leave without saving?');
-      if (!leave) {
-        return; // Stay on page
-      }
-    }
-    
+    // Events are saved as they go, so no need to warn about unsaved changes
     // Navigate back without saving using navigation context
     navigateBack();
   };
@@ -2039,7 +2075,7 @@ function SleepLogModal() {
   // TODO: canAddEvent variable was removed as it appeared unused
   const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
-  if (isLoading) {
+  if (isLoading && isInitialLoading) {
     return <SleepLogModalSkeleton user={user} />;
   }
 
