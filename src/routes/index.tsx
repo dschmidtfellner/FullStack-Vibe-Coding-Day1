@@ -1552,28 +1552,28 @@ function LogDetailView() {
                         <span className={`text-base ${
                           user?.darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          Total time asleep: {stats.totalTimeAsleep}
+                          {stats.totalTimeAsleep} asleep
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className={`text-base ${
                           user?.darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          Total time awake in bed: {stats.totalTimeAwakeInBed}
+                          {stats.totalTimeAwakeInBed} awake in bed
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className={`text-base ${
                           user?.darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          Total number of wake-ups: {stats.numberOfWakeUps}
+                          {stats.numberOfWakeUps} wake-ups
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className={`text-base ${
                           user?.darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          Average wake-up duration: {stats.averageWakeUpDuration}
+                          {stats.averageWakeUpDuration} avg wake-up
                         </span>
                       </div>
                     </>
