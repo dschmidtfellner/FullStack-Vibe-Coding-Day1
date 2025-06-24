@@ -2085,9 +2085,9 @@ function SleepLogModal() {
       <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16 pb-4">
+      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16">
         <div 
-          className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
+          className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative flex flex-col ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
@@ -2110,7 +2110,7 @@ function SleepLogModal() {
           <div className="h-[20px]"></div>
 
       {/* Content - Ensure space for fixed buttons */}
-      <div className="overflow-y-auto px-8 py-8" style={{ paddingBottom: '120px', height: 'calc(85vh - 100px)' }}>
+      <div className="overflow-y-auto px-8 py-8 flex-1">
         
         {/* Sleep Consulting Client Flow - First Screen */}
         {clientType === 'sleep-consulting' && events.length === 0 && (
@@ -2311,30 +2311,28 @@ function SleepLogModal() {
         
       </div>
 
-      {/* Fixed bottom actions */}
-      <div className="fixed left-1/2 transform -translate-x-1/2 z-50" style={{ bottom: '0px', width: '100%', maxWidth: '600px', padding: '0 16px' }}>
-        <div className={`border-t p-4 ${
-          user?.darkMode 
-            ? 'border-gray-700 bg-[#2d2637]' 
-            : 'border-gray-200 bg-white'
-        }`}>
-          <button
-            onClick={handleSave}
-            disabled={!canSave || isLoading}
-            className={`btn w-full text-white text-lg py-4 h-14 rounded-2xl ${
-              user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
-            }`}
-            style={{ 
-              backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
-            }}
-          >
-            {isLoading ? (
-              <div className="loading loading-spinner w-5 h-5"></div>
-            ) : (
-              'Save Log'
-            )}
-          </button>
-        </div>
+      {/* Bottom actions - now inside modal */}
+      <div className={`border-t p-4 mt-auto ${
+        user?.darkMode 
+          ? 'border-gray-700 bg-[#2d2637]' 
+          : 'border-gray-200 bg-white'
+      }`}>
+        <button
+          onClick={handleSave}
+          disabled={!canSave || isLoading}
+          className={`btn w-full text-white text-lg py-4 h-14 rounded-2xl ${
+            user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
+          }`}
+          style={{ 
+            backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
+          }}
+        >
+          {isLoading ? (
+            <div className="loading loading-spinner w-5 h-5"></div>
+          ) : (
+            'Save Log'
+          )}
+        </button>
       </div>
         </div>
       </div>
