@@ -1615,7 +1615,7 @@ function LogDetailView() {
         <div>
           <button
             onClick={() => setHeadlinesExpanded(!headlinesExpanded)}
-            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+            className={`w-full px-4 py-2 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
@@ -1633,7 +1633,7 @@ function LogDetailView() {
           
           {headlinesExpanded && (
             <div className="px-4 pb-4">
-              <div className="space-y-3">
+              <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
                 <div className="flex justify-between items-center">
                   <span className={`text-base ${
                     user?.darkMode ? 'text-white' : 'text-gray-800'
@@ -1664,7 +1664,7 @@ function LogDetailView() {
         <div>
           <button
             onClick={() => setLogExpanded(!logExpanded)}
-            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+            className={`w-full px-4 py-2 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
@@ -1682,7 +1682,7 @@ function LogDetailView() {
           
           {logExpanded && log.events && log.events.length > 0 && (
             <div className="px-4 pb-4">
-              <div className="space-y-3">
+              <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
                 {log.events
                   .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
                   .map((event, index) => (
@@ -1692,9 +1692,7 @@ function LogDetailView() {
                       }`}>
                         {getEventTypeText(event.type)}
                       </span>
-                      <span className={`text-base ${
-                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
+                      <span className="text-base" style={{ color: '#745288' }}>
                         {event.localTime}
                       </span>
                     </div>
@@ -1708,7 +1706,7 @@ function LogDetailView() {
         <div className="flex-1 flex flex-col min-h-0 pb-20">
           <button
             onClick={() => setCommentsExpanded(!commentsExpanded)}
-            className={`w-full px-4 py-4 flex items-center justify-between text-left ${
+            className={`w-full px-4 py-2 flex items-center justify-between text-left ${
               user?.darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
@@ -1727,7 +1725,7 @@ function LogDetailView() {
           {commentsExpanded && (
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               {comments.length === 0 ? (
-                <div className="space-y-3">
+                <div className="border-l-4 pl-4 ml-4 space-y-3" style={{ borderColor: '#E8D5F2' }}>
                   <div className="flex justify-between items-center">
                     <span className={`text-base italic ${
                       user?.darkMode ? 'text-gray-400' : 'text-gray-600'
@@ -1737,18 +1735,20 @@ function LogDetailView() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="border-l-4 pl-4 ml-4 space-y-4" style={{ borderColor: '#E8D5F2' }}>
                   {comments.map((comment) => {
                     const isOwn = user?.id === comment.senderId;
                     return (
                       <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                         <div className="max-w-[75%] flex flex-col">
                           {/* Sender name and timestamp */}
-                          <div className={`text-xs mb-1 flex justify-between items-center ${
-                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            <span>{comment.senderName}</span>
-                            <span>{formatTimeInTimezone(comment.timestamp)}</span>
+                          <div className="text-xs mb-1 flex justify-between items-center">
+                            <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                              {comment.senderName}
+                            </span>
+                            <span style={{ color: '#745288' }}>
+                              {formatTimeInTimezone(comment.timestamp)}
+                            </span>
                           </div>
                           
                           {/* Comment bubble */}
