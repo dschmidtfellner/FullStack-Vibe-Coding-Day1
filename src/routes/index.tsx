@@ -386,7 +386,7 @@ function LogDetailSkeleton({ user }: { user: any }) {
       {/* Content skeleton */}
       <div className="px-4 py-4">
         <div className={`p-4 rounded-lg mb-4 ${
-          user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-50'
+          user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-gray-50'
         }`}>
           <div className={`h-6 w-20 rounded animate-pulse mb-3 ${
             user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
@@ -520,7 +520,7 @@ function LoadingScreen({ message = "Loading..." }: { message?: string }) {
   return (
     <div className="not-prose min-h-screen flex items-center justify-center bg-[#15111B]">
       <div className="text-center">
-        <div className="loading loading-spinner w-8 h-8 text-purple-600 mb-4"></div>
+        <div className="loading loading-spinner w-8 h-8 mb-4" style={{ color: '#745288' }}></div>
         <p className="text-gray-300">{message}</p>
       </div>
     </div>
@@ -939,7 +939,7 @@ function MessagingApp() {
                             reaction.users.includes(user?.id || '')
                               ? user?.darkMode
                                 ? 'bg-[#2d2637] border-gray-600 text-white'
-                                : 'bg-purple-100 border-purple-300 text-purple-700'
+                                : 'bg-gray-100 border-gray-300 text-gray-700'
                               : user?.darkMode
                                 ? 'bg-[#3a3a3a] border-gray-600 text-white hover:bg-[#4a4a4a]'
                                 : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
@@ -1208,10 +1208,10 @@ function LogsListView() {
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-              user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-purple-100'
+              user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-gray-100'
             }`}>
               <Moon className={`w-8 h-8 ${
-                user?.darkMode ? 'text-purple-400' : 'text-purple-600'
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
               }`} />
             </div>
             <h3 className={`text-lg font-semibold mb-2 ${
@@ -1626,9 +1626,9 @@ function LogDetailView() {
             }`}>
               Headlines
             </h2>
-            <div className={`w-6 h-6 ${
-              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
-            }`}>
+            <div className="w-6 h-6" style={{ 
+              color: user?.darkMode ? '#c084fc' : '#745288' 
+            }}>
               {headlinesExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </div>
           </button>
@@ -1662,9 +1662,9 @@ function LogDetailView() {
             }`}>
               Log
             </h2>
-            <div className={`w-6 h-6 ${
-              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
-            }`}>
+            <div className="w-6 h-6" style={{ 
+              color: user?.darkMode ? '#c084fc' : '#745288' 
+            }}>
               {logExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </div>
           </button>
@@ -1706,9 +1706,9 @@ function LogDetailView() {
             }`}>
               Comments
             </h2>
-            <div className={`w-6 h-6 ${
-              user?.darkMode ? 'text-purple-400' : 'text-purple-600'
-            }`}>
+            <div className="w-6 h-6" style={{ 
+              color: user?.darkMode ? '#c084fc' : '#745288' 
+            }}>
               {commentsExpanded ? <Minus className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </div>
           </button>
@@ -2314,12 +2314,16 @@ function SleepLogModal() {
                   className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     sleepType === 'nap'
                       ? user?.darkMode
-                        ? 'border-purple-400 bg-[#3a2f4a] text-white'
-                        : 'border-purple-500 bg-purple-50 text-purple-700'
+                        ? 'bg-[#3a2f4a] text-white'
+                        : 'bg-white text-gray-800'
                       : user?.darkMode
                         ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
+                  style={{
+                    borderColor: sleepType === 'nap' ? '#745288' : undefined,
+                    backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#f3f0f6' : undefined
+                  }}
                 >
                   <Sun className="w-6 h-6 mx-auto mb-2" />
                   <div className="text-base font-medium">Nap</div>
@@ -2329,12 +2333,16 @@ function SleepLogModal() {
                   className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     sleepType === 'bedtime'
                       ? user?.darkMode
-                        ? 'border-purple-400 bg-[#3a2f4a] text-white'
-                        : 'border-purple-500 bg-purple-50 text-purple-700'
+                        ? 'bg-[#3a2f4a] text-white'
+                        : 'bg-white text-gray-800'
                       : user?.darkMode
                         ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
+                  style={{
+                    borderColor: sleepType === 'bedtime' ? '#745288' : undefined,
+                    backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#f3f0f6' : undefined
+                  }}
                 >
                   <Moon className="w-6 h-6 mx-auto mb-2" />
                   <div className="text-base font-medium">Bedtime</div>
