@@ -1632,14 +1632,29 @@ function LogDetailView() {
           </button>
           
           {headlinesExpanded && (
-            <div className={`px-4 pb-4 ${
-              user?.darkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              {/* Placeholder for headlines content */}
-              <div className="space-y-2">
-                <p className="text-sm">Sleep Quality: Good</p>
-                <p className="text-sm">Total Sleep Time: 2h 15m</p>
-                <p className="text-sm">Time to Fall Asleep: 12 minutes</p>
+            <div className="px-4 pb-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    Sleep Quality: Good
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    Total Sleep Time: 2h 15m
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    Time to Fall Asleep: 12 minutes
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1710,44 +1725,50 @@ function LogDetailView() {
           </button>
 
           {commentsExpanded && (
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
               {comments.length === 0 ? (
-                <div className={`text-sm italic ${
-                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  No comments yet
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className={`text-base italic ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      No comments yet
+                    </span>
+                  </div>
                 </div>
               ) : (
-                comments.map((comment) => {
-                  const isOwn = user?.id === comment.senderId;
-                  return (
-                    <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                      <div className="max-w-[75%] flex flex-col">
-                        {/* Sender name and timestamp */}
-                        <div className={`text-xs mb-1 flex justify-between items-center ${
-                          user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <span>{comment.senderName}</span>
-                          <span>{formatTimeInTimezone(comment.timestamp)}</span>
-                        </div>
-                        
-                        {/* Comment bubble */}
-                        <div 
-                          className={`min-w-[100px] rounded-2xl px-4 py-3 ${
-                            isOwn 
-                              ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
-                              : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                          }`} 
-                          style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
-                        >
-                          <p className="text-sm leading-relaxed">{comment.text}</p>
+                <div className="space-y-4">
+                  {comments.map((comment) => {
+                    const isOwn = user?.id === comment.senderId;
+                    return (
+                      <div key={comment.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className="max-w-[75%] flex flex-col">
+                          {/* Sender name and timestamp */}
+                          <div className={`text-xs mb-1 flex justify-between items-center ${
+                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            <span>{comment.senderName}</span>
+                            <span>{formatTimeInTimezone(comment.timestamp)}</span>
+                          </div>
+                          
+                          {/* Comment bubble */}
+                          <div 
+                            className={`min-w-[100px] rounded-2xl px-4 py-3 ${
+                              isOwn 
+                                ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
+                                : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
+                            }`} 
+                            style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#f0ddef') : undefined }}
+                          >
+                            <p className="text-sm leading-relaxed">{comment.text}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                  <div ref={commentsEndRef} />
+                </div>
               )}
-              <div ref={commentsEndRef} />
             </div>
           )}
         </div>
