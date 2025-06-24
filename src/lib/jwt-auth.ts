@@ -35,8 +35,11 @@ const secret = new TextEncoder().encode(JWT_SECRET);
  */
 export async function validateJWTToken(token: string): Promise<BubbleUser | null> {
   try {
-    console.log('JWT_SECRET from env:', JWT_SECRET);
-    console.log('Token to validate:', token.substring(0, 50) + '...');
+    // Debug logging only in development
+    if (import.meta.env.DEV) {
+      console.log('JWT_SECRET from env:', JWT_SECRET?.substring(0, 10) + '...');
+      console.log('Token to validate:', token.substring(0, 20) + '...');
+    }
     
     // Decode and verify the token
     const { payload } = await jwtVerify(token, secret);
@@ -44,7 +47,9 @@ export async function validateJWTToken(token: string): Promise<BubbleUser | null
     
     // Validate required fields
     if (!decoded.userId || !decoded.name || !decoded.userType || !Array.isArray(decoded.childIds)) {
-      console.error('Invalid JWT payload: missing required fields');
+      if (import.meta.env.DEV) {
+        console.error('Invalid JWT payload: missing required fields');
+      }
       return null;
     }
     
@@ -67,7 +72,9 @@ export async function validateJWTToken(token: string): Promise<BubbleUser | null
       isAuthenticated: true,
     };
   } catch (error) {
-    console.error('JWT validation failed:', error);
+    if (import.meta.env.DEV) {
+      console.error('JWT validation failed:', error);
+    }
     return null;
   }
 }

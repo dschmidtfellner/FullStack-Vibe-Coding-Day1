@@ -61,7 +61,9 @@ export async function getOrCreateConversation(childId: string, childName?: strin
         participantNames: {},
         createdAt: serverTimestamp(),
       });
-      console.log('Created new conversation:', conversationId);
+      if (import.meta.env.DEV) {
+        console.log('Created new conversation:', conversationId);
+      }
     }
     
     return conversationId;
@@ -101,7 +103,9 @@ export async function sendMessage(
   childId: string
 ) {
   try {
-    console.log('Firebase sendMessage called with:', { senderId, senderName, text, conversationId, childId });
+    if (import.meta.env.DEV) {
+      console.log('Firebase sendMessage called with:', { senderId, senderName, text: text.substring(0, 50), conversationId, childId });
+    }
     
     const messageData = {
       text,
@@ -114,9 +118,10 @@ export async function sendMessage(
       read: false,
     };
     
-    console.log('Adding document to Firestore:', messageData);
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
-    console.log('Document added successfully with ID:', messageRef.id);
+    if (import.meta.env.DEV) {
+      console.log('Message sent successfully with ID:', messageRef.id);
+    }
 
     // Update conversation with last message info
     await updateConversationLastMessage(conversationId, text, serverTimestamp());
@@ -124,7 +129,6 @@ export async function sendMessage(
     return messageRef.id;
   } catch (error) {
     console.error('Error sending message:', error);
-    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
@@ -134,26 +138,21 @@ export async function sendMessage(
  */
 export async function uploadFile(file: File, path: string): Promise<string> {
   try {
-    console.log('Starting file upload to Firebase Storage:', {
-      fileName: file.name,
-      fileSize: file.size,
-      path: path
-    });
+    if (import.meta.env.DEV) {
+      console.log('Uploading file:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    }
     
     const fileRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-    console.log('Created storage reference:', fileRef.fullPath);
-    
-    console.log('Uploading file to Firebase Storage...');
     const snapshot = await uploadBytes(fileRef, file);
-    console.log('File uploaded successfully, getting download URL...');
-    
     const downloadURL = await getDownloadURL(snapshot.ref);
-    console.log('Download URL obtained:', downloadURL);
+    
+    if (import.meta.env.DEV) {
+      console.log('File uploaded successfully');
+    }
     
     return downloadURL;
   } catch (error) {
     console.error('Error uploading file:', error);
-    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
@@ -676,7 +675,9 @@ export function listenToLogs(
   limitCount: number = 20,
   lastVisible?: any
 ) {
-  console.log('Setting up logs listener:', { childId, limitCount, lastVisible });
+  if (import.meta.env.DEV) {
+    console.log('Setting up logs listener:', { childId, limitCount });
+  }
   
   let q = query(
     collection(db, 'logs'),
@@ -696,7 +697,9 @@ export function listenToLogs(
   }
 
   return onSnapshot(q, (snapshot) => {
-    console.log('Logs snapshot received:', snapshot.docs.length, 'logs');
+    if (import.meta.env.DEV) {
+      console.log('Logs snapshot received:', snapshot.docs.length, 'logs');
+    }
     const logs = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
