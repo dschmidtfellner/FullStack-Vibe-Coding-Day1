@@ -1221,11 +1221,13 @@ function LogsListView() {
               
               {/* Logs for this date */}
               <div className="space-y-3 px-4 pt-3">
-                {dateLogs.map((log, index) => {
-                  // Count naps for numbering (only count naps before this one in the same day)
-                  const napNumber = dateLogs
-                    .slice(0, index + 1)
-                    .filter(l => l.sleepType === 'nap').length;
+                {(() => {
+                  const sortedLogs = dateLogs.sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime()); // Sort by timestamp (oldest first)
+                  return sortedLogs.map((log, index) => {
+                    // Count naps for numbering (only count naps before this one in the sorted array)
+                    const napNumber = sortedLogs
+                      .slice(0, index + 1)
+                      .filter(l => l.sleepType === 'nap').length;
                   
                   return (
                     <SleepLogTile
@@ -1239,7 +1241,8 @@ function LogsListView() {
                       showClickable={true}
                     />
                   );
-                })}
+                  });
+                })()}
               </div>
             </div>
           ))
@@ -1275,13 +1278,14 @@ function LogsListView() {
 
 function LogDetailView() {
   const { user } = useBubbleAuth();
-  const { state, navigateToEditLog, updateLog } = useNavigation();
+  const { state, navigateToEditLog, navigateBack, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
   const [newComment, setNewComment] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const logEventsRef = useRef<HTMLDivElement>(null);
   
   // Section collapse states - Headlines collapsed by default, Log and Comments expanded
   const [headlinesExpanded, setHeadlinesExpanded] = useState(false);
@@ -1343,6 +1347,26 @@ function LogDetailView() {
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments]);
+
+  // Scroll to log events to show recent timestamps behind modal
+  useEffect(() => {
+    // Check if we're in the log detail view and expand log section by default
+    if (log && log.events && log.events.length > 0) {
+      setLogExpanded(true);
+      
+      // Scroll to show the most recent events after a short delay
+      const timer = setTimeout(() => {
+        if (logEventsRef.current) {
+          const lastEvent = logEventsRef.current.lastElementChild;
+          if (lastEvent) {
+            lastEvent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [log, state.view]); // Run when log data changes or view changes
 
   // Format time in the baby's timezone
   const formatTimeInTimezone = (timestamp: any) => {
@@ -1425,6 +1449,23 @@ function LogDetailView() {
       {/* Top spacing - minimal for iframe embedding */}
       <div className="h-[20px]"></div>
 
+      {/* Back Button */}
+      <div className="px-4 py-2">
+        <button
+          onClick={navigateBack}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            user?.darkMode 
+              ? 'text-gray-300 hover:bg-gray-800' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm font-medium">Back</span>
+        </button>
+      </div>
+
       {/* Log Tile - Visual Continuity from List View */}
       <div className="px-4 py-4">
         <SleepLogTile
@@ -1471,7 +1512,7 @@ function LogDetailView() {
                         <span className={`text-base ${
                           user?.darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          Total duration ({stats.timeRange}): {stats.totalDuration}
+                          {stats.timeRange}, {stats.totalDuration}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -1532,7 +1573,7 @@ function LogDetailView() {
           
           {logExpanded && log.events && log.events.length > 0 && (
             <div className="px-4 pb-4">
-              <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+              <div ref={logEventsRef} className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 {log.events
                   .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
                   .map((event, index) => (
@@ -1682,6 +1723,7 @@ function SleepLogModal() {
   const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
   const [showEndOfSleep, setShowEndOfSleep] = useState(false);
   const [currentLogId, setCurrentLogId] = useState<string | null>(null);
+  const [isInitialMount, setIsInitialMount] = useState(true);
   
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
@@ -1697,6 +1739,14 @@ function SleepLogModal() {
       setSleepType('bedtime');
     }
   }, []); // Empty dependency array - only run once on mount
+
+  // Track initial mount for animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialMount(false);
+    }, 350); // Slightly longer than animation duration
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load existing log if editing
   useEffect(() => {
@@ -2005,7 +2055,7 @@ function SleepLogModal() {
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
-            animation: 'slideUp 0.3s ease-out'
+            animation: isInitialMount ? 'slideUp 0.3s ease-out' : 'none'
           }}
         >
           {/* Close button - X in upper right */}
