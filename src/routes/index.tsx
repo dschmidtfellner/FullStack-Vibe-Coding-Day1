@@ -1633,7 +1633,7 @@ function LogDetailView() {
           
           {headlinesExpanded && (
             <div className="px-4 pb-4">
-              <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+              <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 <div className="flex justify-between items-center">
                   <span className={`text-base ${
                     user?.darkMode ? 'text-white' : 'text-gray-800'
@@ -1682,7 +1682,7 @@ function LogDetailView() {
           
           {logExpanded && log.events && log.events.length > 0 && (
             <div className="px-4 pb-4">
-              <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+              <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 {log.events
                   .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
                   .map((event, index) => (
@@ -1725,7 +1725,7 @@ function LogDetailView() {
           {commentsExpanded && (
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               {comments.length === 0 ? (
-                <div className="border-l-4 pl-4 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+                <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                   <div className="flex justify-between items-center">
                     <span className={`text-base italic ${
                       user?.darkMode ? 'text-gray-400' : 'text-gray-600'
@@ -1735,7 +1735,7 @@ function LogDetailView() {
                   </div>
                 </div>
               ) : (
-                <div className="border-l-4 pl-4 space-y-4" style={{ borderColor: '#F0DDEF' }}>
+                <div className="border-l-4 pl-2 space-y-4" style={{ borderColor: '#F0DDEF' }}>
                   {comments.map((comment) => {
                     const isOwn = user?.id === comment.senderId;
                     return (
