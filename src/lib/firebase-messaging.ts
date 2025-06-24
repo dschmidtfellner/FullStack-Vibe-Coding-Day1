@@ -585,19 +585,20 @@ export async function updateSleepLog(
     }));
     
     // Calculate duration if log is complete
-    let duration: number | undefined;
+    const updateData: any = {
+      events: sleepEvents,
+      isComplete,
+      updatedAt: serverTimestamp(),
+    };
+    
+    // Only include duration if log is complete
     if (isComplete && sleepEvents.length >= 2) {
       const sleepPeriods = calculateSleepDuration(sleepEvents);
-      duration = sleepPeriods.totalSleepMinutes;
+      updateData.duration = sleepPeriods.totalSleepMinutes;
     }
     
     const logRef = doc(db, 'logs', logId);
-    await updateDoc(logRef, {
-      events: sleepEvents,
-      isComplete,
-      duration,
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(logRef, updateData);
     
     console.log('Sleep log updated successfully');
   } catch (error) {
