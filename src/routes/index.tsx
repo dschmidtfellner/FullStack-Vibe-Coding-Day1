@@ -404,7 +404,7 @@ function LogDetailSkeleton({ user }: { user: any }) {
 
 function SleepLogModalSkeleton({ user }: { user: any }) {
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+    <div className={`relative h-full font-['Poppins'] max-w-[600px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
       {/* Top spacing */}
@@ -2085,9 +2085,9 @@ function SleepLogModal() {
       <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-4 pt-16">
+      <div className="fixed inset-0 z-50 flex items-end justify-center px-4">
         <div 
-          className={`w-full max-w-[800px] h-[75vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
+          className={`w-full max-w-[600px] h-full font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
@@ -2110,7 +2110,7 @@ function SleepLogModal() {
           <div className="h-[20px]"></div>
 
       {/* Content - Ensure space for fixed buttons */}
-      <div className="overflow-y-auto px-4 py-6" style={{ paddingBottom: '120px', height: 'calc(75vh - 100px)' }}>
+      <div className="overflow-y-auto px-8 py-8" style={{ paddingBottom: '120px', height: 'calc(100vh - 100px)' }}>
         
         {/* Sleep Consulting Client Flow - First Screen */}
         {clientType === 'sleep-consulting' && events.length === 0 && (
@@ -2298,7 +2298,7 @@ function SleepLogModal() {
               <div className="text-center">
                 <button
                   onClick={() => setShowEndOfSleep(true)}
-                  className={`text-sm underline ${
+                  className={`text-base underline ${
                     user?.darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'
                   }`}
                 >
@@ -2316,12 +2316,12 @@ function SleepLogModal() {
         user?.darkMode 
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '20px' }}>
-        <div className="max-w-[800px] mx-auto p-4">
+      }`} style={{ bottom: '0px' }}>
+        <div className="max-w-[600px] mx-auto p-4">
           <button
             onClick={handleSave}
             disabled={!canSave || isLoading}
-            className={`btn w-full text-white text-lg py-4 h-14 ${
+            className={`btn w-full text-white text-lg py-4 h-14 rounded-2xl ${
               user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
             }`}
             style={{ 
