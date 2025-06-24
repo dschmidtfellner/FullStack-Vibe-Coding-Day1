@@ -1689,16 +1689,16 @@ function SleepLogModal() {
   const urlParams = new URLSearchParams(window.location.search);
   const clientType = urlParams.get('clientType') || 'sleep-consulting';
   
-  // Set default sleep type based on time
+  // Set default sleep type based on time (only on initial load)
   useEffect(() => {
-    const hour = currentTime.getHours();
+    const hour = new Date().getHours();
     // If between 4:00am and 6:00pm, default to nap, otherwise bedtime
     if (hour >= 4 && hour < 18) {
       setSleepType('nap');
     } else {
       setSleepType('bedtime');
     }
-  }, [currentTime]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Load existing log if editing
   useEffect(() => {
@@ -1893,8 +1893,6 @@ function SleepLogModal() {
           state.timezone
         );
         
-        console.log('Created new sleep log with ID:', newLogId);
-        
         // Store the log ID for subsequent events
         setCurrentLogId(newLogId);
         
@@ -1917,7 +1915,6 @@ function SleepLogModal() {
         
         // Update the existing log
         const logIdToUse = state.logId || currentLogId;
-        console.log('Updating sleep log with:', { logIdToUse, stateLogId: state.logId, currentLogId, eventsLength: updatedEvents.length });
         
         if (!logIdToUse) {
           throw new Error('No log ID available for update');
