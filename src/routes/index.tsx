@@ -2085,9 +2085,9 @@ function SleepLogModal() {
       <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end justify-center px-4">
+      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16 pb-4">
         <div 
-          className={`w-full max-w-[600px] h-full font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
+          className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
@@ -2110,7 +2110,7 @@ function SleepLogModal() {
           <div className="h-[20px]"></div>
 
       {/* Content - Ensure space for fixed buttons */}
-      <div className="overflow-y-auto px-8 py-8" style={{ paddingBottom: '120px', height: 'calc(100vh - 100px)' }}>
+      <div className="overflow-y-auto px-8 py-8" style={{ paddingBottom: '120px', height: 'calc(85vh - 100px)' }}>
         
         {/* Sleep Consulting Client Flow - First Screen */}
         {clientType === 'sleep-consulting' && events.length === 0 && (
@@ -2312,12 +2312,12 @@ function SleepLogModal() {
       </div>
 
       {/* Fixed bottom actions */}
-      <div className={`fixed left-0 right-0 border-t z-50 ${
-        user?.darkMode 
-          ? 'border-gray-700 bg-[#2d2637]' 
-          : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '0px' }}>
-        <div className="max-w-[600px] mx-auto p-4">
+      <div className="fixed left-1/2 transform -translate-x-1/2 z-50" style={{ bottom: '16px', width: '100%', maxWidth: '600px', padding: '0 16px' }}>
+        <div className={`border-t p-4 rounded-b-3xl ${
+          user?.darkMode 
+            ? 'border-gray-700 bg-[#2d2637]' 
+            : 'border-gray-200 bg-white'
+        }`}>
           <button
             onClick={handleSave}
             disabled={!canSave || isLoading}
