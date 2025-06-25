@@ -2317,14 +2317,14 @@ function SleepLogModal() {
 
             {/* Subevent Context with Inline Time Input */}
             <div className="mb-8">
-              <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+              <div className="border-l-4 pl-2" style={{ borderColor: '#F0DDEF' }}>
                 {(() => {
                   // Get last 3 events for context
                   const recentEvents = events.slice(-3);
                   const hasMoreEvents = events.length > 3;
                   
                   return (
-                    <>
+                    <div className="space-y-4">
                       {/* Show recent events */}
                       {recentEvents.map((event, index) => {
                         const isTopEvent = index === 0 && hasMoreEvents;
@@ -2357,14 +2357,15 @@ function SleepLogModal() {
                             type="time"
                             value={formatTimeForInput(currentTime)}
                             onChange={(e) => handleTimeChange(e.target.value)}
-                            className={`input input-bordered text-base py-2 h-10 ${
+                            className={`input input-bordered text-base py-2 h-10 text-right ${
                               user?.darkMode 
                                 ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                                 : 'bg-white border-gray-300 text-gray-800'
                             }`}
                             style={{ 
                               width: '120px',
-                              fontFamily: 'inherit'
+                              fontFamily: 'inherit',
+                              direction: 'rtl'
                             }}
                           />
                           {/* Show "Now" if current time is selected */}
@@ -2381,7 +2382,7 @@ function SleepLogModal() {
                           })()}
                         </div>
                       </div>
-                    </>
+                    </div>
                   );
                 })()}
               </div>
