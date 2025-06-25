@@ -2363,91 +2363,88 @@ function SleepLogModal() {
                         );
                       })}
                       
-                      {/* Next event with tile selector */}
-                      <div className="space-y-3">
-                        {/* Event type tile selector */}
-                        {(() => {
-                          const options = getEventTypeOptions();
-                          const currentType = getCurrentEventType();
-                          
-                          return (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setSelectedEventType(options.primary)}
-                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
-                                  currentType === options.primary
-                                    ? user?.darkMode
-                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
-                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
-                                    : user?.darkMode
-                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                }`}
-                              >
-                                {getEventTypeText(options.primary)}
-                              </button>
-                              <button
-                                onClick={() => setSelectedEventType(options.secondary)}
-                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
-                                  currentType === options.secondary
-                                    ? user?.darkMode
-                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
-                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
-                                    : user?.darkMode
-                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                }`}
-                              >
-                                <div>{getEventTypeText(options.secondary)}</div>
-                                {getEventTypeText(options.secondary) === 'Out of bed' && (
-                                  <div className={`text-xs mt-1 ${
-                                    user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                                  }`}>
-                                    i.e. End of Sleep
-                                  </div>
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })()}
-                        
-                        {/* Time input row */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-base" style={{ color: '#745288' }}>
-                            {getEventTypeText(getCurrentEventType())}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <div className="relative" style={{ width: '120px' }}>
-                              <input
-                                type="time"
-                                value={formatTimeForInput(currentTime)}
-                                onChange={(e) => handleTimeChange(e.target.value)}
-                                className={`time-input-custom input input-bordered text-base py-2 h-10 w-full ${
-                                  user?.darkMode 
-                                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                                    : 'bg-white border-gray-300 text-gray-800'
-                                }`}
-                                style={{ 
-                                  fontFamily: 'inherit',
-                                  paddingLeft: '32px'
-                                }}
-                              />
-                            </div>
-                            {/* Show "Now" if current time is selected */}
-                            {(() => {
-                              const now = new Date();
-                              const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                              const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                              
-                              return isCurrentTime && (
-                                <span className="text-sm" style={{ color: '#745288' }}>
-                                  Now
-                                </span>
-                              );
-                            })()}
+                      {/* Time input row */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-base" style={{ color: '#745288' }}>
+                          {getEventTypeText(getCurrentEventType())}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="relative" style={{ width: '120px' }}>
+                            <input
+                              type="time"
+                              value={formatTimeForInput(currentTime)}
+                              onChange={(e) => handleTimeChange(e.target.value)}
+                              className={`time-input-custom input input-bordered text-base py-2 h-10 w-full ${
+                                user?.darkMode 
+                                  ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-800'
+                              }`}
+                              style={{ 
+                                fontFamily: 'inherit',
+                                paddingLeft: '32px'
+                              }}
+                            />
                           </div>
+                          {/* Show "Now" if current time is selected */}
+                          {(() => {
+                            const now = new Date();
+                            const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                            const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                            
+                            return isCurrentTime && (
+                              <span className="text-sm" style={{ color: '#745288' }}>
+                                Now
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
+                      
+                      {/* Event type tile selector - positioned below and left-aligned */}
+                      {(() => {
+                        const options = getEventTypeOptions();
+                        const currentType = getCurrentEventType();
+                        
+                        return (
+                          <div className="flex gap-2 mt-3" style={{ width: '50%' }}>
+                            <button
+                              onClick={() => setSelectedEventType(options.primary)}
+                              className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                currentType === options.primary
+                                  ? user?.darkMode
+                                    ? 'bg-[#3a2f4a] text-white border-[#745288]'
+                                    : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                  : user?.darkMode
+                                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                              }`}
+                            >
+                              {getEventTypeText(options.primary)}
+                            </button>
+                            <button
+                              onClick={() => setSelectedEventType(options.secondary)}
+                              className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                currentType === options.secondary
+                                  ? user?.darkMode
+                                    ? 'bg-[#3a2f4a] text-white border-[#745288]'
+                                    : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                  : user?.darkMode
+                                    ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                              }`}
+                            >
+                              <div>{getEventTypeText(options.secondary)}</div>
+                              {getEventTypeText(options.secondary) === 'Out of bed' && (
+                                <div className={`text-xs mt-1 ${
+                                  user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                  i.e. End of Sleep
+                                </div>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
