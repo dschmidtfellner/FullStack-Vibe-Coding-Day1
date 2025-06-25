@@ -46,27 +46,28 @@ body {
 
 /* Style the time input to show clock icon on the left */
 .time-input-custom::-webkit-calendar-picker-indicator {
-  background: transparent;
-  bottom: 0;
-  color: transparent;
-  cursor: pointer;
-  height: auto;
-  left: 8px;
-  position: absolute;
-  right: auto;
-  top: 0;
-  width: auto;
-  opacity: 0.6;
+  background-image: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 1 !important;
 }
 
-/* Show clock icon */
-.time-input-custom::-webkit-calendar-picker-indicator:before {
-  content: "🕐";
-  font-size: 16px;
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+/* Add clock icon using after pseudo-element */
+.time-input-custom::after {
+  content: "🕐" !important;
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 16px !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
 }
 
 /* Firefox time input styling */
