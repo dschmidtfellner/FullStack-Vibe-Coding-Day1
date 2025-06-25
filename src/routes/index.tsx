@@ -4,6 +4,7 @@ import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucid
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
+import TimePicker from 'react-time-picker';
 import { FirebaseMessage } from "@/types/firebase";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import {
@@ -1946,22 +1947,13 @@ function SleepLogModal() {
     }).format(date);
   };
 
-  // Handle time input change
-  const handleTimeChange = (timeString: string) => {
+  // Handle time input change - compatible with react-time-picker
+  const handleTimeChange = (timeString: string | null) => {
+    if (!timeString) return;
+    
     const [hours, minutes] = timeString.split(':').map(Number);
     const newTime = new Date(currentTime);
     newTime.setHours(hours, minutes, 0, 0);
-    
-    // Smart overnight handling - if time seems to go backwards significantly, assume next day
-    if (events.length > 0) {
-      const lastEventTime = events[events.length - 1].timestamp;
-      const timeDiff = newTime.getTime() - lastEventTime.getTime();
-      
-      // If new time is more than 12 hours earlier, assume it's the next day
-      if (timeDiff < -12 * 60 * 60 * 1000) {
-        newTime.setDate(newTime.getDate() + 1);
-      }
-    }
     
     setCurrentTime(newTime);
   };
@@ -2109,10 +2101,11 @@ function SleepLogModal() {
   // Helper function to handle next-day detection for sleep events
   const createEventTimestamp = (baseDate: Date, timeToSet: Date, lastEventTime?: Date): Date => {
     const eventTimestamp = new Date(baseDate);
+    // Always round down to the minute (remove seconds and milliseconds)
     eventTimestamp.setHours(timeToSet.getHours(), timeToSet.getMinutes(), 0, 0);
     
-    // If there's a previous event and this time is earlier (with 5-minute buffer), assume it's the next day
-    if (lastEventTime && eventTimestamp.getTime() <= lastEventTime.getTime() + (5 * 60 * 1000)) {
+    // If there's a previous event and this time is earlier, assume it's the next day
+    if (lastEventTime && eventTimestamp.getTime() <= lastEventTime.getTime()) {
       eventTimestamp.setDate(eventTimestamp.getDate() + 1);
     }
     
@@ -2216,14 +2209,13 @@ function SleepLogModal() {
                 Time
               </label>
               <div className="relative">
-                <input
-                  type="time"
+                <TimePicker
                   value={formatTimeForInput(currentTime)}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className={`input input-bordered w-full text-lg py-4 h-16 ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
+                  onChange={handleTimeChange}
+                  disableClock={true}
+                  clearIcon={null}
+                  className={`time-picker-wrapper w-full text-lg ${
+                    user?.darkMode ? 'time-picker-dark' : 'time-picker-light'
                   }`}
                 />
                 {/* Show "Now" if current time is selected (within 1 minute) */}
@@ -2321,14 +2313,13 @@ function SleepLogModal() {
                 Time
               </label>
               <div className="relative">
-                <input
-                  type="time"
+                <TimePicker
                   value={formatTimeForInput(currentTime)}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className={`input input-bordered w-full text-lg py-4 h-16 ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
+                  onChange={handleTimeChange}
+                  disableClock={true}
+                  clearIcon={null}
+                  className={`time-picker-wrapper w-full text-lg ${
+                    user?.darkMode ? 'time-picker-dark' : 'time-picker-light'
                   }`}
                 />
                 {/* Show "Now" if current time is selected (within 1 minute) */}
