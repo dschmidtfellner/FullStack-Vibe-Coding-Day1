@@ -48,10 +48,10 @@ export function SleepLogTile({
   const tileContent = (
     <div className="flex justify-between items-center">
       <div className="flex-1">
-        {/* Time range - smaller purple text */}
-        <div className="text-sm mb-1" style={{
-          color: '#745288'
-        }}>
+        {/* Time range - standard dark text */}
+        <div className={`text-sm mb-1 ${
+          user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+        }`}>
           {getTimeRange()}
         </div>
         

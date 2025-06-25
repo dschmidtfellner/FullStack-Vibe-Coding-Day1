@@ -1,4 +1,4 @@
-import { SleepEvent, SleepLog } from '@/lib/firebase-messaging';
+import { SleepLog } from '@/lib/firebase-messaging';
 
 export interface SleepStatistics {
   totalDuration: string; // "Xh Ym" format

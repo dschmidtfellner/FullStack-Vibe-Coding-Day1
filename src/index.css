@@ -9,6 +9,13 @@
     dark --prefersdark;
 }
 
+/* Custom Color Variables */
+:root {
+  --brand-pink: #F0DDEF;
+  --brand-purple: #503460;
+  --brand-purple-light: #745288;
+}
+
 /* Custom font family - using Poppins everywhere */
 * {
   font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
@@ -38,39 +45,97 @@ body {
   }
 }
 
-/* Custom time input styling for proper alignment */
-.time-input-custom {
-  text-align: right !important;
-  padding-right: 0px !important;
+/* React Time Picker Custom Styling */
+.react-time-picker {
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Style the time input to show clock icon on the left */
-.time-input-custom::-webkit-calendar-picker-indicator {
-  background-image: none !important;
-  background: transparent !important;
-  cursor: pointer !important;
-  position: absolute !important;
-  left: 8px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 16px !important;
-  height: 16px !important;
-  opacity: 1 !important;
+.react-time-picker__wrapper {
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  height: 60px;
+  align-items: center;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  color: #1f2937;
+  justify-content: flex-end;
 }
 
-/* Add clock icon using after pseudo-element */
-.time-input-custom::after {
-  content: "🕐" !important;
-  position: absolute !important;
-  left: 8px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  font-size: 16px !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
-}
-
-/* Firefox time input styling */
-.time-input-custom::-moz-time-picker {
+.react-time-picker__inputGroup {
+  min-width: auto;
+  flex-grow: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 1rem;
   text-align: right;
+}
+
+.react-time-picker__inputGroup__input {
+  min-width: auto;
+  width: auto;
+  height: calc(1.3333em * 1.2);
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  box-sizing: border-box;
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  text-align: right;
+  color: inherit;
+}
+
+.react-time-picker__inputGroup__input:focus {
+  outline: none;
+}
+
+.react-time-picker__inputGroup__divider {
+  padding: 0 0.125em;
+  font-weight: bold;
+}
+
+.react-time-picker__inputGroup__amPm {
+  text-align: right;
+  margin-left: 0.25rem;
+}
+
+.react-time-picker__clock-button {
+  display: none !important;
+}
+
+/* Dark mode styles */
+.dark-theme .react-time-picker__wrapper {
+  border-color: #4b5563;
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.dark-theme .react-time-picker__inputGroup__input {
+  color: #ffffff;
+}
+
+.dark-theme .react-time-picker__clock-button {
+  color: #9ca3af;
+}
+
+/* Large time picker variant */
+.react-time-picker.large .react-time-picker__wrapper {
+  height: 4rem;
+  font-size: 1.125rem;
+}
+
+/* Compact time picker variant */
+.react-time-picker.compact .react-time-picker__wrapper {
+  height: 60px;
+  font-size: 1rem;
 }

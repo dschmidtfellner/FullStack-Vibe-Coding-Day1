@@ -2,6 +2,9 @@ import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucide-react";
 import { SleepLogTile } from "@/components/SleepLogTile";
+import TimePicker from 'react-time-picker';
+import 'react-time-picker/dist/TimePicker.css';
+import 'react-clock/dist/Clock.css';
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
@@ -1616,7 +1619,9 @@ function LogDetailView() {
                       }`}>
                         {getEventTypeText(event.type)}
                       </span>
-                      <span className="text-base" style={{ color: '#745288' }}>
+                      <span className={`text-base ${
+                        user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
                         {event.localTime}
                       </span>
                     </div>
@@ -1670,7 +1675,7 @@ function LogDetailView() {
                             <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-600'}>
                               {comment.senderName}
                             </span>
-                            <span style={{ color: '#745288' }}>
+                            <span className={user?.darkMode ? 'text-gray-300' : 'text-gray-600'}>
                               {formatTimeInTimezone(comment.timestamp)}
                             </span>
                           </div>
@@ -1749,7 +1754,7 @@ function SleepLogModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [sleepType, setSleepType] = useState<'nap' | 'bedtime'>('nap');
   const [events, setEvents] = useState<Array<{ type: SleepEvent['type']; timestamp: Date }>>([]);
-  const [currentEventType, setCurrentEventType] = useState<SleepEvent['type']>('put_in_bed');
+  // Removed unused currentEventType state
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isComplete, setIsComplete] = useState(false);
@@ -1856,26 +1861,7 @@ function SleepLogModal() {
     }
   }, [state.logId, state.logCache, updateLog]);
 
-  // Get valid next event types based on current sequence
-  const getValidNextEventTypes = (): SleepEvent['type'][] => {
-    if (events.length === 0) {
-      return ['put_in_bed', 'fell_asleep']; // Any valid first event
-    }
-
-    const lastEvent = events[events.length - 1];
-    switch (lastEvent.type) {
-      case 'put_in_bed':
-        return ['fell_asleep', 'out_of_bed'];
-      case 'fell_asleep':
-        return ['woke_up', 'out_of_bed'];
-      case 'woke_up':
-        return ['fell_asleep', 'out_of_bed'];
-      case 'out_of_bed':
-        return []; // Session complete
-      default:
-        return [];
-    }
-  };
+  // TODO: getValidNextEventTypes function was removed as it appeared unused
 
 
   // Get question text for sleep consulting flow
@@ -1952,8 +1938,8 @@ function SleepLogModal() {
     return options.primary;
   };
 
-  // Format time for input
-  const formatTimeForInput = (date: Date): string => {
+  // Format time for time picker (24-hour HH:MM format for react-time-picker)
+  const formatTimeForPicker = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
       timeZone: state.timezone,
       hour12: false,
@@ -1972,15 +1958,17 @@ function SleepLogModal() {
     }).format(date);
   };
 
-  // Handle time input change
-  const handleTimeChange = (timeString: string) => {
-    if (!timeString) return;
+  // Handle time picker change
+  const handleTimeChange = (value: string | null) => {
+    if (!value) return;
     
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const newTime = new Date(currentTime);
-    newTime.setHours(hours, minutes, 0, 0);
-    
-    setCurrentTime(newTime);
+    // Parse 24-hour format (HH:MM)
+    const [hours, minutes] = value.split(':').map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      const newTime = new Date(currentTime);
+      newTime.setHours(hours, minutes, 0, 0);
+      setCurrentTime(newTime);
+    }
   };
 
   // TODO: handleAddEvent function was removed as it appeared unused
@@ -2144,8 +2132,7 @@ function SleepLogModal() {
     navigateBack();
   };
 
-  const validNextEvents = getValidNextEventTypes();
-  // TODO: canAddEvent variable was removed as it appeared unused
+  // TODO: validNextEvents and canAddEvent variables were removed as they appeared unused
   const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
   if (isLoading && isInitialLoading) {
@@ -2234,14 +2221,15 @@ function SleepLogModal() {
                 Time
               </label>
               <div className="relative">
-                <input
-                  type="time"
-                  value={formatTimeForInput(currentTime)}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className={`input input-bordered w-full text-lg py-4 h-16 ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
+                <TimePicker
+                  value={formatTimeForPicker(currentTime)}
+                  onChange={handleTimeChange}
+                  clockIcon={null}
+                  clearIcon={null}
+                  disableClock={true}
+                  format="h:mm a"
+                  className={`react-time-picker large ${
+                    user?.darkMode ? 'dark-theme' : ''
                   }`}
                 />
               </div>
@@ -2253,7 +2241,7 @@ function SleepLogModal() {
                 
                 return isCurrentTime && (
                   <div className="mt-2 text-sm">
-                    <span style={{ color: '#745288' }}>
+                    <span className={user?.darkMode ? 'text-gray-300' : 'text-gray-600'}>
                       Now
                     </span>
                   </div>
@@ -2356,7 +2344,9 @@ function SleepLogModal() {
                             }`}>
                               {getEventTypeText(event.type)}
                             </span>
-                            <span className="text-base" style={{ color: '#745288' }}>
+                            <span className={`text-base ${
+                              user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
                               {formatTimeForDisplay(event.timestamp)}
                             </span>
                           </div>
@@ -2371,38 +2361,55 @@ function SleepLogModal() {
                           const currentType = getCurrentEventType();
                           
                           return (
-                            <div className="flex gap-2" style={{ width: '50%' }}>
+                            <div className="flex gap-2" style={{ width: 'calc(50% + 4px)' }}>
                               <button
                                 onClick={() => setSelectedEventType(options.primary)}
-                                className={`flex-1 px-4 py-3 rounded-lg border transition-all text-base ${
+                                className={`flex-1 px-4 rounded-lg border-2 transition-all text-base ${
                                   currentType === options.primary
                                     ? user?.darkMode
-                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
-                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                      ? 'text-white border-[#503460]'
+                                      : 'text-gray-800 border-[#503460]'
                                     : user?.darkMode
-                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                      ? 'border-gray-600 bg-[#2a223a] text-gray-400 hover:border-gray-500'
+                                      : 'border-gray-300 bg-white text-gray-500 hover:border-gray-400'
                                 }`}
+                                style={{
+                                  height: '60px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  backgroundColor: currentType === options.primary ? '#F0DDEF' : undefined
+                                }}
                               >
                                 {getEventTypeText(options.primary)}
                               </button>
                               <button
                                 onClick={() => setSelectedEventType(options.secondary)}
-                                className={`flex-1 px-4 py-3 rounded-lg border transition-all text-base ${
+                                className={`flex-1 px-4 rounded-lg border-2 transition-all text-base ${
                                   currentType === options.secondary
                                     ? user?.darkMode
-                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
-                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                      ? 'text-white border-[#503460]'
+                                      : 'text-gray-800 border-[#503460]'
                                     : user?.darkMode
-                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                      ? 'border-gray-600 bg-[#2a223a] text-gray-400 hover:border-gray-500'
+                                      : 'border-gray-300 bg-white text-gray-500 hover:border-gray-400'
                                 }`}
+                                style={{ 
+                                  height: '60px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexDirection: 'column',
+                                  backgroundColor: currentType === options.secondary ? '#F0DDEF' : undefined
+                                }}
                               >
-                                <div>{getEventTypeText(options.secondary)}</div>
+                                <div style={{ lineHeight: '1.1' }}>{getEventTypeText(options.secondary)}</div>
                                 {getEventTypeText(options.secondary) === 'Out of bed' && (
-                                  <div className={`text-xs mt-1 ${
-                                    user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                                  }`}>
+                                  <div className={`text-xs ${
+                                    currentType === options.secondary
+                                      ? user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                                      : user?.darkMode ? 'text-gray-500' : 'text-gray-400'
+                                  }`} style={{ lineHeight: '1.1', marginTop: '1px' }}>
                                     i.e. End of Sleep
                                   </div>
                                 )}
@@ -2412,25 +2419,17 @@ function SleepLogModal() {
                         })()}
                         
                         <div className="flex items-center gap-2">
-                          <div className="relative" style={{ width: '130px' }}>
-                            <input
-                              type="time"
-                              value={formatTimeForInput(currentTime)}
-                              onChange={(e) => handleTimeChange(e.target.value)}
-                              className={`time-input-custom input input-bordered text-base w-full ${
-                                user?.darkMode 
-                                  ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                                  : 'bg-white border-gray-300 text-gray-800'
+                          <div className="relative" style={{ width: '150px' }}>
+                            <TimePicker
+                              value={formatTimeForPicker(currentTime)}
+                              onChange={handleTimeChange}
+                              clockIcon={null}
+                              clearIcon={null}
+                              disableClock={true}
+                              format="h:mm a"
+                              className={`react-time-picker compact ${
+                                user?.darkMode ? 'dark-theme' : ''
                               }`}
-                              style={{ 
-                                fontFamily: 'inherit',
-                                paddingLeft: '32px',
-                                height: '48px',
-                                paddingTop: '12px',
-                                paddingBottom: '12px',
-                                boxSizing: 'border-box',
-                                minHeight: 'auto'
-                              }}
                             />
                           </div>
                           {/* Show "Now" if current time is selected */}
