@@ -2218,21 +2218,21 @@ function SleepLogModal() {
                       : 'bg-white border-gray-300 text-gray-800'
                   }`}
                 />
-                {/* Show "Now" if current time is selected (within 1 minute) */}
-                {(() => {
-                  const now = new Date();
-                  const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                  const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                  
-                  return isCurrentTime && (
-                    <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
-                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Now
-                    </div>
-                  );
-                })()}
               </div>
+              {/* Show "Now" below input if current time is selected */}
+              {(() => {
+                const now = new Date();
+                const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                
+                return isCurrentTime && (
+                  <div className="mt-2 text-sm">
+                    <span style={{ color: '#745288' }}>
+                      Now
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Sleep Type Selection - Moved Below Date/Time */}
@@ -2323,21 +2323,21 @@ function SleepLogModal() {
                       : 'bg-white border-gray-300 text-gray-800'
                   }`}
                 />
-                {/* Show "Now" if current time is selected (within 1 minute) */}
-                {(() => {
-                  const now = new Date();
-                  const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                  const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                  
-                  return isCurrentTime && (
-                    <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
-                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Now
-                    </div>
-                  );
-                })()}
               </div>
+              {/* Show "Now" below input if current time is selected */}
+              {(() => {
+                const now = new Date();
+                const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                
+                return isCurrentTime && (
+                  <div className="mt-2 text-sm">
+                    <span style={{ color: '#745288' }}>
+                      Now
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Add end of sleep option - only show if not already showing end */}
