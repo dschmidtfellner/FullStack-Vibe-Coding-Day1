@@ -2305,39 +2305,77 @@ function SleepLogModal() {
               )}
             </div>
 
-            {/* Time Input Only - No Date */}
+            {/* Subevent Context with Inline Time Input */}
             <div className="mb-8">
-              <label className={`block text-lg font-medium mb-4 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Time
-              </label>
-              <div className="relative">
-                <input
-                  type="time"
-                  value={formatTimeForInput(currentTime)}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className={`input input-bordered w-full text-lg py-4 h-16 ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
-                  }`}
-                />
+              <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
+                {(() => {
+                  // Get last 3 events for context
+                  const recentEvents = events.slice(-3);
+                  const hasMoreEvents = events.length > 3;
+                  
+                  return (
+                    <>
+                      {/* Show recent events */}
+                      {recentEvents.map((event, index) => {
+                        const isTopEvent = index === 0 && hasMoreEvents;
+                        return (
+                          <div 
+                            key={index} 
+                            className={`flex justify-between items-center ${
+                              isTopEvent ? 'opacity-40 blur-[1px]' : ''
+                            }`}
+                          >
+                            <span className={`text-base ${
+                              user?.darkMode ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              {getEventTypeText(event.type)}
+                            </span>
+                            <span className="text-base" style={{ color: '#745288' }}>
+                              {formatTimeForDisplay(event.timestamp)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Next event input */}
+                      <div className="flex justify-between items-center">
+                        <span className={`text-base ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {getEventTypeText(getNextEventType())}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={formatTimeForInput(currentTime)}
+                            onChange={(e) => handleTimeChange(e.target.value)}
+                            className={`text-base text-right border-none bg-transparent outline-none ${
+                              user?.darkMode ? 'text-white' : 'text-gray-800'
+                            }`}
+                            style={{ 
+                              color: '#745288',
+                              width: '80px',
+                              fontFamily: 'inherit'
+                            }}
+                          />
+                          {/* Show "Now" if current time is selected */}
+                          {(() => {
+                            const now = new Date();
+                            const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                            const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                            
+                            return isCurrentTime && (
+                              <span className="text-sm" style={{ color: '#745288' }}>
+                                Now
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
-              {/* Show "Now" below input if current time is selected */}
-              {(() => {
-                const now = new Date();
-                const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                
-                return isCurrentTime && (
-                  <div className="mt-2 text-sm">
-                    <span style={{ color: '#745288' }}>
-                      Now
-                    </span>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Add end of sleep option - only show if not already showing end */}
