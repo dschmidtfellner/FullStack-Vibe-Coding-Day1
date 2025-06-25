@@ -2417,14 +2417,19 @@ function SleepLogModal() {
                               type="time"
                               value={formatTimeForInput(currentTime)}
                               onChange={(e) => handleTimeChange(e.target.value)}
-                              className={`time-input-custom input input-bordered text-base py-3 w-full ${
+                              className={`time-input-custom input input-bordered text-base w-full ${
                                 user?.darkMode 
                                   ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                                   : 'bg-white border-gray-300 text-gray-800'
                               }`}
                               style={{ 
                                 fontFamily: 'inherit',
-                                paddingLeft: '32px'
+                                paddingLeft: '32px',
+                                height: '48px',
+                                paddingTop: '12px',
+                                paddingBottom: '12px',
+                                boxSizing: 'border-box',
+                                minHeight: 'auto'
                               }}
                             />
                           </div>
