@@ -2349,9 +2349,7 @@ function SleepLogModal() {
                       
                       {/* Next event input */}
                       <div className="flex justify-between items-center">
-                        <span className={`text-base ${
-                          user?.darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>
+                        <span className="text-base" style={{ color: '#745288' }}>
                           {getEventTypeText(getNextEventType())}
                         </span>
                         <div className="flex items-center gap-2">
@@ -2359,12 +2357,13 @@ function SleepLogModal() {
                             type="time"
                             value={formatTimeForInput(currentTime)}
                             onChange={(e) => handleTimeChange(e.target.value)}
-                            className={`text-base text-right border-none bg-transparent outline-none ${
-                              user?.darkMode ? 'text-white' : 'text-gray-800'
+                            className={`input input-bordered text-base py-2 h-10 ${
+                              user?.darkMode 
+                                ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                                : 'bg-white border-gray-300 text-gray-800'
                             }`}
                             style={{ 
-                              color: '#745288',
-                              width: '80px',
+                              width: '120px',
                               fontFamily: 'inherit'
                             }}
                           />
