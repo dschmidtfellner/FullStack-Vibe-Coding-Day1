@@ -1926,6 +1926,16 @@ function SleepLogModal() {
     }
   };
 
+  // Get human-readable text for event types
+  const getEventTypeText = (type: SleepEvent['type']): string => {
+    switch (type) {
+      case 'put_in_bed': return 'Put in bed';
+      case 'fell_asleep': return 'Fell asleep';
+      case 'woke_up': return 'Woke up';
+      case 'out_of_bed': return 'Out of bed';
+    }
+  };
+
   // Format time for input
   const formatTimeForInput = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
