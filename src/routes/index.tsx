@@ -4,7 +4,6 @@ import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucid
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp } from "firebase/firestore";
-import TimePicker from 'react-time-picker';
 import { FirebaseMessage } from "@/types/firebase";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import {
@@ -1947,8 +1946,8 @@ function SleepLogModal() {
     }).format(date);
   };
 
-  // Handle time input change - compatible with react-time-picker
-  const handleTimeChange = (timeString: string | null) => {
+  // Handle time input change
+  const handleTimeChange = (timeString: string) => {
     if (!timeString) return;
     
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -2209,13 +2208,14 @@ function SleepLogModal() {
                 Time
               </label>
               <div className="relative">
-                <TimePicker
+                <input
+                  type="time"
                   value={formatTimeForInput(currentTime)}
-                  onChange={handleTimeChange}
-                  disableClock={true}
-                  clearIcon={null}
-                  className={`time-picker-wrapper w-full text-lg ${
-                    user?.darkMode ? 'time-picker-dark' : 'time-picker-light'
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                  className={`input input-bordered w-full text-lg py-4 h-16 ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
                   }`}
                 />
                 {/* Show "Now" if current time is selected (within 1 minute) */}
@@ -2313,13 +2313,14 @@ function SleepLogModal() {
                 Time
               </label>
               <div className="relative">
-                <TimePicker
+                <input
+                  type="time"
                   value={formatTimeForInput(currentTime)}
-                  onChange={handleTimeChange}
-                  disableClock={true}
-                  clearIcon={null}
-                  className={`time-picker-wrapper w-full text-lg ${
-                    user?.darkMode ? 'time-picker-dark' : 'time-picker-light'
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                  className={`input input-bordered w-full text-lg py-4 h-16 ${
+                    user?.darkMode 
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
                   }`}
                 />
                 {/* Show "Now" if current time is selected (within 1 minute) */}
