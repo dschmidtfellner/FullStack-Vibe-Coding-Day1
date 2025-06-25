@@ -2012,10 +2012,10 @@ function SleepLogModal() {
         // For sleep consulting subsequent events - add event to existing log
         const nextEventType = getNextEventType();
         
-        // Ensure the new event uses the same date as the original log, only updating time
+        // Create timestamp with next-day detection
         const originalDate = events[0].timestamp; // Get date from first event
-        const eventTimestamp = new Date(originalDate);
-        eventTimestamp.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        const lastEvent = events[events.length - 1];
+        const eventTimestamp = createEventTimestamp(originalDate, currentTime, lastEvent.timestamp);
         
         const newEvent = {
           type: nextEventType,
@@ -2104,6 +2104,19 @@ function SleepLogModal() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to handle next-day detection for sleep events
+  const createEventTimestamp = (baseDate: Date, timeToSet: Date, lastEventTime?: Date): Date => {
+    const eventTimestamp = new Date(baseDate);
+    eventTimestamp.setHours(timeToSet.getHours(), timeToSet.getMinutes(), 0, 0);
+    
+    // If there's a previous event and this time is earlier (with 5-minute buffer), assume it's the next day
+    if (lastEventTime && eventTimestamp.getTime() <= lastEventTime.getTime() + (5 * 60 * 1000)) {
+      eventTimestamp.setDate(eventTimestamp.getDate() + 1);
+    }
+    
+    return eventTimestamp;
   };
 
   // Cancel and go back
