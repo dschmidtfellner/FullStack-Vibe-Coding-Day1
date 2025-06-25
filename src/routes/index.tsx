@@ -1755,6 +1755,7 @@ function SleepLogModal() {
   const [isComplete, setIsComplete] = useState(false);
   const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
   const [showEndOfSleep, setShowEndOfSleep] = useState(false);
+  const [selectedEventType, setSelectedEventType] = useState<SleepEvent['type'] | null>(null);
   const [currentLogId, setCurrentLogId] = useState<string | null>(null);
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -1773,6 +1774,11 @@ function SleepLogModal() {
       setSleepType('bedtime');
     }
   }, []); // Empty dependency array - only run once on mount
+
+  // Reset selected event type when events change (to default to primary option)
+  useEffect(() => {
+    setSelectedEventType(null);
+  }, [events.length]);
 
   // Track initial mount for animation
   useEffect(() => {
@@ -1905,25 +1911,7 @@ function SleepLogModal() {
 
   // Get next event type for sleep consulting flow
   const getNextEventType = (): SleepEvent['type'] => {
-    if (showEndOfSleep) {
-      return 'out_of_bed';
-    }
-    
-    if (events.length === 0) {
-      return 'put_in_bed';
-    }
-    
-    const lastEvent = events[events.length - 1];
-    switch (lastEvent.type) {
-      case 'put_in_bed':
-        return 'fell_asleep';
-      case 'fell_asleep':
-        return 'woke_up';
-      case 'woke_up':
-        return 'fell_asleep';
-      default:
-        return 'fell_asleep';
-    }
+    return getCurrentEventType();
   };
 
   // Get human-readable text for event types
@@ -1934,6 +1922,34 @@ function SleepLogModal() {
       case 'woke_up': return 'Woke up';
       case 'out_of_bed': return 'Out of bed';
     }
+  };
+
+  // Get event type options based on last subevent
+  const getEventTypeOptions = (): { primary: SleepEvent['type'], secondary: SleepEvent['type'] } => {
+    if (events.length === 0) {
+      return { primary: 'put_in_bed', secondary: 'fell_asleep' };
+    }
+    
+    const lastEvent = events[events.length - 1];
+    switch (lastEvent.type) {
+      case 'put_in_bed':
+        return { primary: 'fell_asleep', secondary: 'out_of_bed' };
+      case 'fell_asleep':
+        return { primary: 'woke_up', secondary: 'out_of_bed' };
+      case 'woke_up':
+        return { primary: 'fell_asleep', secondary: 'out_of_bed' };
+      default:
+        return { primary: 'fell_asleep', secondary: 'out_of_bed' };
+    }
+  };
+
+  // Get currently selected event type (use selectedEventType or default to primary option)
+  const getCurrentEventType = (): SleepEvent['type'] => {
+    if (selectedEventType) {
+      return selectedEventType;
+    }
+    const options = getEventTypeOptions();
+    return options.primary;
   };
 
   // Format time for input
@@ -2347,40 +2363,89 @@ function SleepLogModal() {
                         );
                       })}
                       
-                      {/* Next event input */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-base" style={{ color: '#745288' }}>
-                          {getEventTypeText(getNextEventType())}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <div className="relative" style={{ width: '120px' }}>
-                            <input
-                              type="time"
-                              value={formatTimeForInput(currentTime)}
-                              onChange={(e) => handleTimeChange(e.target.value)}
-                              className={`time-input-custom input input-bordered text-base py-2 h-10 w-full ${
-                                user?.darkMode 
-                                  ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                                  : 'bg-white border-gray-300 text-gray-800'
-                              }`}
-                              style={{ 
-                                fontFamily: 'inherit',
-                                paddingLeft: '32px'
-                              }}
-                            />
+                      {/* Next event with tile selector */}
+                      <div className="space-y-3">
+                        {/* Event type tile selector */}
+                        {(() => {
+                          const options = getEventTypeOptions();
+                          const currentType = getCurrentEventType();
+                          
+                          return (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setSelectedEventType(options.primary)}
+                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                  currentType === options.primary
+                                    ? user?.darkMode
+                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
+                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                    : user?.darkMode
+                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                }`}
+                              >
+                                {getEventTypeText(options.primary)}
+                              </button>
+                              <button
+                                onClick={() => setSelectedEventType(options.secondary)}
+                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                  currentType === options.secondary
+                                    ? user?.darkMode
+                                      ? 'bg-[#3a2f4a] text-white border-[#745288]'
+                                      : 'bg-[#F0DDEF] text-gray-800 border-[#745288]'
+                                    : user?.darkMode
+                                      ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                }`}
+                              >
+                                <div>{getEventTypeText(options.secondary)}</div>
+                                {getEventTypeText(options.secondary) === 'Out of bed' && (
+                                  <div className={`text-xs mt-1 ${
+                                    user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                                  }`}>
+                                    i.e. End of Sleep
+                                  </div>
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })()}
+                        
+                        {/* Time input row */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-base" style={{ color: '#745288' }}>
+                            {getEventTypeText(getCurrentEventType())}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="relative" style={{ width: '120px' }}>
+                              <input
+                                type="time"
+                                value={formatTimeForInput(currentTime)}
+                                onChange={(e) => handleTimeChange(e.target.value)}
+                                className={`time-input-custom input input-bordered text-base py-2 h-10 w-full ${
+                                  user?.darkMode 
+                                    ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-800'
+                                }`}
+                                style={{ 
+                                  fontFamily: 'inherit',
+                                  paddingLeft: '32px'
+                                }}
+                              />
+                            </div>
+                            {/* Show "Now" if current time is selected */}
+                            {(() => {
+                              const now = new Date();
+                              const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                              const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                              
+                              return isCurrentTime && (
+                                <span className="text-sm" style={{ color: '#745288' }}>
+                                  Now
+                                </span>
+                              );
+                            })()}
                           </div>
-                          {/* Show "Now" if current time is selected */}
-                          {(() => {
-                            const now = new Date();
-                            const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                            const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                            
-                            return isCurrentTime && (
-                              <span className="text-sm" style={{ color: '#745288' }}>
-                                Now
-                              </span>
-                            );
-                          })()}
                         </div>
                       </div>
                     </div>
@@ -2389,19 +2454,6 @@ function SleepLogModal() {
               </div>
             </div>
 
-            {/* Add end of sleep option - only show if not already showing end */}
-            {!showEndOfSleep && (
-              <div className="text-center">
-                <button
-                  onClick={() => setShowEndOfSleep(true)}
-                  className={`text-base underline ${
-                    user?.darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'
-                  }`}
-                >
-                  or Add end of sleep
-                </button>
-              </div>
-            )}
           </div>
         )}
         
