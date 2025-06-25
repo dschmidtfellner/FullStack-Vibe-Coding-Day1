@@ -2374,7 +2374,7 @@ function SleepLogModal() {
                             <div className="flex gap-2" style={{ width: '50%' }}>
                               <button
                                 onClick={() => setSelectedEventType(options.primary)}
-                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                className={`flex-1 px-4 py-3 rounded-lg border transition-all text-base ${
                                   currentType === options.primary
                                     ? user?.darkMode
                                       ? 'bg-[#3a2f4a] text-white border-[#745288]'
@@ -2388,7 +2388,7 @@ function SleepLogModal() {
                               </button>
                               <button
                                 onClick={() => setSelectedEventType(options.secondary)}
-                                className={`flex-1 px-3 py-2 rounded-lg border transition-all text-sm ${
+                                className={`flex-1 px-4 py-3 rounded-lg border transition-all text-base ${
                                   currentType === options.secondary
                                     ? user?.darkMode
                                       ? 'bg-[#3a2f4a] text-white border-[#745288]'
@@ -2412,12 +2412,12 @@ function SleepLogModal() {
                         })()}
                         
                         <div className="flex items-center gap-2">
-                          <div className="relative" style={{ width: '120px' }}>
+                          <div className="relative" style={{ width: '130px' }}>
                             <input
                               type="time"
                               value={formatTimeForInput(currentTime)}
                               onChange={(e) => handleTimeChange(e.target.value)}
-                              className={`time-input-custom input input-bordered text-base py-2 h-10 w-full ${
+                              className={`time-input-custom input input-bordered text-base py-3 w-full ${
                                 user?.darkMode 
                                   ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                                   : 'bg-white border-gray-300 text-gray-800'
