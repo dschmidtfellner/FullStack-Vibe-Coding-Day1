@@ -37,3 +37,39 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Custom time input styling for proper alignment */
+.time-input-custom {
+  text-align: right !important;
+  padding-right: 12px !important;
+}
+
+/* Style the time input to show clock icon on the left */
+.time-input-custom::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 8px;
+  position: absolute;
+  right: auto;
+  top: 0;
+  width: auto;
+  opacity: 0.6;
+}
+
+/* Show clock icon */
+.time-input-custom::-webkit-calendar-picker-indicator:before {
+  content: "🕐";
+  font-size: 16px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Firefox time input styling */
+.time-input-custom::-moz-time-picker {
+  text-align: right;
+}

@@ -2357,15 +2357,14 @@ function SleepLogModal() {
                             type="time"
                             value={formatTimeForInput(currentTime)}
                             onChange={(e) => handleTimeChange(e.target.value)}
-                            className={`input input-bordered text-base py-2 h-10 text-right ${
+                            className={`time-input-custom input input-bordered text-base py-2 h-10 ${
                               user?.darkMode 
                                 ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                                 : 'bg-white border-gray-300 text-gray-800'
                             }`}
                             style={{ 
                               width: '120px',
-                              fontFamily: 'inherit',
-                              direction: 'rtl'
+                              fontFamily: 'inherit'
                             }}
                           />
                           {/* Show "Now" if current time is selected */}
