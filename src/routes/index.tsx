@@ -2664,7 +2664,7 @@ function SleepLogModal() {
           {/* Show confirm button for warnings that allow proceeding */}
           {validationWarning && validationWarning.type !== 'too-long-gap' && (
             <button
-              onClick={() => handleSave(true)}
+              onClick={() => { void handleSave(true); }}
               disabled={isLoading || isButtonDisabled}
               className={`btn text-white text-lg py-4 h-14 rounded-2xl px-6 ${
                 user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
@@ -2678,7 +2678,7 @@ function SleepLogModal() {
           )}
           
           <button
-            onClick={() => validationWarning ? setValidationWarning(null) : handleSave()}
+            onClick={() => validationWarning ? setValidationWarning(null) : void handleSave()}
             disabled={!canSave || isLoading || isButtonDisabled || (validationWarning?.type === 'too-long-gap')}
             className={`btn text-white text-lg py-4 h-14 rounded-2xl px-8 ${
               user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
