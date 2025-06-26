@@ -2409,52 +2409,54 @@ function SleepLogModal() {
               </div>
             </div>
 
-            {/* Sleep Type Selection - Moved Below Date/Time */}
+            {/* Type Selection - Inline Layout */}
             <div className="mb-6">
-              <label className={`block text-lg font-medium mb-4 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Sleep Type
-              </label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setSleepType('nap')}
-                  className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                    sleepType === 'nap'
-                      ? user?.darkMode
-                        ? 'bg-[#3a2f4a] text-white'
-                        : 'bg-white text-gray-800'
-                      : user?.darkMode
-                        ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                  }`}
-                  style={{
-                    borderColor: sleepType === 'nap' ? '#745288' : undefined,
-                    backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#F0DDEF' : undefined
-                  }}
-                >
-                  <Sun className="w-5 h-5" />
-                  <span className="text-base font-medium">Nap</span>
-                </button>
-                <button
-                  onClick={() => setSleepType('bedtime')}
-                  className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                    sleepType === 'bedtime'
-                      ? user?.darkMode
-                        ? 'bg-[#3a2f4a] text-white'
-                        : 'bg-white text-gray-800'
-                      : user?.darkMode
-                        ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                  }`}
-                  style={{
-                    borderColor: sleepType === 'bedtime' ? '#745288' : undefined,
-                    backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#F0DDEF' : undefined
-                  }}
-                >
-                  <Moon className="w-5 h-5" />
-                  <span className="text-base font-medium">Bedtime</span>
-                </button>
+              <div className="flex items-start justify-between">
+                <label className={`text-lg font-medium mt-3 ${
+                  user?.darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Type
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSleepType('nap')}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                      sleepType === 'nap'
+                        ? user?.darkMode
+                          ? 'bg-[#3a2f4a] text-white'
+                          : 'bg-white text-gray-800'
+                        : user?.darkMode
+                          ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                    style={{
+                      borderColor: sleepType === 'nap' ? '#745288' : undefined,
+                      backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#F0DDEF' : undefined
+                    }}
+                  >
+                    <Sun className="w-5 h-5" />
+                    <span className="text-base font-medium">Nap</span>
+                  </button>
+                  <button
+                    onClick={() => setSleepType('bedtime')}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                      sleepType === 'bedtime'
+                        ? user?.darkMode
+                          ? 'bg-[#3a2f4a] text-white'
+                          : 'bg-white text-gray-800'
+                        : user?.darkMode
+                          ? 'border-gray-600 bg-[#2a223a] text-gray-300 hover:border-gray-500'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                    style={{
+                      borderColor: sleepType === 'bedtime' ? '#745288' : undefined,
+                      backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#F0DDEF' : undefined
+                    }}
+                  >
+                    <Moon className="w-5 h-5" />
+                    <span className="text-base font-medium">Bedtime</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
