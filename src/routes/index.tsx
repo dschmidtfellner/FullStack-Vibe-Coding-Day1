@@ -39,13 +39,14 @@ type NavigationState = {
   logCache: Map<string, SleepLog>;
   isLoading: boolean;
   previousView?: 'messaging' | 'logs' | 'log-detail' | null;
+  defaultLogDate?: string; // For passing default date to new log modal
 };
 
 type NavigationContextType = {
   state: NavigationState;
   navigateToLogs: () => void;
   navigateToLogDetail: (logId: string) => void;
-  navigateToNewLog: () => void;
+  navigateToNewLog: (defaultDate?: string) => void;
   navigateToEditLog: (logId: string) => void;
   navigateToMessaging: () => void;
   navigateBack: () => void;
@@ -106,8 +107,14 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     updateURL('log-detail', logId);
   };
 
-  const navigateToNewLog = () => {
-    setState(prev => ({ ...prev, view: 'log-sleep', logId: null, previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view }));
+  const navigateToNewLog = (defaultDate?: string) => {
+    setState(prev => ({ 
+      ...prev, 
+      view: 'log-sleep', 
+      logId: null, 
+      defaultLogDate: defaultDate,
+      previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view 
+    }));
     updateURL('log-sleep');
   };
 
@@ -1233,6 +1240,35 @@ function LogsListView() {
     return selectedDate === todayString;
   };
 
+  // Get relative date text for display under the date
+  const getRelativeDateText = () => {
+    const today = new Date();
+    const todayString = new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(today);
+    
+    if (selectedDate === todayString) {
+      return 'Today';
+    }
+    
+    const selectedDateObj = new Date(selectedDate + 'T12:00:00');
+    const todayObj = new Date(todayString + 'T12:00:00');
+    const diffTime = selectedDateObj.getTime() - todayObj.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === -1) {
+      return 'Yesterday';
+    } else if (diffDays < -1) {
+      return `${Math.abs(diffDays)} days ago`;
+    } else if (diffDays === 1) {
+      return '1 day from now';
+    } else if (diffDays > 1) {
+      return `${diffDays} days from now`;
+    }
+    
+    return null;
+  };
+
 
   // Filter logs for selected date and get previous day's bedtime
   const getLogsForSelectedDate = () => {
@@ -1284,16 +1320,26 @@ function LogsListView() {
           </button>
 
           {/* Date Display - Clickable */}
-          <button
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className={`font-domine text-2xl font-medium transition-colors ${
-              user?.darkMode 
-                ? 'text-white hover:text-gray-200' 
-                : 'text-gray-800 hover:text-gray-600'
-            }`}
-          >
-            {isToday() ? 'Today' : formatSelectedDate()}
-          </button>
+          <div className="flex flex-col items-center">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className={`font-domine text-2xl font-medium transition-colors ${
+                user?.darkMode 
+                  ? 'text-white hover:text-gray-200' 
+                  : 'text-gray-800 hover:text-gray-600'
+              }`}
+            >
+              {isToday() ? 'Today' : formatSelectedDate()}
+            </button>
+            {/* Relative date text */}
+            {getRelativeDateText() && !isToday() && (
+              <div className={`text-sm mt-1 ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                {getRelativeDateText()}
+              </div>
+            )}
+          </div>
 
           {/* Next Day Button */}
           <button
@@ -1402,7 +1448,7 @@ function LogsListView() {
       {/* Floating Action Button - Centered and Bigger */}
       <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-20">
         <button
-          onClick={navigateToNewLog}
+          onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
             user?.darkMode 
               ? 'text-white hover:opacity-90' 
@@ -1903,7 +1949,13 @@ function SleepLogModal() {
   const [events, setEvents] = useState<Array<{ type: SleepEvent['type']; timestamp: Date }>>([]);
   // Removed unused currentEventType state
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    // Use default date from navigation state if available, otherwise today
+    if (state.defaultLogDate) {
+      return new Date(state.defaultLogDate + 'T12:00:00');
+    }
+    return new Date();
+  });
   const [isComplete, setIsComplete] = useState(false);
   const [existingLog, setExistingLog] = useState<SleepLog | null>(null);
   const [showEndOfSleep, setShowEndOfSleep] = useState(false);
@@ -2144,16 +2196,23 @@ function SleepLogModal() {
       timeToCheck.setHours(timestamp.getHours(), timestamp.getMinutes(), 0, 0);
     }
     
-    // Check if time is more than 5 minutes in the future
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-    if (timeToCheck > fiveMinutesFromNow) {
-      return {
-        isValid: true, // Allow with confirmation
-        warning: {
-          type: 'future',
-          message: 'This time is in the future - are you sure you want to save it?'
-        }
-      };
+    // Check if time is more than 5 minutes in the future (only for current date)
+    const selectedDateString = currentDate.toISOString().split('T')[0];
+    const todayString = new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(now);
+    
+    if (selectedDateString === todayString) {
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      if (timeToCheck > fiveMinutesFromNow) {
+        return {
+          isValid: true, // Allow with confirmation
+          warning: {
+            type: 'future',
+            message: 'This time is in the future - are you sure you want to save it?'
+          }
+        };
+      }
     }
     
     // If first event, no other validations needed

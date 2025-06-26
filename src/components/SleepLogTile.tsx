@@ -24,8 +24,13 @@ export function SleepLogTile({
   isNightBefore = false,
   nightBeforeEndTime = '',
 }: SleepLogTileProps) {
-  // Get time range for log display (e.g., "11:45 am—1:50 pm")
+  // Get time range for log display (e.g., "11:45 am—1:50 pm") or night before subtitle
   const getTimeRange = () => {
+    // If it's a night before display, show the subtitle instead
+    if (isNightBefore) {
+      return `Night before—${nightBeforeEndTime || ''}`;
+    }
+
     if (!log.events || log.events.length === 0) {
       return formatTimeInTimezone(log.timestamp);
     }
@@ -52,13 +57,7 @@ export function SleepLogTile({
     return 'Sleep';
   };
 
-  // Get subtitle for night before display
-  const getSubtitle = () => {
-    if (isNightBefore) {
-      return `Night before—${nightBeforeEndTime || ''}`;
-    }
-    return null;
-  };
+  // No separate subtitle needed anymore - integrated into getTimeRange
 
   const tileContent = (
     <div className="flex justify-between items-center">
@@ -82,14 +81,6 @@ export function SleepLogTile({
           {getLogDisplayName()}
         </div>
         
-        {/* Subtitle for night before */}
-        {getSubtitle() && (
-          <div className={`text-sm mt-1 ${
-            user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            {getSubtitle()}
-          </div>
-        )}
       </div>
       
       <div className="flex items-center gap-3 ml-4">
