@@ -2261,19 +2261,7 @@ function SleepLogModal() {
     }
   };
 
-  // Helper function to handle next-day detection for sleep events
-  const createEventTimestamp = (baseDate: Date, timeToSet: Date, lastEventTime?: Date): Date => {
-    const eventTimestamp = new Date(baseDate);
-    // Always round down to the minute (remove seconds and milliseconds)
-    eventTimestamp.setHours(timeToSet.getHours(), timeToSet.getMinutes(), 0, 0);
-    
-    // If there's a previous event and this time is earlier, assume it's the next day
-    if (lastEventTime && eventTimestamp.getTime() <= lastEventTime.getTime()) {
-      eventTimestamp.setDate(eventTimestamp.getDate() + 1);
-    }
-    
-    return eventTimestamp;
-  };
+  // Note: createEventTimestamp is already defined above at line 1987
 
   // Cancel and go back with exit animation
   const handleCancel = () => {
