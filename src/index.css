@@ -150,3 +150,12 @@ body {
   font-size: 1rem;
   padding: 0 12px;
 }
+
+/* Right-align time picker content */
+.react-time-picker.right-align .react-time-picker__wrapper {
+  justify-content: flex-end;
+}
+
+.react-time-picker.right-align .react-time-picker__inputGroup {
+  justify-content: flex-end;
+}

@@ -2209,19 +2209,19 @@ function SleepLogModal() {
             </div>
 
             {/* Date Input - Inline Label */}
-            <div className="mb-4">
-              <div className="flex items-center gap-4">
-                <label className={`text-base font-medium ${
+            <div className="mb-6">
+              <div className="flex items-start justify-between">
+                <label className={`text-lg font-medium mt-3 ${
                   user?.darkMode ? 'text-white' : 'text-gray-800'
                 }`}>
                   Date
                 </label>
-                <div className="relative" style={{ width: '50%' }}>
+                <div className="flex flex-col items-end" style={{ width: '25%' }}>
                   <input
                     type="date"
                     value={currentDate.toISOString().split('T')[0]}
                     onChange={(e) => setCurrentDate(new Date(e.target.value))}
-                    className={`input input-bordered w-full text-base ${
+                    className={`input input-bordered w-full text-base text-right ${
                       user?.darkMode 
                         ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-800'
@@ -2230,7 +2230,7 @@ function SleepLogModal() {
                   />
                   {/* Show "Today" if current date is selected */}
                   {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                    <div className={`absolute -bottom-5 left-0 text-xs pointer-events-none ${
+                    <div className={`mt-1 text-xs text-right ${
                       user?.darkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
                       Today
@@ -2241,14 +2241,14 @@ function SleepLogModal() {
             </div>
 
             {/* Time Input - Inline Label */}
-            <div className="mb-4">
-              <div className="flex items-center gap-4">
-                <label className={`text-base font-medium ${
+            <div className="mb-6">
+              <div className="flex items-start justify-between">
+                <label className={`text-lg font-medium mt-3 ${
                   user?.darkMode ? 'text-white' : 'text-gray-800'
                 }`}>
                   Time
                 </label>
-                <div className="relative" style={{ width: '50%' }}>
+                <div className="flex flex-col items-end" style={{ width: '25%' }}>
                   <TimePicker
                     value={formatTimeForPicker(currentTime)}
                     onChange={handleTimeChange}
@@ -2256,7 +2256,7 @@ function SleepLogModal() {
                     clearIcon={null}
                     disableClock={true}
                     format="h:mm a"
-                    className={`react-time-picker compact ${
+                    className={`react-time-picker compact right-align ${
                       user?.darkMode ? 'dark-theme' : ''
                     }`}
                   />
@@ -2267,7 +2267,7 @@ function SleepLogModal() {
                     const isCurrentTime = timeDiff < 60000; // Within 1 minute
                     
                     return isCurrentTime && (
-                      <div className="absolute -bottom-5 left-0 text-xs pointer-events-none">
+                      <div className="mt-1 text-xs text-right">
                         <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-500'}>
                           Now
                         </span>
