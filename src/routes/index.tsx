@@ -122,15 +122,23 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
-    // Always go to Log Detail when working on a specific log (regardless of origin)
-    if (state.logId) {
-      navigateToLogDetail(state.logId);
-    } else if (state.previousView === 'logs') {
+    // Different logic based on current view
+    if (state.view === 'log-sleep') {
+      // From modal: go to Log Detail if we have a logId, otherwise use previousView
+      if (state.logId) {
+        navigateToLogDetail(state.logId);
+      } else if (state.previousView === 'logs') {
+        navigateToLogs();
+      } else if (state.previousView === 'messaging') {
+        navigateToMessaging();
+      } else {
+        navigateToLogs();
+      }
+    } else if (state.view === 'log-detail') {
+      // From log detail: always go back to logs list
       navigateToLogs();
-    } else if (state.previousView === 'messaging') {
-      navigateToMessaging();
     } else {
-      // Default fallback
+      // Default fallback for other views
       navigateToLogs();
     }
   };
