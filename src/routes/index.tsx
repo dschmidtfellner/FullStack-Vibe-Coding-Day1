@@ -2378,31 +2378,31 @@ function SleepLogModal() {
                   Time
                 </label>
                 <div className="flex flex-col items-end" style={{ width: '25%' }}>
-                  <TimePicker
-                    value={formatTimeForPicker(currentTime)}
-                    onChange={handleTimeChange}
-                    clockIcon={null}
-                    clearIcon={null}
-                    disableClock={true}
-                    format="h:mm a"
-                    className={`react-time-picker compact right-align ${
-                      user?.darkMode ? 'dark-theme' : ''
-                    }`}
-                  />
-                  {/* Show "Now" indicator when current time is selected */}
-                  {(() => {
-                    const now = new Date();
-                    const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                    const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                    
-                    return isCurrentTime && (
-                      <div className="mt-1 text-xs text-right">
-                        <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                  <div className="flex items-center gap-2">
+                    {/* Show "Now" indicator when current time is selected */}
+                    {(() => {
+                      const now = new Date();
+                      const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                      const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                      
+                      return isCurrentTime && (
+                        <span className={`text-xs ${user?.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           Now
                         </span>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
+                    <TimePicker
+                      value={formatTimeForPicker(currentTime)}
+                      onChange={handleTimeChange}
+                      clockIcon={null}
+                      clearIcon={null}
+                      disableClock={true}
+                      format="h:mm a"
+                      className={`react-time-picker compact right-align ${
+                        user?.darkMode ? 'dark-theme' : ''
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -2577,6 +2577,18 @@ function SleepLogModal() {
                         })()}
                         
                         <div className="flex items-center gap-2">
+                          {/* Show "Now" if current time is selected */}
+                          {(() => {
+                            const now = new Date();
+                            const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                            const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                            
+                            return isCurrentTime && (
+                              <span className="text-sm" style={{ color: '#745288' }}>
+                                Now
+                              </span>
+                            );
+                          })()}
                           <div className="relative" style={{ width: '150px' }}>
                             <TimePicker
                               value={formatTimeForPicker(currentTime)}
@@ -2590,18 +2602,6 @@ function SleepLogModal() {
                               }`}
                             />
                           </div>
-                          {/* Show "Now" if current time is selected */}
-                          {(() => {
-                            const now = new Date();
-                            const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                            const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                            
-                            return isCurrentTime && (
-                              <span className="text-sm" style={{ color: '#745288' }}>
-                                Now
-                              </span>
-                            );
-                          })()}
                         </div>
                       </div>
                     </div>
