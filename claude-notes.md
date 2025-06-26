@@ -48,3 +48,53 @@
 - Target: High-performance messaging module for integration with Bubble app
 - Use `mcp__shell-commands__launch-dev-all` to start development servers
 - Project follows git workflow with frequent commits as checkpoints
+
+## Time Validation Implementation for Sleep Logs
+
+### Feature: Time Input Validation Guardrails
+
+### What was implemented:
+
+1. **Overnight Logic (Prepped Time)**
+   - Created `createEventTimestamp` function that adds 24 hours if the inputted time is before the most recent event
+   - This handles overnight sleep sessions automatically
+
+2. **Validation Rules:**
+   - **Valid (No Warning)**: 0-12 hours after last event
+   - **Warning (Confirmable)**: 12-16 hours after last event
+     - Shows yellow warning with "Confirm" button
+     - Message: "That time is more than 12 hours after the last logged time - are you sure you want to save it?"
+     - Subtext: "Did you instead want to end this [Nap/Bedtime] and start another?"
+   - **Error (Hard Block)**: 16+ hours after last event
+     - Shows red error, no way to proceed
+     - Message: "Unable to add a log more than 16 hours after your last logged time in this [Nap/Bedtime]."
+     - Subtext: "Consider adding a new [Nap/Bedtime] instead."
+
+3. **Future Time Validation:**
+   - Warns if time is more than 5 minutes in the future
+   - Applies to both initial timestamp and subsequent events
+   - Shows yellow warning with "Confirm" button
+
+4. **Button Rate Limiting:**
+   - Add button disabled for 1.5 seconds after being pressed
+   - Prevents accidental duplicate entries from button mashing
+
+5. **UI Updates:**
+   - Added validation warning display above action buttons
+   - Shows contextual buttons: "Confirm" for warnings, "Change Time" when there's an error
+   - Color-coded warnings: Yellow for confirmable warnings, Red for hard blocks
+   - Validation runs on both time picker and date picker changes
+
+### Implementation Details:
+- Added validation state variables: `validationWarning`, `isButtonDisabled`, `lastButtonPressTime`
+- Created `validateTimeInput` function that checks all validation rules
+- Updated `handleSave` to include validation checks and rate limiting
+- Modified UI to display warnings and handle confirmation flow
+
+### Commits Made:
+- `feat: Add time validation guardrails for sleep log inputs`
+
+### Next Steps:
+- The validation system is fully implemented and ready for testing
+- All validation scenarios should be tested with real user input
+- Consider adding analytics to track how often validations are triggered
