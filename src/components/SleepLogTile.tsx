@@ -9,6 +9,8 @@ interface SleepLogTileProps {
   onContinueLogging?: () => void; // Handler for Continue Logging button
   formatTimeInTimezone: (timestamp: any) => string; // Time formatting function
   showClickable?: boolean; // Whether the tile should be clickable
+  isNightBefore?: boolean; // Whether this is a previous night's bedtime
+  nightBeforeEndTime?: string; // End time for night before display
 }
 
 export function SleepLogTile({
@@ -19,6 +21,8 @@ export function SleepLogTile({
   onContinueLogging,
   formatTimeInTimezone,
   showClickable = true,
+  isNightBefore = false,
+  nightBeforeEndTime = '',
 }: SleepLogTileProps) {
   // Get time range for log display (e.g., "11:45 am—1:50 pm")
   const getTimeRange = () => {
@@ -38,11 +42,22 @@ export function SleepLogTile({
 
   // Get display name for the log type
   const getLogDisplayName = () => {
+    if (isNightBefore) {
+      return 'Bedtime';
+    }
     if (log.sleepType === 'bedtime') return 'Bedtime';
     if (log.sleepType === 'nap') {
       return napNumber ? `Nap ${napNumber}` : 'Nap';
     }
     return 'Sleep';
+  };
+
+  // Get subtitle for night before display
+  const getSubtitle = () => {
+    if (isNightBefore) {
+      return `Night before—${nightBeforeEndTime || ''}`;
+    }
+    return null;
   };
 
   const tileContent = (
@@ -66,6 +81,15 @@ export function SleepLogTile({
         >
           {getLogDisplayName()}
         </div>
+        
+        {/* Subtitle for night before */}
+        {getSubtitle() && (
+          <div className={`text-sm mt-1 ${
+            user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {getSubtitle()}
+          </div>
+        )}
       </div>
       
       <div className="flex items-center gap-3 ml-4">

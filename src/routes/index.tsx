@@ -1,6 +1,6 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus } from "lucide-react";
+import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight } from "lucide-react";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
@@ -1137,6 +1137,15 @@ function LogsListView() {
   const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  
+  // Selected date state - default to today in baby's timezone
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(today); // YYYY-MM-DD format
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Listen to logs with real-time updates
   useEffect(() => {
@@ -1182,16 +1191,70 @@ function LogsListView() {
     }).format(date);
   };
 
+  // Get date in YYYY-MM-DD format for comparison
+  const getLocalDateKey = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(date);
+  };
 
-  // Group logs by date - use state.logs from navigation context
-  const groupedLogs = state.logs.reduce((groups: { [key: string]: SleepLog[] }, log) => {
-    const dateKey = log.localDate || formatDateInTimezone(log.timestamp);
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
-    }
-    groups[dateKey].push(log);
-    return groups;
-  }, {});
+  // Date navigation functions
+  const goToPreviousDay = () => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() - 1);
+    setSelectedDate(new Intl.DateTimeFormat('en-CA').format(currentDate));
+  };
+
+  const goToNextDay = () => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() + 1);
+    setSelectedDate(new Intl.DateTimeFormat('en-CA').format(currentDate));
+  };
+
+  // Format selected date for display
+  const formatSelectedDate = () => {
+    const date = new Date(selectedDate);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: state.timezone,
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  // Check if selected date is today
+  const isToday = () => {
+    const today = new Date();
+    const todayString = new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(today);
+    return selectedDate === todayString;
+  };
+
+
+  // Filter logs for selected date and get previous day's bedtime
+  const getLogsForSelectedDate = () => {
+    const selectedDateLogs = state.logs.filter(log => {
+      const logDateKey = log.localDate || getLocalDateKey(log.timestamp);
+      return logDateKey === selectedDate;
+    });
+
+    // Get previous day's bedtime (if any)
+    const previousDate = new Date(selectedDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+    const previousDateKey = new Intl.DateTimeFormat('en-CA').format(previousDate);
+    
+    const previousDayBedtime = state.logs.find(log => {
+      const logDateKey = log.localDate || getLocalDateKey(log.timestamp);
+      return logDateKey === previousDateKey && log.sleepType === 'bedtime';
+    });
+
+    return { selectedDateLogs, previousDayBedtime };
+  };
+
+  const { selectedDateLogs, previousDayBedtime } = getLogsForSelectedDate();
 
   // Only show skeleton if we're loading AND have no data to show
   if (isLoading && state.logs.length === 0) {
@@ -1205,9 +1268,69 @@ function LogsListView() {
       {/* Top spacing - minimal for iframe embedding */}
       <div className="h-[20px]"></div>
 
+      {/* Date Navigation Header */}
+      <div className="px-4 pb-4">
+        <div className="flex items-center justify-between">
+          {/* Previous Day Button */}
+          <button
+            onClick={goToPreviousDay}
+            className={`p-2 rounded-full transition-colors ${
+              user?.darkMode 
+                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Date Display - Clickable */}
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className={`font-domine text-2xl font-medium transition-colors ${
+              user?.darkMode 
+                ? 'text-white hover:text-gray-200' 
+                : 'text-gray-800 hover:text-gray-600'
+            }`}
+          >
+            {isToday() ? 'Today' : formatSelectedDate()}
+          </button>
+
+          {/* Next Day Button */}
+          <button
+            onClick={goToNextDay}
+            className={`p-2 rounded-full transition-colors ${
+              user?.darkMode 
+                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Date Picker */}
+        {showDatePicker && (
+          <div className="mt-4 flex justify-center">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setShowDatePicker(false);
+              }}
+              className={`input input-bordered ${
+                user?.darkMode 
+                  ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-800'
+              }`}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Logs Container */}
-      <div className="overflow-y-auto pb-32 h-[calc(100%-40px)]">
-        {Object.keys(groupedLogs).length === 0 ? (
+      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
+        {selectedDateLogs.length === 0 && !previousDayBedtime ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
@@ -1219,51 +1342,60 @@ function LogsListView() {
             </div>
             <h3 className={`text-lg font-semibold mb-2 ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
-            }`}>No sleep logs yet</h3>
+            }`}>No sleep logs for this day</h3>
             <p className={`text-center mb-6 ${
               user?.darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>Tap the plus button to start tracking sleep</p>
           </div>
         ) : (
-          // Logs list grouped by date
-          Object.entries(groupedLogs).map(([dateKey, dateLogs]) => (
-            <div key={dateKey} className="mb-6">
-              {/* Date separator */}
-              <div className={`sticky top-0 px-4 py-2 text-sm font-medium ${
-                user?.darkMode 
-                  ? 'bg-[#2a223a] text-gray-300 border-b border-gray-700' 
-                  : 'bg-gray-50 text-gray-700 border-b border-gray-200'
-              }`}>
-                {dateKey}
+          // Single day logs
+          <div className="space-y-3 px-4">
+            {/* Previous Day's Bedtime (if exists) */}
+            {previousDayBedtime && (
+              <div style={{ opacity: 0.5 }}>
+                <SleepLogTile
+                  key={`prev-${previousDayBedtime.id}`}
+                  log={previousDayBedtime}
+                  user={user}
+                  napNumber={0}
+                  onClick={() => navigateToLogDetail(previousDayBedtime.id)}
+                  onContinueLogging={() => navigateToEditLog(previousDayBedtime.id)}
+                  formatTimeInTimezone={formatTimeInTimezone}
+                  showClickable={true}
+                  isNightBefore={true}
+                  nightBeforeEndTime={
+                    previousDayBedtime.events && previousDayBedtime.events.length > 0
+                      ? formatTimeInTimezone(previousDayBedtime.events[previousDayBedtime.events.length - 1].timestamp)
+                      : ''
+                  }
+                />
               </div>
+            )}
+
+            {/* Current Day's Logs */}
+            {(() => {
+              const sortedLogs = selectedDateLogs.sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime());
+              return sortedLogs.map((log, index) => {
+                // Count naps for numbering
+                const napNumber = sortedLogs
+                  .slice(0, index + 1)
+                  .filter(l => l.sleepType === 'nap').length;
               
-              {/* Logs for this date */}
-              <div className="space-y-3 px-4 pt-3">
-                {(() => {
-                  const sortedLogs = dateLogs.sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime()); // Sort by timestamp (oldest first)
-                  return sortedLogs.map((log, index) => {
-                    // Count naps for numbering (only count naps before this one in the sorted array)
-                    const napNumber = sortedLogs
-                      .slice(0, index + 1)
-                      .filter(l => l.sleepType === 'nap').length;
-                  
-                  return (
-                    <SleepLogTile
-                      key={log.id}
-                      log={log}
-                      user={user}
-                      napNumber={napNumber}
-                      onClick={() => navigateToLogDetail(log.id)}
-                      onContinueLogging={() => navigateToEditLog(log.id)}
-                      formatTimeInTimezone={formatTimeInTimezone}
-                      showClickable={true}
-                    />
-                  );
-                  });
-                })()}
-              </div>
-            </div>
-          ))
+                return (
+                  <SleepLogTile
+                    key={log.id}
+                    log={log}
+                    user={user}
+                    napNumber={napNumber}
+                    onClick={() => navigateToLogDetail(log.id)}
+                    onContinueLogging={() => navigateToEditLog(log.id)}
+                    formatTimeInTimezone={formatTimeInTimezone}
+                    showClickable={true}
+                  />
+                );
+              });
+            })()}
+          </div>
         )}
       </div>
 
