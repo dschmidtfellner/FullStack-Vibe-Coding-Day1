@@ -1332,7 +1332,7 @@ function LogsListView() {
               {isToday() ? 'Today' : formatSelectedDate()}
             </button>
             {/* Relative date text */}
-            {getRelativeDateText() && !isToday() && (
+            {getRelativeDateText() && getRelativeDateText() !== 'Today' && (
               <div className={`text-sm mt-1 ${
                 user?.darkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
