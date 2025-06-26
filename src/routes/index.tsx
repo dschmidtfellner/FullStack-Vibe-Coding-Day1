@@ -2649,11 +2649,12 @@ function SleepLogModal() {
             <button
               onClick={() => { void handleSave(true); }}
               disabled={isLoading || isButtonDisabled}
-              className={`btn text-white text-lg py-4 h-14 rounded-2xl px-6 ${
+              className={`btn text-lg py-4 h-14 rounded-2xl px-6 ${
                 user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
               }`}
               style={{ 
-                backgroundColor: user?.darkMode ? '#9B7EBD' : '#745288'
+                backgroundColor: user?.darkMode ? '#F0DDEF' : '#F0DDEF',
+                color: user?.darkMode ? '#503460' : '#503460'
               }}
             >
               Confirm
