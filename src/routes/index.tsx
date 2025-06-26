@@ -2338,33 +2338,35 @@ function SleepLogModal() {
                   Date
                 </label>
                 <div className="flex flex-col items-end" style={{ width: '25%' }}>
-                  <input
-                    type="date"
-                    value={currentDate.toISOString().split('T')[0]}
-                    onChange={(e) => {
-                      const newDate = new Date(e.target.value);
-                      setCurrentDate(newDate);
-                      // Revalidate when date changes
-                      const combinedDateTime = new Date(newDate);
-                      combinedDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
-                      const validation = validateTimeInput(combinedDateTime, events.length === 0);
-                      setValidationWarning(validation.warning);
-                    }}
-                    className={`input input-bordered w-full text-base text-right ${
-                      user?.darkMode 
-                        ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-800'
-                    }`}
-                    style={{ height: '48px', padding: '0 12px' }}
-                  />
-                  {/* Show "Today" if current date is selected */}
-                  {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                    <div className={`mt-1 text-xs text-right ${
-                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Today
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 w-full">
+                    {/* Show "Today" if current date is selected */}
+                    {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
+                      <span className={`text-xs ${
+                        user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Today
+                      </span>
+                    )}
+                    <input
+                      type="date"
+                      value={currentDate.toISOString().split('T')[0]}
+                      onChange={(e) => {
+                        const newDate = new Date(e.target.value);
+                        setCurrentDate(newDate);
+                        // Revalidate when date changes
+                        const combinedDateTime = new Date(newDate);
+                        combinedDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                        const validation = validateTimeInput(combinedDateTime, events.length === 0);
+                        setValidationWarning(validation.warning);
+                      }}
+                      className={`input input-bordered text-base text-right flex-1 ${
+                        user?.darkMode 
+                          ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-800'
+                      }`}
+                      style={{ height: '48px', padding: '0 12px' }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
