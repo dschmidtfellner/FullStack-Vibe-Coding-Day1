@@ -45,6 +45,16 @@ body {
   }
 }
 
+/* Modal slide-down animation */
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
 /* React Time Picker Custom Styling */
 .react-time-picker {
   width: 100%;

@@ -1764,6 +1764,7 @@ function SleepLogModal() {
   const [currentLogId, setCurrentLogId] = useState<string | null>(null);
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
   
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
@@ -2125,11 +2126,15 @@ function SleepLogModal() {
     return eventTimestamp;
   };
 
-  // Cancel and go back
+  // Cancel and go back with exit animation
   const handleCancel = () => {
-    // Events are saved as they go, so no need to warn about unsaved changes
-    // Navigate back without saving using navigation context
-    navigateBack();
+    // Start exit animation
+    setIsExiting(true);
+    
+    // Navigate back after animation completes
+    setTimeout(() => {
+      navigateBack();
+    }, 300); // Match animation duration
   };
 
   // TODO: validNextEvents and canAddEvent variables were removed as they appeared unused
@@ -2151,7 +2156,11 @@ function SleepLogModal() {
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}
           style={{
-            animation: isInitialMount ? 'slideUp 0.3s ease-out' : 'none'
+            animation: isExiting 
+              ? 'slideDown 0.3s ease-in' 
+              : isInitialMount 
+                ? 'slideUp 0.3s ease-out' 
+                : 'none'
           }}
         >
           {/* Close button - X in upper right */}
