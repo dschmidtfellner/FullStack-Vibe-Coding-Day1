@@ -122,8 +122,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
-    // Smart back navigation using previousView
-    if (state.previousView === 'log-detail' && state.logId) {
+    // Always go to Log Detail when working on a specific log (regardless of origin)
+    if (state.logId) {
       navigateToLogDetail(state.logId);
     } else if (state.previousView === 'logs') {
       navigateToLogs();
