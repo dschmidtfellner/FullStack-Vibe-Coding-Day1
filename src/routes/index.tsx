@@ -2208,69 +2208,73 @@ function SleepLogModal() {
               </h2>
             </div>
 
-            {/* Date Input - Bigger and Friendlier */}
-            <div className="mb-8">
-              <label className={`block text-lg font-medium mb-4 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={currentDate.toISOString().split('T')[0]}
-                  onChange={(e) => setCurrentDate(new Date(e.target.value))}
-                  className={`input input-bordered w-full text-lg py-4 h-16 ${
-                    user?.darkMode 
-                      ? 'bg-[#3a3a3a] border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
-                  }`}
-                />
-                {/* Show "Today" if current date is selected */}
-                {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-sm pointer-events-none ${
-                    user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    Today
-                  </div>
-                )}
+            {/* Date Input - Inline Label */}
+            <div className="mb-4">
+              <div className="flex items-center gap-4">
+                <label className={`text-base font-medium ${
+                  user?.darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Date
+                </label>
+                <div className="relative" style={{ width: '50%' }}>
+                  <input
+                    type="date"
+                    value={currentDate.toISOString().split('T')[0]}
+                    onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                    className={`input input-bordered w-full text-base h-12 ${
+                      user?.darkMode 
+                        ? 'bg-[#3a3a3a] border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-800'
+                    }`}
+                  />
+                  {/* Show "Today" if current date is selected */}
+                  {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
+                    <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-xs pointer-events-none ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Today
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Time Input - Bigger and Friendlier */}
-            <div className="mb-8">
-              <label className={`block text-lg font-medium mb-4 ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                Time
-              </label>
-              <div className="relative">
-                <TimePicker
-                  value={formatTimeForPicker(currentTime)}
-                  onChange={handleTimeChange}
-                  clockIcon={null}
-                  clearIcon={null}
-                  disableClock={true}
-                  format="h:mm a"
-                  className={`react-time-picker large ${
-                    user?.darkMode ? 'dark-theme' : ''
-                  }`}
-                />
+            {/* Time Input - Inline Label */}
+            <div className="mb-4">
+              <div className="flex items-center gap-4">
+                <label className={`text-base font-medium ${
+                  user?.darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Time
+                </label>
+                <div className="relative" style={{ width: '50%' }}>
+                  <TimePicker
+                    value={formatTimeForPicker(currentTime)}
+                    onChange={handleTimeChange}
+                    clockIcon={null}
+                    clearIcon={null}
+                    disableClock={true}
+                    format="h:mm a"
+                    className={`react-time-picker compact ${
+                      user?.darkMode ? 'dark-theme' : ''
+                    }`}
+                  />
+                  {/* Show "Now" indicator when current time is selected */}
+                  {(() => {
+                    const now = new Date();
+                    const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
+                    const isCurrentTime = timeDiff < 60000; // Within 1 minute
+                    
+                    return isCurrentTime && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs pointer-events-none">
+                        <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          Now
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
-              {/* Show "Now" below input if current time is selected */}
-              {(() => {
-                const now = new Date();
-                const timeDiff = Math.abs(currentTime.getTime() - now.getTime());
-                const isCurrentTime = timeDiff < 60000; // Within 1 minute
-                
-                return isCurrentTime && (
-                  <div className="mt-2 text-sm">
-                    <span className={user?.darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                      Now
-                    </span>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Sleep Type Selection - Moved Below Date/Time */}
