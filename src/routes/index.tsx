@@ -2147,6 +2147,36 @@ function SleepLogModal() {
     return options.primary;
   };
 
+  // Get relative date text for modal date input
+  const getModalRelativeDateText = () => {
+    const today = new Date();
+    const todayString = new Intl.DateTimeFormat('en-CA', {
+      timeZone: state.timezone
+    }).format(today);
+    const selectedDateString = currentDate.toISOString().split('T')[0];
+    
+    if (selectedDateString === todayString) {
+      return 'Today';
+    }
+    
+    const selectedDateObj = new Date(selectedDateString + 'T12:00:00');
+    const todayObj = new Date(todayString + 'T12:00:00');
+    const diffTime = selectedDateObj.getTime() - todayObj.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === -1) {
+      return 'Yesterday';
+    } else if (diffDays < -1) {
+      return `${Math.abs(diffDays)} days ago`;
+    } else if (diffDays === 1) {
+      return '1 day from now';
+    } else if (diffDays > 1) {
+      return `${diffDays} days from now`;
+    }
+    
+    return null;
+  };
+
   // Format time for time picker (24-hour HH:MM format for react-time-picker)
   const formatTimeForPicker = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
@@ -2530,14 +2560,12 @@ function SleepLogModal() {
                 </label>
                 <div className="flex flex-col items-end" style={{ width: '25%' }}>
                   <div className="flex items-center gap-2">
-                    {/* Show "Today" if current date is selected */}
-                    {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                      <span className={`text-xs ${
-                        user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        Today
-                      </span>
-                    )}
+                    {/* Show relative date text (Today, Yesterday, etc.) */}
+                    <span className={`text-xs ${
+                      user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      {getModalRelativeDateText()}
+                    </span>
                     <input
                       type="date"
                       value={currentDate.toISOString().split('T')[0]}

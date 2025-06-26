@@ -93,6 +93,13 @@
 
 ### Commits Made:
 - `feat: Add time validation guardrails for sleep log inputs`
+- `fix: Complete modal relative date text implementation`
+
+### Recently Completed:
+- ✅ Implemented relative date text in sleep log modal
+- ✅ Modal now shows "Yesterday", "2 days ago", etc. instead of just "Today"
+- ✅ Matches the relative date functionality in the log list view
+- ✅ Replaced hardcoded "Today" check with dynamic `getModalRelativeDateText()` function
 
 ### Next Steps:
 - The validation system is fully implemented and ready for testing
