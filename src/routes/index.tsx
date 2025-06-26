@@ -1202,20 +1202,20 @@ function LogsListView() {
 
   // Date navigation functions
   const goToPreviousDay = () => {
-    const currentDate = new Date(selectedDate);
+    const currentDate = new Date(selectedDate + 'T12:00:00'); // Add time to avoid timezone issues
     currentDate.setDate(currentDate.getDate() - 1);
     setSelectedDate(new Intl.DateTimeFormat('en-CA').format(currentDate));
   };
 
   const goToNextDay = () => {
-    const currentDate = new Date(selectedDate);
+    const currentDate = new Date(selectedDate + 'T12:00:00'); // Add time to avoid timezone issues
     currentDate.setDate(currentDate.getDate() + 1);
     setSelectedDate(new Intl.DateTimeFormat('en-CA').format(currentDate));
   };
 
   // Format selected date for display
   const formatSelectedDate = () => {
-    const date = new Date(selectedDate);
+    const date = new Date(selectedDate + 'T12:00:00');
     return new Intl.DateTimeFormat('en-US', {
       timeZone: state.timezone,
       weekday: 'long',
@@ -1242,7 +1242,7 @@ function LogsListView() {
     });
 
     // Get previous day's bedtime (if any)
-    const previousDate = new Date(selectedDate);
+    const previousDate = new Date(selectedDate + 'T12:00:00');
     previousDate.setDate(previousDate.getDate() - 1);
     const previousDateKey = new Intl.DateTimeFormat('en-CA').format(previousDate);
     
