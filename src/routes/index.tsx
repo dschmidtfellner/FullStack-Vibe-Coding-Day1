@@ -2523,7 +2523,7 @@ function SleepLogModal() {
                           const currentType = getCurrentEventType();
                           
                           return (
-                            <div className="flex gap-2" style={{ width: 'calc(50% + 4px)' }}>
+                            <div className="flex gap-2" style={{ width: 'calc(50% + 12px)' }}>
                               <button
                                 onClick={() => setSelectedEventType(options.primary)}
                                 className={`flex-1 px-4 rounded-lg border-2 transition-all text-base ${
@@ -2562,7 +2562,8 @@ function SleepLogModal() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   flexDirection: 'column',
-                                  backgroundColor: currentType === options.secondary ? '#F0DDEF' : undefined
+                                  backgroundColor: currentType === options.secondary ? '#F0DDEF' : undefined,
+                                  width: 'calc(50% + 8px)'
                                 }}
                               >
                                 <div style={{ lineHeight: '1.1' }}>{getEventTypeText(options.secondary)}</div>
@@ -2593,7 +2594,7 @@ function SleepLogModal() {
                               </span>
                             );
                           })()}
-                          <div className="relative" style={{ width: '150px' }}>
+                          <div className="relative" style={{ width: '25%' }}>
                             <TimePicker
                               value={formatTimeForPicker(currentTime)}
                               onChange={handleTimeChange}
