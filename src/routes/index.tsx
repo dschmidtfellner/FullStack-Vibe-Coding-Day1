@@ -2065,8 +2065,7 @@ function SleepLogModal() {
         isValid: false,
         warning: {
           type: 'too-long-gap',
-          message: `Unable to add a log more than 16 hours after your last logged time in this ${sleepType}.`,
-          subtext: `Consider adding a new ${sleepType === 'nap' ? 'Nap' : 'Bedtime'} instead.`
+          message: `Unable to save a time before your last log in this ${sleepType} - to interject another time, use Edit`
         }
       };
     }
@@ -2624,23 +2623,19 @@ function SleepLogModal() {
       }`}>
         {/* Validation warning display */}
         {validationWarning && (
-          <div className={`mb-4 p-4 rounded-lg ${
-            validationWarning.type === 'too-long-gap'
-              ? user?.darkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'
-              : user?.darkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'
-          }`}>
-            <p className={`text-sm font-medium ${
+          <div className="mb-4">
+            <p className={`text-sm ${
               validationWarning.type === 'too-long-gap'
-                ? user?.darkMode ? 'text-red-300' : 'text-red-800'
-                : user?.darkMode ? 'text-yellow-300' : 'text-yellow-800'
+                ? 'text-red-600'
+                : user?.darkMode ? 'text-[#9B7EBD]' : 'text-[#745288]'
             }`}>
               {validationWarning.message}
             </p>
             {validationWarning.subtext && (
               <p className={`text-sm mt-1 ${
                 validationWarning.type === 'too-long-gap'
-                  ? user?.darkMode ? 'text-red-400' : 'text-red-600'
-                  : user?.darkMode ? 'text-yellow-400' : 'text-yellow-600'
+                  ? 'text-red-600'
+                  : user?.darkMode ? 'text-[#9B7EBD]' : 'text-[#745288]'
               }`}>
                 {validationWarning.subtext}
               </p>
@@ -2658,7 +2653,7 @@ function SleepLogModal() {
                 user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
               }`}
               style={{ 
-                backgroundColor: user?.darkMode ? '#d97706' : '#ea580c'
+                backgroundColor: user?.darkMode ? '#9B7EBD' : '#745288'
               }}
             >
               Confirm
