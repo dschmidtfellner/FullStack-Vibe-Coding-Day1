@@ -38,6 +38,7 @@ type NavigationState = {
   logs: SleepLog[];
   logCache: Map<string, SleepLog>;
   isLoading: boolean;
+  previousView?: 'messaging' | 'logs' | 'log-detail' | null;
 };
 
 type NavigationContextType = {
@@ -80,6 +81,7 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     logs: [],
     logCache: new Map(),
     isLoading: false,
+    previousView: null,
   });
 
   // Update URL without page reload
@@ -105,12 +107,12 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToNewLog = () => {
-    setState(prev => ({ ...prev, view: 'log-sleep', logId: null }));
+    setState(prev => ({ ...prev, view: 'log-sleep', logId: null, previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view }));
     updateURL('log-sleep');
   };
 
   const navigateToEditLog = (logId: string) => {
-    setState(prev => ({ ...prev, view: 'log-sleep', logId }));
+    setState(prev => ({ ...prev, view: 'log-sleep', logId, previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view }));
     updateURL('log-sleep', logId);
   };
 
@@ -120,11 +122,16 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
-    // Smart back navigation
-    if (state.view === 'log-detail' || state.view === 'log-sleep') {
+    // Smart back navigation using previousView
+    if (state.previousView === 'log-detail' && state.logId) {
+      navigateToLogDetail(state.logId);
+    } else if (state.previousView === 'logs') {
       navigateToLogs();
+    } else if (state.previousView === 'messaging') {
+      navigateToMessaging();
     } else {
-      navigateToLogs(); // Default fallback
+      // Default fallback
+      navigateToLogs();
     }
   };
 
