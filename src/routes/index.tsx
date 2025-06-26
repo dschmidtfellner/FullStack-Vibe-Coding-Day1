@@ -1781,6 +1781,15 @@ function SleepLogModal() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   
+  // Validation states
+  const [validationWarning, setValidationWarning] = useState<{
+    type: 'future' | 'long-gap' | 'too-long-gap';
+    message: string;
+    subtext?: string;
+  } | null>(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [lastButtonPressTime, setLastButtonPressTime] = useState(0);
+  
   // Determine client type from URL (default to sleep consulting)
   const urlParams = new URLSearchParams(window.location.search);
   const clientType = urlParams.get('clientType') || 'sleep-consulting';
@@ -1974,6 +1983,97 @@ function SleepLogModal() {
     }).format(date);
   };
 
+  // Create event timestamp with overnight detection
+  const createEventTimestamp = (originalDate: Date, selectedTime: Date, lastEventTimestamp: Date): Date => {
+    // Create a timestamp using the selected time but on the original date
+    const eventTimestamp = new Date(originalDate);
+    eventTimestamp.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+    
+    // If the new timestamp is before the last event, assume it's the next day
+    if (eventTimestamp < lastEventTimestamp) {
+      eventTimestamp.setDate(eventTimestamp.getDate() + 1);
+    }
+    
+    return eventTimestamp;
+  };
+
+  // Validate time input
+  const validateTimeInput = (timestamp: Date, isFirstEvent: boolean = false): {
+    isValid: boolean;
+    warning: typeof validationWarning;
+  } => {
+    const now = new Date();
+    
+    // For first event, we need to use the combined date/time
+    let timeToCheck = timestamp;
+    if (isFirstEvent || events.length === 0) {
+      // Create combined datetime for first event
+      timeToCheck = new Date(currentDate);
+      timeToCheck.setHours(timestamp.getHours(), timestamp.getMinutes(), 0, 0);
+    }
+    
+    // Check if time is more than 5 minutes in the future
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+    if (timeToCheck > fiveMinutesFromNow) {
+      return {
+        isValid: true, // Allow with confirmation
+        warning: {
+          type: 'future',
+          message: 'This time is in the future - are you sure you want to save it?'
+        }
+      };
+    }
+    
+    // If first event, no other validations needed
+    if (isFirstEvent || events.length === 0) {
+      return { isValid: true, warning: null };
+    }
+    
+    // Get the last event timestamp
+    const lastEventTimestamp = events[events.length - 1].timestamp;
+    
+    // Calculate the prepped time (with overnight logic applied)
+    const preppedTime = createEventTimestamp(
+      events[0].timestamp, // original date from first event
+      timestamp,
+      lastEventTimestamp
+    );
+    
+    // Calculate hours difference
+    const hoursDiff = (preppedTime.getTime() - lastEventTimestamp.getTime()) / (1000 * 60 * 60);
+    
+    // Valid: 0-12 hours after last event
+    if (hoursDiff >= 0 && hoursDiff <= 12) {
+      return { isValid: true, warning: null };
+    }
+    
+    // Warning: 12-16 hours after last event
+    if (hoursDiff > 12 && hoursDiff < 16) {
+      return {
+        isValid: true, // Allow with confirmation
+        warning: {
+          type: 'long-gap',
+          message: `That time is more than 12 hours after the last logged time - are you sure you want to save it?`,
+          subtext: `Did you instead want to end this ${sleepType} and start another?`
+        }
+      };
+    }
+    
+    // Error: 16+ hours after last event
+    if (hoursDiff >= 16) {
+      return {
+        isValid: false,
+        warning: {
+          type: 'too-long-gap',
+          message: `Unable to add a log more than 16 hours after your last logged time in this ${sleepType}.`,
+          subtext: `Consider adding a new ${sleepType === 'nap' ? 'Nap' : 'Bedtime'} instead.`
+        }
+      };
+    }
+    
+    return { isValid: true, warning: null };
+  };
+
   // Handle time picker change
   const handleTimeChange = (value: string | null) => {
     if (!value) return;
@@ -1984,6 +2084,10 @@ function SleepLogModal() {
       const newTime = new Date(currentTime);
       newTime.setHours(hours, minutes, 0, 0);
       setCurrentTime(newTime);
+      
+      // Validate the new time
+      const validation = validateTimeInput(newTime, events.length === 0);
+      setValidationWarning(validation.warning);
     }
   };
 
@@ -1994,8 +2098,38 @@ function SleepLogModal() {
   // If needed, this function would remove the last event from the sequence
 
   // Save the log
-  const handleSave = async () => {
+  const handleSave = async (skipValidation: boolean = false) => {
     if (!user || !state.childId) return;
+
+    // Implement button rate limiting (1.5 seconds)
+    const now = Date.now();
+    if (now - lastButtonPressTime < 1500) {
+      return;
+    }
+    setLastButtonPressTime(now);
+    setIsButtonDisabled(true);
+    setTimeout(() => setIsButtonDisabled(false), 1500);
+
+    // Perform validation unless skipped (for confirmations)
+    if (!skipValidation) {
+      const validation = validateTimeInput(currentTime, events.length === 0);
+      if (validation.warning) {
+        setValidationWarning(validation.warning);
+        // If it's a hard block (too-long-gap), don't proceed
+        if (!validation.isValid) {
+          return;
+        }
+        // For warnings that need confirmation, wait for user action
+        if (validation.warning.type !== 'future' && validation.warning.type !== 'long-gap') {
+          return;
+        }
+        // Show the warning and return - user needs to confirm
+        return;
+      }
+    }
+
+    // Clear any warnings when proceeding
+    setValidationWarning(null);
 
     setIsLoading(true);
     try {
@@ -2220,7 +2354,15 @@ function SleepLogModal() {
                   <input
                     type="date"
                     value={currentDate.toISOString().split('T')[0]}
-                    onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                    onChange={(e) => {
+                      const newDate = new Date(e.target.value);
+                      setCurrentDate(newDate);
+                      // Revalidate when date changes
+                      const combinedDateTime = new Date(newDate);
+                      combinedDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                      const validation = validateTimeInput(combinedDateTime, events.length === 0);
+                      setValidationWarning(validation.warning);
+                    }}
                     className={`input input-bordered w-full text-base text-right ${
                       user?.darkMode 
                         ? 'bg-[#3a3a3a] border-gray-600 text-white' 
@@ -2492,19 +2634,63 @@ function SleepLogModal() {
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
       }`}>
-        <div className="flex justify-center">
+        {/* Validation warning display */}
+        {validationWarning && (
+          <div className={`mb-4 p-4 rounded-lg ${
+            validationWarning.type === 'too-long-gap'
+              ? user?.darkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'
+              : user?.darkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'
+          }`}>
+            <p className={`text-sm font-medium ${
+              validationWarning.type === 'too-long-gap'
+                ? user?.darkMode ? 'text-red-300' : 'text-red-800'
+                : user?.darkMode ? 'text-yellow-300' : 'text-yellow-800'
+            }`}>
+              {validationWarning.message}
+            </p>
+            {validationWarning.subtext && (
+              <p className={`text-sm mt-1 ${
+                validationWarning.type === 'too-long-gap'
+                  ? user?.darkMode ? 'text-red-400' : 'text-red-600'
+                  : user?.darkMode ? 'text-yellow-400' : 'text-yellow-600'
+              }`}>
+                {validationWarning.subtext}
+              </p>
+            )}
+          </div>
+        )}
+        
+        <div className="flex justify-center gap-3">
+          {/* Show confirm button for warnings that allow proceeding */}
+          {validationWarning && validationWarning.type !== 'too-long-gap' && (
+            <button
+              onClick={() => handleSave(true)}
+              disabled={isLoading || isButtonDisabled}
+              className={`btn text-white text-lg py-4 h-14 rounded-2xl px-6 ${
+                user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
+              }`}
+              style={{ 
+                backgroundColor: user?.darkMode ? '#d97706' : '#ea580c'
+              }}
+            >
+              Confirm
+            </button>
+          )}
+          
           <button
-            onClick={handleSave}
-            disabled={!canSave || isLoading}
+            onClick={() => validationWarning ? setValidationWarning(null) : handleSave()}
+            disabled={!canSave || isLoading || isButtonDisabled || (validationWarning?.type === 'too-long-gap')}
             className={`btn text-white text-lg py-4 h-14 rounded-2xl px-8 ${
               user?.darkMode ? 'hover:opacity-90' : 'hover:opacity-90'
-            }`}
+            } ${validationWarning?.type === 'too-long-gap' ? 'opacity-50 cursor-not-allowed' : ''}`}
             style={{ 
               backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
             }}
           >
             {isLoading ? (
               <div className="loading loading-spinner w-5 h-5"></div>
+            ) : validationWarning ? (
+              'Change Time'
             ) : (
               'Add'
             )}
