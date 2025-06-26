@@ -2419,7 +2419,7 @@ function SleepLogModal() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setSleepType('nap')}
-                  className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
                     sleepType === 'nap'
                       ? user?.darkMode
                         ? 'bg-[#3a2f4a] text-white'
@@ -2433,12 +2433,12 @@ function SleepLogModal() {
                     backgroundColor: sleepType === 'nap' && !user?.darkMode ? '#F0DDEF' : undefined
                   }}
                 >
-                  <Sun className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-base font-medium">Nap</div>
+                  <Sun className="w-5 h-5" />
+                  <span className="text-base font-medium">Nap</span>
                 </button>
                 <button
                   onClick={() => setSleepType('bedtime')}
-                  className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
                     sleepType === 'bedtime'
                       ? user?.darkMode
                         ? 'bg-[#3a2f4a] text-white'
@@ -2452,8 +2452,8 @@ function SleepLogModal() {
                     backgroundColor: sleepType === 'bedtime' && !user?.darkMode ? '#F0DDEF' : undefined
                   }}
                 >
-                  <Moon className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-base font-medium">Bedtime</div>
+                  <Moon className="w-5 h-5" />
+                  <span className="text-base font-medium">Bedtime</span>
                 </button>
               </div>
             </div>
