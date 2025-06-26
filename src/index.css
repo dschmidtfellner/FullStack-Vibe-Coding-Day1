@@ -148,4 +148,5 @@ body {
 .react-time-picker.compact .react-time-picker__wrapper {
   height: 48px;
   font-size: 1rem;
+  padding: 0 12px;
 }

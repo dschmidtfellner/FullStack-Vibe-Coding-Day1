@@ -2221,15 +2221,16 @@ function SleepLogModal() {
                     type="date"
                     value={currentDate.toISOString().split('T')[0]}
                     onChange={(e) => setCurrentDate(new Date(e.target.value))}
-                    className={`input input-bordered w-full text-base h-12 ${
+                    className={`input input-bordered w-full text-base ${
                       user?.darkMode 
                         ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-800'
                     }`}
+                    style={{ height: '48px', padding: '0 12px' }}
                   />
                   {/* Show "Today" if current date is selected */}
                   {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
-                    <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-xs pointer-events-none ${
+                    <div className={`absolute -bottom-5 left-0 text-xs pointer-events-none ${
                       user?.darkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
                       Today
@@ -2266,7 +2267,7 @@ function SleepLogModal() {
                     const isCurrentTime = timeDiff < 60000; // Within 1 minute
                     
                     return isCurrentTime && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs pointer-events-none">
+                      <div className="absolute -bottom-5 left-0 text-xs pointer-events-none">
                         <span className={user?.darkMode ? 'text-gray-400' : 'text-gray-500'}>
                           Now
                         </span>
