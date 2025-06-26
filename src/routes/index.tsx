@@ -2338,7 +2338,7 @@ function SleepLogModal() {
                   Date
                 </label>
                 <div className="flex flex-col items-end" style={{ width: '25%' }}>
-                  <div className="flex items-center gap-2 w-full">
+                  <div className="flex items-center gap-2">
                     {/* Show "Today" if current date is selected */}
                     {currentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0] && (
                       <span className={`text-xs ${
@@ -2359,12 +2359,12 @@ function SleepLogModal() {
                         const validation = validateTimeInput(combinedDateTime, events.length === 0);
                         setValidationWarning(validation.warning);
                       }}
-                      className={`input input-bordered text-base text-right flex-1 ${
+                      className={`input input-bordered text-base text-right ${
                         user?.darkMode 
                           ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                           : 'bg-white border-gray-300 text-gray-800'
                       }`}
-                      style={{ height: '48px', padding: '0 12px' }}
+                      style={{ height: '48px', padding: '0 12px', width: 'auto', minWidth: '120px' }}
                     />
                   </div>
                 </div>
