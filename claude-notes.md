@@ -105,3 +105,41 @@
 - The validation system is fully implemented and ready for testing
 - All validation scenarios should be tested with real user input
 - Consider adding analytics to track how often validations are triggered
+
+## Edit Interface for Sleep Logs
+
+### Objective
+Implement an Edit interface for the Log Detail page that allows users to:
+- Edit times of existing sleep events
+- Delete sleep events
+- Add interjections between events
+- Move the entire log to a different date
+
+### Progress Status
+✅ Added Edit button next to Delete button on Log Detail page
+✅ Created new edit-log route and view
+✅ Implemented EditLogView component with:
+  - Header with Cancel/Save buttons
+  - Preserved log tile from detail view
+  - Date selector to move entire log
+  - Event list with Edit/Delete functionality
+  - Inline time editing with TimePicker
+  - Plus buttons between events for interjections
+  - Smart interjection type detection
+
+### Commits Made During Session
+1. "feat: Add Edit interface for sleep logs with date selector, inline time editing, and interjection support"
+
+### Important Implementation Details
+- Created new 'edit-log' view type in NavigationState
+- Modified navigateToEditLog to use 'edit-log' instead of 'log-sleep'
+- Events are converted from Firestore Timestamp format to Date for editing
+- Date changes move all events by the same time offset
+- Interjections are placed halfway between existing events
+- Save function updates Firebase and navigates back to log detail
+
+### Next Steps
+- Polish styling to match screenshot more closely
+- Add validation for invalid event sequences
+- Test edge cases and error handling
+- Consider adding undo/redo functionality

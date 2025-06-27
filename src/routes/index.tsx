@@ -31,14 +31,14 @@ import {
 
 // Navigation Context for client-side routing
 type NavigationState = {
-  view: 'messaging' | 'logs' | 'log-detail' | 'log-sleep';
+  view: 'messaging' | 'logs' | 'log-detail' | 'log-sleep' | 'edit-log';
   logId?: string | null;
   childId: string | null;
   timezone: string;
   logs: SleepLog[];
   logCache: Map<string, SleepLog>;
   isLoading: boolean;
-  previousView?: 'messaging' | 'logs' | 'log-detail' | null;
+  previousView?: 'messaging' | 'logs' | 'log-detail' | 'log-sleep' | 'edit-log' | null;
   defaultLogDate?: string; // For passing default date to new log modal
 };
 
@@ -119,8 +119,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToEditLog = (logId: string) => {
-    setState(prev => ({ ...prev, view: 'log-sleep', logId, previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view }));
-    updateURL('log-sleep', logId);
+    setState(prev => ({ ...prev, view: 'edit-log', logId, previousView: prev.view === 'edit-log' ? prev.previousView : prev.view }));
+    updateURL('edit-log', logId);
   };
 
   const navigateToMessaging = () => {
@@ -307,6 +307,8 @@ function AppRouter() {
           // If creating a new log, show the logs list
           return <LogsListView />;
         }
+      case 'edit-log':
+        return <EditLogView />;
       default:
         return <LogsListView />;
     }
@@ -1683,16 +1685,33 @@ function LogDetailView() {
           <span className="text-sm font-medium">Back</span>
         </button>
         
-        {/* Temporary Delete Button */}
-        <button
-          onClick={handleDeleteLog}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          <span className="text-sm font-medium">Delete</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Edit Button */}
+          <button
+            onClick={() => navigateToEditLog(state.logId!)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              user?.darkMode 
+                ? 'text-purple-400 hover:bg-purple-900/20' 
+                : 'text-purple-600 hover:bg-purple-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            <span className="text-sm font-medium">Edit</span>
+          </button>
+          
+          {/* Delete Button */}
+          <button
+            onClick={handleDeleteLog}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span className="text-sm font-medium">Delete</span>
+          </button>
+        </div>
       </div>
 
       {/* Log Tile - Visual Continuity from List View */}
@@ -1934,6 +1953,446 @@ function LogDetailView() {
       </div>
 
       {/* Minimal bottom spacing for iframe */}
+      <div className={`h-[20px] ${
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+      }`}></div>
+    </div>
+  );
+}
+
+function EditLogView() {
+  const { user } = useBubbleAuth();
+  const { state, navigateBack, updateLog } = useNavigation();
+  const [log, setLog] = useState<SleepLog | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [events, setEvents] = useState<{ type: SleepEvent['type']; timestamp: Date }[]>([]);
+  const [editingEventIndex, setEditingEventIndex] = useState<number | null>(null);
+  const [editingTime, setEditingTime] = useState<string>('');
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Get current log from cache or fetch it
+  useEffect(() => {
+    if (!state.logId) return;
+
+    // First check cache
+    const cachedLog = state.logCache.get(state.logId);
+    if (cachedLog) {
+      setLog(cachedLog);
+      // Convert events from Firestore to local format
+      if (cachedLog.events) {
+        const localEvents = cachedLog.events.map(e => ({
+          type: e.type,
+          timestamp: e.timestamp.toDate()
+        }));
+        setEvents(localEvents);
+        // Set initial date from first event
+        if (localEvents.length > 0) {
+          setCurrentDate(localEvents[0].timestamp);
+        }
+      }
+      return;
+    }
+
+    // If not in cache, fetch it
+    setIsLoading(true);
+    getLog(state.logId)
+      .then((logData) => {
+        if (logData) {
+          setLog(logData);
+          updateLog(logData); // Add to cache
+          // Convert events from Firestore to local format
+          if (logData.events) {
+            const localEvents = logData.events.map(e => ({
+              type: e.type,
+              timestamp: e.timestamp.toDate()
+            }));
+            setEvents(localEvents);
+            // Set initial date from first event
+            if (localEvents.length > 0) {
+              setCurrentDate(localEvents[0].timestamp);
+            }
+          }
+        }
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error loading log:', error);
+        setIsLoading(false);
+      });
+  }, [state.logId, state.logCache, updateLog]);
+
+  // Format time for display
+  const formatTimeForDisplay = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: state.timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
+
+  // Format date for the date selector
+  const formatDateForSelector = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: state.timezone,
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  };
+
+  // Handle date change - move all events by the same offset
+  const handleDateChange = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    
+    // Calculate the offset in milliseconds
+    const offset = newDate.getTime() - currentDate.getTime();
+    
+    // Update all events with the offset
+    const updatedEvents = events.map(event => ({
+      ...event,
+      timestamp: new Date(event.timestamp.getTime() + offset)
+    }));
+    
+    setEvents(updatedEvents);
+    setCurrentDate(newDate);
+  };
+
+  // Start editing an event
+  const handleEditEvent = (index: number) => {
+    setEditingEventIndex(index);
+    const event = events[index];
+    // Format time as HH:MM for the time picker
+    const hours = event.timestamp.getHours().toString().padStart(2, '0');
+    const minutes = event.timestamp.getMinutes().toString().padStart(2, '0');
+    setEditingTime(`${hours}:${minutes}`);
+  };
+
+  // Save edited time
+  const handleSaveEventTime = (index: number) => {
+    if (!editingTime) return;
+    
+    const [hours, minutes] = editingTime.split(':').map(Number);
+    const updatedEvents = [...events];
+    const newTimestamp = new Date(updatedEvents[index].timestamp);
+    newTimestamp.setHours(hours, minutes, 0, 0);
+    
+    updatedEvents[index] = {
+      ...updatedEvents[index],
+      timestamp: newTimestamp
+    };
+    
+    setEvents(updatedEvents);
+    setEditingEventIndex(null);
+    setEditingTime('');
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingEventIndex(null);
+    setEditingTime('');
+  };
+
+  // Delete an event
+  const handleDeleteEvent = (index: number) => {
+    const updatedEvents = events.filter((_, i) => i !== index);
+    setEvents(updatedEvents);
+  };
+
+  // Add an interjection event
+  const handleAddInterjection = (afterIndex: number, type: SleepEvent['type']) => {
+    const updatedEvents = [...events];
+    
+    // Calculate timestamp between current and next event
+    const currentEvent = events[afterIndex];
+    const nextEvent = events[afterIndex + 1];
+    
+    let newTimestamp: Date;
+    if (nextEvent) {
+      // Place new event halfway between current and next
+      const timeDiff = nextEvent.timestamp.getTime() - currentEvent.timestamp.getTime();
+      newTimestamp = new Date(currentEvent.timestamp.getTime() + timeDiff / 2);
+    } else {
+      // If no next event, add 30 minutes after current
+      newTimestamp = new Date(currentEvent.timestamp.getTime() + 30 * 60 * 1000);
+    }
+    
+    const newEvent = {
+      type,
+      timestamp: newTimestamp
+    };
+    
+    updatedEvents.splice(afterIndex + 1, 0, newEvent);
+    setEvents(updatedEvents);
+  };
+
+  // Get event type text
+  const getEventTypeText = (type: SleepEvent['type']) => {
+    switch (type) {
+      case 'put_in_bed': return 'Put in bed';
+      case 'fell_asleep': return 'Asleep';
+      case 'woke_up': return 'Awake';
+      case 'out_of_bed': return 'Out of bed';
+      default: return type;
+    }
+  };
+
+  // Save all changes
+  const handleSaveChanges = async () => {
+    if (!state.logId || !log || !user) return;
+    
+    setIsSaving(true);
+    try {
+      // Update the log with new events
+      const isComplete = events.some(e => e.type === 'out_of_bed');
+      await updateSleepLog(state.logId, events, state.timezone, isComplete);
+      
+      // Update the cache
+      const eventsWithLocalTime = events.map(e => ({
+        type: e.type,
+        timestamp: Timestamp.fromDate(e.timestamp),
+        localTime: formatTimeForDisplay(e.timestamp)
+      }));
+      const updatedLog = { 
+        ...log, 
+        events: eventsWithLocalTime, 
+        isComplete,
+        updatedAt: Timestamp.fromDate(new Date())
+      };
+      updateLog(updatedLog);
+      
+      // Navigate back to log detail
+      navigateBack();
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading || !log) {
+    return <LoadingScreen message="Loading log..." />;
+  }
+
+  return (
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
+      {/* Top spacing */}
+      <div className="h-[20px]"></div>
+
+      {/* Header with Back and Save buttons */}
+      <div className="px-4 py-2 flex items-center justify-between">
+        <button
+          onClick={navigateBack}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            user?.darkMode 
+              ? 'text-gray-300 hover:bg-gray-800' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm font-medium">Cancel</span>
+        </button>
+        
+        <button
+          onClick={() => { void handleSaveChanges(); }}
+          disabled={isSaving}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            user?.darkMode 
+              ? 'bg-purple-600 text-white hover:bg-purple-700' 
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+          }`}
+        >
+          {isSaving ? (
+            <div className="loading loading-spinner w-4 h-4"></div>
+          ) : (
+            <span className="text-sm font-medium">Save</span>
+          )}
+        </button>
+      </div>
+
+      {/* Log Tile - Preserved from detail view */}
+      <div className="px-4 py-4">
+        <SleepLogTile
+          log={log}
+          user={user}
+          napNumber={1}
+          formatTimeInTimezone={formatTimeForDisplay}
+          showClickable={false}
+        />
+      </div>
+
+      {/* Date Selector */}
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => handleDateChange('prev')}
+            className={`p-2 rounded-lg transition-colors ${
+              user?.darkMode 
+                ? 'text-gray-300 hover:bg-gray-800' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          
+          <div className={`text-lg font-medium ${
+            user?.darkMode ? 'text-white' : 'text-gray-800'
+          }`}>
+            {formatDateForSelector(currentDate)}
+          </div>
+          
+          <button
+            onClick={() => handleDateChange('next')}
+            className={`p-2 rounded-lg transition-colors ${
+              user?.darkMode 
+                ? 'text-gray-300 hover:bg-gray-800' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Events List */}
+      <div className="px-4 pb-20 overflow-y-auto">
+        <div className="space-y-2">
+          {events.map((event, index) => (
+            <div key={index}>
+              {/* Event Row */}
+              <div className={`p-4 rounded-lg border ${
+                user?.darkMode 
+                  ? 'bg-gray-900 border-gray-700' 
+                  : 'bg-white border-gray-200'
+              }`}>
+                {editingEventIndex === index ? (
+                  // Editing mode
+                  <div className="flex items-center justify-between gap-4">
+                    <span className={`text-base flex-1 ${
+                      user?.darkMode ? 'text-white' : 'text-gray-800'
+                    }`}>
+                      {getEventTypeText(event.type)}
+                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                      <TimePicker
+                        value={editingTime}
+                        onChange={(value) => setEditingTime(value || '')}
+                        disableClock={true}
+                        clearIcon={null}
+                        format="h:mm a"
+                        className={user?.darkMode ? 'dark-time-picker' : ''}
+                      />
+                      
+                      <button
+                        onClick={() => handleSaveEventTime(index)}
+                        className="px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                      >
+                        Save
+                      </button>
+                      
+                      <button
+                        onClick={handleCancelEdit}
+                        className={`px-3 py-1 rounded ${
+                          user?.darkMode 
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // Display mode
+                  <div className="flex items-center justify-between">
+                    <span className={`text-base ${
+                      user?.darkMode ? 'text-white' : 'text-gray-800'
+                    }`}>
+                      {getEventTypeText(event.type)}
+                    </span>
+                    
+                    <div className="flex items-center gap-3">
+                      <span className={`text-base ${
+                        user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
+                        {formatTimeForDisplay(event.timestamp)}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleEditEvent(index)}
+                        className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                          user?.darkMode 
+                            ? 'text-purple-400 hover:bg-purple-900/20' 
+                            : 'text-purple-600 hover:bg-purple-50'
+                        }`}
+                        style={{
+                          backgroundColor: user?.darkMode ? 'rgba(139, 92, 246, 0.1)' : '#F3E8FF'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      
+                      {events.length > 1 && (
+                        <button
+                          onClick={() => handleDeleteEvent(index)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            user?.darkMode 
+                              ? 'text-gray-400 hover:bg-gray-800' 
+                              : 'text-gray-500 hover:bg-gray-100'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Add Interjection Button - Only show between events, not after the last one */}
+              {index < events.length - 1 && (
+                <div className="flex justify-center py-2">
+                  <button
+                    onClick={() => {
+                      // Determine what type to add based on current and next event
+                      const currentType = event.type;
+                      const nextType = events[index + 1].type;
+                      let newType: SleepEvent['type'] = 'woke_up';
+                      
+                      if (currentType === 'fell_asleep' && nextType === 'out_of_bed') {
+                        newType = 'woke_up';
+                      } else if (currentType === 'woke_up' && nextType === 'out_of_bed') {
+                        newType = 'fell_asleep';
+                      }
+                      
+                      handleAddInterjection(index, newType);
+                    }}
+                    className={`p-2 rounded-full transition-colors ${
+                      user?.darkMode 
+                        ? 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30' 
+                        : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                    }`}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom spacing */}
       <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
