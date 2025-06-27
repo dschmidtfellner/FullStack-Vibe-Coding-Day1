@@ -2277,10 +2277,9 @@ function EditLogModal() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center">
-        <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
-          user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-        }`}>
+    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+    }`}>
       {/* Top spacing */}
       <div className="h-[20px]"></div>
 
@@ -2721,8 +2720,7 @@ function EditLogModal() {
           </div>
         </div>
       )}
-        </div>
-      </div>
+    </div>
   );
 }
 
