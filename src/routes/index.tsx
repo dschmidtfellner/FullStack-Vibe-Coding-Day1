@@ -2242,10 +2242,19 @@ function EditLogModal() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-      <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
-        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-      }`}>
+    <>
+      {/* Modal Backdrop */}
+      <div 
+        className="fixed inset-0 z-40" 
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }} 
+        onClick={navigateBack}
+      ></div>
+      
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
+          user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+        }`}>
       {/* Top spacing */}
       <div className="h-[20px]"></div>
 
@@ -2634,8 +2643,9 @@ function EditLogModal() {
           </div>
         </div>
       )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
