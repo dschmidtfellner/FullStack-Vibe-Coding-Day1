@@ -2217,15 +2217,44 @@ function EditLogView() {
         </button>
       </div>
 
-      {/* Log Tile - Preserved from detail view */}
+      {/* Log Tile - Preserved from detail view with delete icon */}
       <div className="px-4 py-4">
-        <SleepLogTile
-          log={log}
-          user={user}
-          napNumber={1}
-          formatTimeInTimezone={formatTimeForDisplay}
-          showClickable={false}
-        />
+        <div className="relative">
+          <SleepLogTile
+            log={log}
+            user={user}
+            napNumber={1}
+            formatTimeInTimezone={formatTimeForDisplay}
+            showClickable={false}
+          />
+          {/* Delete icon in top right of tile */}
+          <button
+            onClick={async () => {
+              if (confirm('Are you sure you want to delete this log? This action cannot be undone.')) {
+                try {
+                  const { deleteDoc, doc } = await import('firebase/firestore');
+                  const { db } = await import('@/lib/firebase');
+                  
+                  if (state.logId) {
+                    await deleteDoc(doc(db, 'logs', state.logId));
+                    navigateBack();
+                  }
+                } catch (error) {
+                  console.error('Error deleting log:', error);
+                  alert('Failed to delete log. Please try again.');
+                }
+              }
+            }}
+            className="absolute top-4 right-4 p-2 transition-colors"
+            style={{
+              color: '#E8B4E3'
+            }}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Date Selector */}
@@ -2263,14 +2292,16 @@ function EditLogView() {
 
       {/* Events List */}
       <div className="px-4 pb-20 overflow-y-auto">
-        <div className="space-y-2">
+        <div>
           {events.map((event, index) => (
             <div key={index}>
               {/* Event Row */}
-              <div className={`p-4 rounded-lg border ${
+              <div className={`py-4 ${
+                index > 0 ? 'border-t' : ''
+              } ${
                 user?.darkMode 
-                  ? 'bg-gray-900 border-gray-700' 
-                  : 'bg-white border-gray-200'
+                  ? 'border-gray-700' 
+                  : 'border-gray-200'
               }`}>
                 {editingEventIndex === index ? (
                   // Editing mode
@@ -2293,20 +2324,13 @@ function EditLogView() {
                       
                       <button
                         onClick={() => handleSaveEventTime(index)}
-                        className="px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                        className="px-4 py-1.5 rounded-full text-sm transition-colors"
+                        style={{
+                          backgroundColor: '#E8B4E3',
+                          color: 'white'
+                        }}
                       >
                         Save
-                      </button>
-                      
-                      <button
-                        onClick={handleCancelEdit}
-                        className={`px-3 py-1 rounded ${
-                          user?.darkMode 
-                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        }`}
-                      >
-                        Cancel
                       </button>
                     </div>
                   </div>
@@ -2328,13 +2352,11 @@ function EditLogView() {
                       
                       <button
                         onClick={() => handleEditEvent(index)}
-                        className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                          user?.darkMode 
-                            ? 'text-purple-400 hover:bg-purple-900/20' 
-                            : 'text-purple-600 hover:bg-purple-50'
-                        }`}
+                        className="px-4 py-1.5 rounded-full text-sm transition-colors border"
                         style={{
-                          backgroundColor: user?.darkMode ? 'rgba(139, 92, 246, 0.1)' : '#F3E8FF'
+                          borderColor: '#E8B4E3',
+                          color: '#E8B4E3',
+                          backgroundColor: 'transparent'
                         }}
                       >
                         Edit
@@ -2343,13 +2365,9 @@ function EditLogView() {
                       {events.length > 1 && (
                         <button
                           onClick={() => handleDeleteEvent(index)}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            user?.darkMode 
-                              ? 'text-gray-400 hover:bg-gray-800' 
-                              : 'text-gray-500 hover:bg-gray-100'
-                          }`}
+                          className="p-2 transition-colors text-gray-400 hover:text-gray-600"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -2361,7 +2379,7 @@ function EditLogView() {
               
               {/* Add Interjection Button - Only show between events, not after the last one */}
               {index < events.length - 1 && (
-                <div className="flex justify-center py-2">
+                <div className="flex justify-end py-3">
                   <button
                     onClick={() => {
                       // Determine what type to add based on current and next event
@@ -2377,13 +2395,13 @@ function EditLogView() {
                       
                       handleAddInterjection(index, newType);
                     }}
-                    className={`p-2 rounded-full transition-colors ${
-                      user?.darkMode 
-                        ? 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30' 
-                        : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
-                    }`}
+                    className="p-2.5 rounded-full transition-colors"
+                    style={{
+                      backgroundColor: '#E8B4E3',
+                      color: 'white'
+                    }}
                   >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-6 h-6" />
                   </button>
                 </div>
               )}
