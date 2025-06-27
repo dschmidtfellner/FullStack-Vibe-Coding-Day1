@@ -2245,13 +2245,13 @@ function EditLogModal() {
     <>
       {/* Modal Backdrop */}
       <div 
-        className="fixed inset-0 z-40" 
+        className="fixed inset-0 z-[100]" 
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }} 
         onClick={navigateBack}
       ></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center">
         <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
           user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
         }`}>
