@@ -1978,6 +1978,9 @@ function EditLogModal() {
   const [interjectionType, setInterjectionType] = useState<SleepEvent['type']>('woke_up');
   const [interjectionTime, setInterjectionTime] = useState<Date>(new Date());
   const [interjectionValidationWarning, setInterjectionValidationWarning] = useState<any>(null);
+  
+  // Validation dialog state
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
 
   // Get current log from cache or fetch it
   useEffect(() => {
@@ -2148,6 +2151,32 @@ function EditLogModal() {
     }
   };
 
+  // Check if event has consecutive same type (for red formatting)
+  const hasConsecutiveSameType = (index: number): boolean => {
+    if (index === 0) return false;
+    
+    const currentEvent = events[index];
+    const previousEvent = events[index - 1];
+    
+    // Only check for consecutive awake/asleep events
+    const sleepWakeTypes = ['fell_asleep', 'woke_up'];
+    if (!sleepWakeTypes.includes(currentEvent.type) || !sleepWakeTypes.includes(previousEvent.type)) {
+      return false;
+    }
+    
+    return currentEvent.type === previousEvent.type;
+  };
+
+  // Check if there are any consecutive same types in the events array
+  const hasAnyConsecutiveSameTypes = (): boolean => {
+    for (let i = 1; i < events.length; i++) {
+      if (hasConsecutiveSameType(i)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Validate interjection time
   const validateInterjectionTime = (time: Date, beforeEvent: Date, afterEvent: Date) => {
     if (time < beforeEvent) {
@@ -2207,6 +2236,12 @@ function EditLogModal() {
   const handleSaveChanges = async () => {
     if (!state.logId || !log || !user) return;
     
+    // Check for consecutive same types before saving
+    if (hasAnyConsecutiveSameTypes()) {
+      setShowValidationDialog(true);
+      return;
+    }
+    
     setIsSaving(true);
     try {
       // Update the log with new events
@@ -2252,7 +2287,14 @@ function EditLogModal() {
       {/* Header with Back and Save buttons */}
       <div className="px-4 py-2 flex items-center justify-between">
         <button
-          onClick={navigateBack}
+          onClick={() => {
+            // Check for consecutive same types before navigating back
+            if (hasAnyConsecutiveSameTypes()) {
+              setShowValidationDialog(true);
+              return;
+            }
+            navigateBack();
+          }}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
             user?.darkMode 
               ? 'text-gray-300 hover:bg-gray-800' 
@@ -2270,8 +2312,8 @@ function EditLogModal() {
           disabled={isSaving}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
             user?.darkMode 
-              ? 'bg-purple-600 text-white hover:bg-purple-700' 
-              : 'bg-purple-600 text-white hover:bg-purple-700'
+              ? 'bg-purple-800 text-white hover:bg-purple-900' 
+              : 'bg-purple-800 text-white hover:bg-purple-900'
           }`}
         >
           {isSaving ? (
@@ -2396,11 +2438,20 @@ function EditLogModal() {
                 ) : (
                   // Display mode
                   <div className="flex items-center justify-between">
-                    <span className={`text-base ${
-                      user?.darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      {getEventTypeText(event.type)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-base ${
+                        hasConsecutiveSameType(index) 
+                          ? 'text-red-500' 
+                          : (user?.darkMode ? 'text-white' : 'text-gray-800')
+                      }`}>
+                        {getEventTypeText(event.type)}
+                      </span>
+                      {hasConsecutiveSameType(index) && (
+                        <div className="w-6 h-6 rounded-full border-2 border-red-500 flex items-center justify-center">
+                          <span className="text-red-500 text-sm font-bold">!</span>
+                        </div>
+                      )}
+                    </div>
                     
                     <div className="flex items-center gap-3">
                       <span className={`text-base ${
@@ -2629,6 +2680,42 @@ function EditLogModal() {
                 }}
               >
                 Add Log
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Validation Dialog */}
+      {showValidationDialog && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setShowValidationDialog(false)}
+          ></div>
+          <div className={`relative w-full max-w-md mx-auto rounded-2xl p-8 shadow-xl ${
+            user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+          }`} style={{ backgroundColor: '#F4E6F3' }}>
+            <div className="text-center">
+              <h2 className="text-2xl font-medium mb-4" style={{ color: '#503460' }}>
+                Missing an awake or asleep
+              </h2>
+              
+              <p className="text-base mb-6" style={{ color: '#503460' }}>
+                You've tracked two 'Awakes' or two 'Asleeps' in a row. To save this log, 
+                add an 'Asleep' or 'Awake' in between them.
+              </p>
+              
+              <p className="text-base mb-8" style={{ color: '#503460' }}>
+                If you don't know exactly, just put your best guess.
+              </p>
+              
+              <button
+                onClick={() => setShowValidationDialog(false)}
+                className="w-full py-4 rounded-full text-white font-medium text-lg"
+                style={{ backgroundColor: '#503460' }}
+              >
+                Got It
               </button>
             </div>
           </div>
