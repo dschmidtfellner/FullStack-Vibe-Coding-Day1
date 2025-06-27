@@ -135,6 +135,7 @@ Implement an Edit interface for the Log Detail page that allows users to:
 ### Commits Made During Session
 1. "feat: Add Edit interface for sleep logs with date selector, inline time editing, and interjection support"
 2. "fix: Polish Edit interface styling to match design specifications"
+3. "fix: Change event type display text from 'Fell asleep'/'Woke up' to 'Asleep'/'Awake'"
 
 ### Important Implementation Details
 - Created new 'edit-log' view type in NavigationState
