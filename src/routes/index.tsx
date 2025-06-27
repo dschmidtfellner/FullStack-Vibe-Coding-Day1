@@ -144,6 +144,13 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     } else if (state.view === 'log-detail') {
       // From log detail: always go back to logs list
       navigateToLogs();
+    } else if (state.view === 'edit-log') {
+      // From edit log: go back to log detail
+      if (state.logId) {
+        navigateToLogDetail(state.logId);
+      } else {
+        navigateToLogs();
+      }
     } else {
       // Default fallback for other views
       navigateToLogs();
