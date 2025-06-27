@@ -308,7 +308,7 @@ function AppRouter() {
           return <LogsListView />;
         }
       case 'edit-log':
-        return <LogDetailView />;
+        return null; // Don't render background view when EditLogModal is open
       default:
         return <LogsListView />;
     }
