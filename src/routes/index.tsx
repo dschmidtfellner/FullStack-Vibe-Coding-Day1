@@ -1584,8 +1584,8 @@ function LogDetailView() {
   const getEventTypeText = (type: SleepEvent['type']): string => {
     switch (type) {
       case 'put_in_bed': return 'Put in bed';
-      case 'fell_asleep': return 'Fell asleep';
-      case 'woke_up': return 'Woke up';
+      case 'fell_asleep': return 'Asleep';
+      case 'woke_up': return 'Awake';
       case 'out_of_bed': return 'Out of bed';
     }
   };
@@ -2821,8 +2821,8 @@ function SleepLogModal() {
   const getEventTypeText = (type: SleepEvent['type']): string => {
     switch (type) {
       case 'put_in_bed': return 'Put in bed';
-      case 'fell_asleep': return 'Fell asleep';
-      case 'woke_up': return 'Woke up';
+      case 'fell_asleep': return 'Asleep';
+      case 'woke_up': return 'Awake';
       case 'out_of_bed': return 'Out of bed';
     }
   };
