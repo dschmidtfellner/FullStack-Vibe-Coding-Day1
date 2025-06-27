@@ -2503,7 +2503,7 @@ function EditLogModal() {
 
       {/* Interjection Modal */}
       {showInterjectionModal && interjectionIndex !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-end z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-end z-[120]">
           <div className={`w-full max-w-[800px] mx-auto rounded-t-2xl shadow-xl transform transition-transform duration-300 ease-out ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}>
