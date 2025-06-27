@@ -2242,8 +2242,7 @@ function EditLogModal() {
   }
 
   return (
-      {/* Full Screen Container */}
-      <div className="fixed inset-0 flex items-center justify-center">
+    <div className="fixed inset-0 flex items-center justify-center">
         <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
           user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
         }`}>
