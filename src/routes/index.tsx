@@ -308,7 +308,7 @@ function AppRouter() {
           return <LogsListView />;
         }
       case 'edit-log':
-        return <EditLogView />;
+        return <LogDetailView />;
       default:
         return <LogsListView />;
     }
@@ -318,6 +318,7 @@ function AppRouter() {
     <>
       {renderMainView()}
       {state.view === 'log-sleep' && <SleepLogModal />}
+      {state.view === 'edit-log' && <EditLogModal />}
     </>
   );
 }
@@ -1960,7 +1961,7 @@ function LogDetailView() {
   );
 }
 
-function EditLogView() {
+function EditLogModal() {
   const { user } = useBubbleAuth();
   const { state, navigateBack, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);
@@ -1970,6 +1971,13 @@ function EditLogView() {
   const [editingTime, setEditingTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Interjection modal state
+  const [showInterjectionModal, setShowInterjectionModal] = useState(false);
+  const [interjectionIndex, setInterjectionIndex] = useState<number | null>(null);
+  const [interjectionType, setInterjectionType] = useState<SleepEvent['type']>('woke_up');
+  const [interjectionTime, setInterjectionTime] = useState<Date>(new Date());
+  const [interjectionValidationWarning, setInterjectionValidationWarning] = useState<any>(null);
 
   // Get current log from cache or fetch it
   useEffect(() => {
@@ -2036,6 +2044,7 @@ function EditLogView() {
   const formatDateForSelector = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       timeZone: state.timezone,
+      weekday: 'long',
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -2139,6 +2148,61 @@ function EditLogView() {
     }
   };
 
+  // Validate interjection time
+  const validateInterjectionTime = (time: Date, beforeEvent: Date, afterEvent: Date) => {
+    if (time < beforeEvent) {
+      return {
+        isValid: false,
+        warning: {
+          type: 'before-range',
+          message: `Time must be after ${formatTimeForDisplay(beforeEvent)}`
+        }
+      };
+    }
+    
+    if (time > afterEvent) {
+      return {
+        isValid: false,
+        warning: {
+          type: 'after-range',
+          message: `Time must be before ${formatTimeForDisplay(afterEvent)}`
+        }
+      };
+    }
+    
+    return { isValid: true, warning: null };
+  };
+
+  // Handle interjection modal save
+  const handleSaveInterjection = () => {
+    if (interjectionIndex === null) return;
+    
+    const beforeEvent = events[interjectionIndex];
+    const afterEvent = events[interjectionIndex + 1];
+    
+    // Validate the time
+    const validation = validateInterjectionTime(interjectionTime, beforeEvent.timestamp, afterEvent.timestamp);
+    if (!validation.isValid) {
+      setInterjectionValidationWarning(validation.warning);
+      return;
+    }
+    
+    // Add the interjection
+    const updatedEvents = [...events];
+    const newEvent = {
+      type: interjectionType,
+      timestamp: interjectionTime
+    };
+    
+    updatedEvents.splice(interjectionIndex + 1, 0, newEvent);
+    setEvents(updatedEvents);
+    
+    // Close modal
+    setShowInterjectionModal(false);
+    setInterjectionIndex(null);
+    setInterjectionValidationWarning(null);
+  };
+
   // Save all changes
   const handleSaveChanges = async () => {
     if (!state.logId || !log || !user) return;
@@ -2178,9 +2242,10 @@ function EditLogView() {
   }
 
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+      <div className={`relative h-full w-full font-['Poppins'] max-w-[800px] mx-auto ${
+        user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+      }`}>
       {/* Top spacing */}
       <div className="h-[20px]"></div>
 
@@ -2247,7 +2312,7 @@ function EditLogView() {
             }}
             className="absolute top-4 right-4 p-2 transition-colors"
             style={{
-              color: '#E8B4E3'
+              color: '#DC2626'
             }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2296,13 +2361,7 @@ function EditLogView() {
           {events.map((event, index) => (
             <div key={index}>
               {/* Event Row */}
-              <div className={`py-4 ${
-                index > 0 ? 'border-t' : ''
-              } ${
-                user?.darkMode 
-                  ? 'border-gray-700' 
-                  : 'border-gray-200'
-              }`}>
+              <div className="py-4">
                 {editingEventIndex === index ? (
                   // Editing mode
                   <div className="flex items-center justify-between gap-4">
@@ -2354,8 +2413,8 @@ function EditLogView() {
                         onClick={() => handleEditEvent(index)}
                         className="px-4 py-1.5 rounded-full text-sm transition-colors border"
                         style={{
-                          borderColor: '#E8B4E3',
-                          color: '#E8B4E3',
+                          borderColor: '#9B7EBD',
+                          color: '#9B7EBD',
                           backgroundColor: 'transparent'
                         }}
                       >
@@ -2377,31 +2436,49 @@ function EditLogView() {
                 )}
               </div>
               
-              {/* Add Interjection Button - Only show between events, not after the last one */}
+              {/* Separator line with overlaid plus button - Only show between events */}
               {index < events.length - 1 && (
-                <div className="flex justify-end py-3">
+                <div className="relative flex items-center justify-center h-8">
+                  {/* Pink separator line */}
+                  <div 
+                    className="absolute inset-x-0 top-1/2 h-px"
+                    style={{ backgroundColor: '#F0DDEF' }}
+                  ></div>
+                  
+                  {/* Plus button overlaid on top */}
                   <button
                     onClick={() => {
-                      // Determine what type to add based on current and next event
+                      // Determine default type based on current and next event
                       const currentType = event.type;
                       const nextType = events[index + 1].type;
-                      let newType: SleepEvent['type'] = 'woke_up';
+                      let defaultType: SleepEvent['type'] = 'woke_up';
                       
                       if (currentType === 'fell_asleep' && nextType === 'out_of_bed') {
-                        newType = 'woke_up';
+                        defaultType = 'woke_up';
                       } else if (currentType === 'woke_up' && nextType === 'out_of_bed') {
-                        newType = 'fell_asleep';
+                        defaultType = 'fell_asleep';
                       }
                       
-                      handleAddInterjection(index, newType);
+                      // Calculate default time (halfway between events)
+                      const currentEvent = events[index];
+                      const nextEvent = events[index + 1];
+                      const timeDiff = nextEvent.timestamp.getTime() - currentEvent.timestamp.getTime();
+                      const defaultTime = new Date(currentEvent.timestamp.getTime() + timeDiff / 2);
+                      
+                      // Open modal
+                      setInterjectionIndex(index);
+                      setInterjectionType(defaultType);
+                      setInterjectionTime(defaultTime);
+                      setInterjectionValidationWarning(null);
+                      setShowInterjectionModal(true);
                     }}
-                    className="p-2.5 rounded-full transition-colors"
+                    className="p-1.5 rounded-full transition-colors relative z-10"
                     style={{
                       backgroundColor: '#E8B4E3',
                       color: 'white'
                     }}
                   >
-                    <Plus className="w-6 h-6" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -2414,6 +2491,150 @@ function EditLogView() {
       <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
+
+      {/* Interjection Modal */}
+      {showInterjectionModal && interjectionIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-end z-50">
+          <div className={`w-full max-w-[800px] mx-auto rounded-t-2xl shadow-xl transform transition-transform duration-300 ease-out ${
+            user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+          }`}>
+            {/* Modal Header */}
+            <div className="px-6 py-6 text-center">
+              <h2 className={`text-2xl font-medium mb-2 ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Add a Log
+              </h2>
+              <p className={`text-base ${
+                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                between {formatTimeForDisplay(events[interjectionIndex].timestamp)} and {formatTimeForDisplay(events[interjectionIndex + 1].timestamp)}
+              </p>
+            </div>
+
+            {/* Context Events */}
+            <div className="px-6 mb-8">
+              <div className="space-y-4">
+                {/* Before Event */}
+                <div className="flex justify-between items-center">
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    {getEventTypeText(events[interjectionIndex].type)}
+                  </span>
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {formatTimeForDisplay(events[interjectionIndex].timestamp)}
+                  </span>
+                </div>
+
+                {/* Input Row */}
+                <div className="flex justify-between items-center gap-4">
+                  {/* Event Type Dropdown */}
+                  <div style={{ width: '120px' }}>
+                    <select
+                      value={interjectionType}
+                      onChange={(e) => setInterjectionType(e.target.value as SleepEvent['type'])}
+                      className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-colors ${
+                        user?.darkMode
+                          ? 'bg-[#2a223a] border-gray-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-800'
+                      }`}
+                    >
+                      <option value="fell_asleep">Asleep</option>
+                      <option value="woke_up">Awake</option>
+                    </select>
+                  </div>
+
+                  {/* Time Picker */}
+                  <div style={{ width: '120px' }}>
+                    <TimePicker
+                      value={`${interjectionTime.getHours().toString().padStart(2, '0')}:${interjectionTime.getMinutes().toString().padStart(2, '0')}`}
+                      onChange={(value) => {
+                        if (value) {
+                          const [hours, minutes] = value.split(':').map(Number);
+                          const newTime = new Date(interjectionTime);
+                          newTime.setHours(hours, minutes, 0, 0);
+                          setInterjectionTime(newTime);
+                          
+                          // Clear validation warning when time changes
+                          setInterjectionValidationWarning(null);
+                        }
+                      }}
+                      disableClock={true}
+                      clearIcon={null}
+                      format="h:mm a"
+                      className={`w-full ${user?.darkMode ? 'dark-time-picker' : ''}`}
+                    />
+                  </div>
+                </div>
+
+                {/* After Event */}
+                <div className="flex justify-between items-center">
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    {getEventTypeText(events[interjectionIndex + 1].type)}
+                  </span>
+                  <span className={`text-base ${
+                    user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {formatTimeForDisplay(events[interjectionIndex + 1].timestamp)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Validation Warning */}
+            {interjectionValidationWarning && (
+              <div className="px-6 mb-6">
+                <div className={`p-4 rounded-lg border-2 ${
+                  user?.darkMode 
+                    ? 'bg-red-900/20 border-red-600 text-red-400' 
+                    : 'bg-red-50 border-red-300 text-red-700'
+                }`}>
+                  <p className="text-base font-medium">{interjectionValidationWarning.message}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="px-6 pb-8 flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setShowInterjectionModal(false);
+                  setInterjectionIndex(null);
+                  setInterjectionValidationWarning(null);
+                }}
+                className={`px-6 py-3 rounded-full text-base transition-colors ${
+                  user?.darkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSaveInterjection}
+                disabled={!!interjectionValidationWarning}
+                className={`px-8 py-3 rounded-full text-base text-white transition-colors ${
+                  interjectionValidationWarning 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:opacity-90'
+                }`}
+                style={{ 
+                  backgroundColor: user?.darkMode ? '#9B7EBD' : '#503460'
+                }}
+              >
+                Add Log
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 }
