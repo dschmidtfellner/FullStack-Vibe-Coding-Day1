@@ -1586,7 +1586,7 @@ function LogsListView() {
                     {/* Tile */}
                     <div className="flex items-start mb-2">
                       {/* Time label - top aligned */}
-                      <div className="text-sm mr-4 pt-3" style={{ minWidth: '70px', color: '#745288' }}>
+                      <div className="text-sm mr-4" style={{ minWidth: '70px', color: '#745288' }}>
                         {event.localTime}
                       </div>
                       
