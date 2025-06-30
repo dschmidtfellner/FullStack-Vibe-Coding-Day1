@@ -1305,7 +1305,7 @@ function LogsListView() {
 
   // Process all events for Windows view
   const getWindowsViewData = () => {
-    // Collect all events from all logs (previous day bedtime + current day)
+    // Collect events from logs that started on selected day + previous day bedtime's out of bed
     const allEvents: Array<{
       event: SleepEvent;
       logId: string;
@@ -1313,19 +1313,20 @@ function LogsListView() {
       timestamp: Date;
     }> = [];
 
-    // Add previous day bedtime events if exists
+    // Add ONLY the "out of bed" event from previous day bedtime if exists
     if (previousDayBedtime && previousDayBedtime.events) {
-      previousDayBedtime.events.forEach(event => {
+      const outOfBedEvent = previousDayBedtime.events.find(event => event.type === 'out_of_bed');
+      if (outOfBedEvent) {
         allEvents.push({
-          event,
+          event: outOfBedEvent,
           logId: previousDayBedtime.id,
           logType: previousDayBedtime.sleepType,
-          timestamp: event.timestamp.toDate()
+          timestamp: outOfBedEvent.timestamp.toDate()
         });
-      });
+      }
     }
 
-    // Add current day events
+    // Add ALL events from current day logs (logs that started on selected day)
     selectedDateLogs.forEach(log => {
       if (log.events) {
         log.events.forEach(event => {
@@ -1554,18 +1555,22 @@ function LogsListView() {
                 
                 // Determine tile type and styling
                 let tileColor = '';
+                let textColor = '';
                 let tileText = '';
                 let showSeparator = false;
                 
                 if (event.type === 'out_of_bed') {
                   tileColor = user?.darkMode ? 'bg-gray-700' : 'bg-gray-200';
+                  textColor = user?.darkMode ? 'text-white' : 'text-gray-800';
                   tileText = `${durationString} out of bed`;
                   showSeparator = true;
                 } else if (event.type === 'fell_asleep') {
-                  tileColor = user?.darkMode ? 'bg-[#6B5B95]' : 'bg-[#9B7EBD]';
+                  tileColor = 'bg-[#745288]';
+                  textColor = 'text-white';
                   tileText = `${durationString} asleep`;
                 } else if (event.type === 'put_in_bed' || event.type === 'woke_up') {
-                  tileColor = user?.darkMode ? 'bg-[#8B5A8C]' : 'bg-[#F0B4E4]';
+                  tileColor = 'bg-[#F0DDEF]';
+                  textColor = user?.darkMode ? 'text-gray-800' : 'text-gray-800';
                   tileText = `${durationString} awake in bed`;
                 }
                 
@@ -1579,20 +1584,16 @@ function LogsListView() {
                     )}
                     
                     {/* Tile */}
-                    <div className="flex items-center mb-2">
-                      {/* Time label */}
-                      <div className={`text-sm mr-4 ${
-                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`} style={{ minWidth: '70px' }}>
+                    <div className="flex items-start mb-2">
+                      {/* Time label - top aligned */}
+                      <div className="text-sm mr-4 pt-3" style={{ minWidth: '70px', color: '#745288' }}>
                         {event.localTime}
                       </div>
                       
                       {/* Duration tile */}
                       <div
                         onClick={() => navigateToLogDetail(logId)}
-                        className={`flex-1 px-4 py-3 rounded-2xl cursor-pointer transition-opacity hover:opacity-90 ${tileColor} ${
-                          user?.darkMode ? 'text-white' : 'text-gray-800'
-                        }`}
+                        className={`flex-1 px-4 py-3 rounded-2xl cursor-pointer transition-opacity hover:opacity-90 ${tileColor} ${textColor}`}
                       >
                         <span className="text-base">{tileText}</span>
                       </div>
