@@ -109,6 +109,17 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToNewLog = (defaultDate?: string) => {
+    // Try to send to Bubble parent first
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'FIREBASE_APP_MODAL',
+        modalType: 'NEW_LOG_MODAL',
+        data: { defaultDate, childId: initialChildId }
+      }, '*');
+      return;
+    }
+    
+    // Fallback to inline modal
     setState(prev => ({ 
       ...prev, 
       view: 'log-sleep', 
@@ -120,6 +131,17 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToEditLog = (logId: string) => {
+    // Try to send to Bubble parent first
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'FIREBASE_APP_MODAL',
+        modalType: 'EDIT_LOG_MODAL',
+        data: { logId, childId: initialChildId }
+      }, '*');
+      return;
+    }
+    
+    // Fallback to inline modal
     setState(prev => ({ ...prev, view: 'edit-log', logId, previousView: prev.view === 'edit-log' ? prev.previousView : prev.view }));
     updateURL('edit-log', logId);
   };
@@ -1170,13 +1192,24 @@ function LogsListView() {
   // Expose function to open comments modal from outside (e.g., Bubble app)
   useEffect(() => {
     (window as any).openCommentsModal = () => {
+      // Try to send to Bubble parent first
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'FIREBASE_APP_MODAL',
+          modalType: 'COMMENTS_MODAL',
+          data: { childId: state.childId }
+        }, '*');
+        return;
+      }
+      
+      // Fallback to inline modal
       setShowCommentsModal(true);
     };
     
     return () => {
       delete (window as any).openCommentsModal;
     };
-  }, []);
+  }, [state.childId]);
 
   // Listen to logs with real-time updates
   useEffect(() => {
@@ -1470,7 +1503,20 @@ function LogsListView() {
 
             {/* Comments Icon */}
             <button
-              onClick={() => setShowCommentsModal(true)}
+              onClick={() => {
+                // Try to send to Bubble parent first
+                if (window.parent !== window) {
+                  window.parent.postMessage({
+                    type: 'FIREBASE_APP_MODAL',
+                    modalType: 'COMMENTS_MODAL',
+                    data: { childId: state.childId }
+                  }, '*');
+                  return;
+                }
+                
+                // Fallback to inline modal
+                setShowCommentsModal(true);
+              }}
               className={`p-2 rounded-full transition-colors ${
                 user?.darkMode 
                   ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
