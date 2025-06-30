@@ -1388,55 +1388,56 @@ function LogsListView() {
       {/* Date Navigation Header */}
       <div className="px-4 pb-4">
         <div className="flex items-center justify-between">
-          {/* Previous Day Button */}
-          <button
-            onClick={goToPreviousDay}
-            className={`p-2 rounded-full transition-colors ${
-              user?.darkMode 
-                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          {/* Date Display - Clickable */}
-          <div className="flex flex-col items-center">
+          {/* Left: Date Navigation Controls */}
+          <div className="flex items-center">
+            {/* Previous Day Button */}
             <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`font-domine text-2xl font-medium transition-colors ${
+              onClick={goToPreviousDay}
+              className={`p-2 rounded-full transition-colors ${
                 user?.darkMode 
-                  ? 'text-white hover:text-gray-200' 
-                  : 'text-gray-800 hover:text-gray-600'
+                  ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
               }`}
             >
-              {isToday() ? 'Today' : formatSelectedDate()}
+              <ChevronLeft className="w-6 h-6" />
             </button>
-            {/* Relative date text */}
-            {getRelativeDateText() && getRelativeDateText() !== 'Today' && (
-              <div className={`text-sm mt-1 ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                {getRelativeDateText()}
-              </div>
-            )}
+
+            {/* Date Display - Clickable */}
+            <div className="flex flex-col items-start mx-3">
+              <button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className={`font-domine text-2xl font-medium transition-colors ${
+                  user?.darkMode 
+                    ? 'text-white hover:text-gray-200' 
+                    : 'text-gray-800 hover:text-gray-600'
+                }`}
+              >
+                {isToday() ? 'Today' : formatSelectedDate()}
+              </button>
+              {/* Relative date text */}
+              {getRelativeDateText() && getRelativeDateText() !== 'Today' && (
+                <div className={`text-sm mt-1 ${
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  {getRelativeDateText()}
+                </div>
+              )}
+            </div>
+
+            {/* Next Day Button */}
+            <button
+              onClick={goToNextDay}
+              className={`p-2 rounded-full transition-colors ${
+                user?.darkMode 
+                  ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Next Day Button */}
-          <button
-            onClick={goToNextDay}
-            className={`p-2 rounded-full transition-colors ${
-              user?.darkMode 
-                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* View Mode Toggle - placed after date navigation, aligned to right */}
-        <div className="flex justify-end mt-4">
+          {/* Right: Windows/Events Toggle */}
           <button
             onClick={() => setViewMode(viewMode === 'events' ? 'windows' : 'events')}
             className={`px-4 py-2 rounded-full border transition-colors ${
@@ -1455,7 +1456,7 @@ function LogsListView() {
 
         {/* Date Picker */}
         {showDatePicker && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex justify-start">
             <input
               type="date"
               value={selectedDate}
@@ -2584,7 +2585,7 @@ function EditLogModal() {
                         disableClock={true}
                         clearIcon={null}
                         format="h:mm a"
-                        className={user?.darkMode ? 'dark-time-picker' : ''}
+                        className={`w-32 ${user?.darkMode ? 'dark-time-picker' : ''}`}
                       />
                       
                       <button
@@ -2780,7 +2781,7 @@ function EditLogModal() {
                       disableClock={true}
                       clearIcon={null}
                       format="h:mm a"
-                      className={`w-full ${user?.darkMode ? 'dark-time-picker' : ''}`}
+                      className={`w-32 ${user?.darkMode ? 'dark-time-picker' : ''}`}
                     />
                   </div>
                 </div>
@@ -3526,12 +3527,12 @@ function SleepLogModal() {
                         const validation = validateTimeInput(combinedDateTime, events.length === 0);
                         setValidationWarning(validation.warning);
                       }}
-                      className={`input input-bordered text-base text-right ${
+                      className={`input input-bordered text-xl text-right w-44 ${
                         user?.darkMode 
                           ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                           : 'bg-white border-gray-300 text-gray-800'
                       }`}
-                      style={{ height: '48px', padding: '0 12px', width: 'auto', minWidth: '120px' }}
+                      style={{ height: '48px', padding: '0 12px', colorScheme: user?.darkMode ? 'dark' : 'light' }}
                     />
                   </div>
                 </div>
@@ -3567,7 +3568,7 @@ function SleepLogModal() {
                       clearIcon={null}
                       disableClock={true}
                       format="h:mm a"
-                      className={`react-time-picker compact right-align ${
+                      className={`react-time-picker compact right-align w-32 ${
                         user?.darkMode ? 'dark-theme' : ''
                       }`}
                     />
@@ -3769,7 +3770,7 @@ function SleepLogModal() {
                               clearIcon={null}
                               disableClock={true}
                               format="h:mm a"
-                              className={`react-time-picker compact ${
+                              className={`react-time-picker compact w-32 ${
                                 user?.darkMode ? 'dark-theme' : ''
                               }`}
                             />
