@@ -1154,6 +1154,7 @@ function LogsListView() {
   const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [viewMode, setViewMode] = useState<'events' | 'windows'>('events');
   
   // Selected date state - default to today in baby's timezone
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -1302,6 +1303,75 @@ function LogsListView() {
 
   const { selectedDateLogs, previousDayBedtime } = getLogsForSelectedDate();
 
+  // Process all events for Windows view
+  const getWindowsViewData = () => {
+    // Collect all events from all logs (previous day bedtime + current day)
+    const allEvents: Array<{
+      event: SleepEvent;
+      logId: string;
+      logType: 'bedtime' | 'nap';
+      timestamp: Date;
+    }> = [];
+
+    // Add previous day bedtime events if exists
+    if (previousDayBedtime && previousDayBedtime.events) {
+      previousDayBedtime.events.forEach(event => {
+        allEvents.push({
+          event,
+          logId: previousDayBedtime.id,
+          logType: previousDayBedtime.sleepType,
+          timestamp: event.timestamp.toDate()
+        });
+      });
+    }
+
+    // Add current day events
+    selectedDateLogs.forEach(log => {
+      if (log.events) {
+        log.events.forEach(event => {
+          allEvents.push({
+            event,
+            logId: log.id,
+            logType: log.sleepType,
+            timestamp: event.timestamp.toDate()
+          });
+        });
+      }
+    });
+
+    // Sort chronologically
+    allEvents.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    // Calculate durations between events
+    const windowsData = allEvents.map((item, index) => {
+      let duration = 0;
+      if (index < allEvents.length - 1) {
+        const nextTimestamp = allEvents[index + 1].timestamp;
+        duration = nextTimestamp.getTime() - item.timestamp.getTime();
+      }
+
+      return {
+        ...item,
+        duration,
+        durationString: formatDuration(duration)
+      };
+    });
+
+    return windowsData;
+  };
+
+  // Format duration in "Xh Ym" format
+  const formatDuration = (milliseconds: number) => {
+    const totalMinutes = Math.floor(milliseconds / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   // Only show skeleton if we're loading AND have no data to show
   if (isLoading && state.logs.length === 0) {
     return <LogsListSkeleton user={user} />;
@@ -1364,6 +1434,24 @@ function LogsListView() {
           </button>
         </div>
 
+        {/* View Mode Toggle - placed after date navigation, aligned to right */}
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={() => setViewMode(viewMode === 'events' ? 'windows' : 'events')}
+            className={`px-4 py-2 rounded-full border transition-colors ${
+              user?.darkMode
+                ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+            }`}
+            style={{
+              fontSize: '14px',
+              fontWeight: '400'
+            }}
+          >
+            {viewMode === 'events' ? 'Windows' : 'Events'}
+          </button>
+        </div>
+
         {/* Date Picker */}
         {showDatePicker && (
           <div className="mt-4 flex justify-center">
@@ -1403,8 +1491,8 @@ function LogsListView() {
               user?.darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>Tap the plus button to start tracking sleep</p>
           </div>
-        ) : (
-          // Single day logs
+        ) : viewMode === 'events' ? (
+          // Events view (original tile view)
           <div className="space-y-3 px-4">
             {/* Previous Day's Bedtime (if exists) */}
             {previousDayBedtime && (
@@ -1448,6 +1536,75 @@ function LogsListView() {
                     formatTimeInTimezone={formatTimeInTimezone}
                     showClickable={true}
                   />
+                );
+              });
+            })()}
+          </div>
+        ) : (
+          // Windows view
+          <div className="px-4">
+            {(() => {
+              const windowsData = getWindowsViewData();
+              
+              return windowsData.map((window, index) => {
+                const { event, logId, duration, durationString } = window;
+                
+                // Don't show duration for the last event
+                if (index === windowsData.length - 1) return null;
+                
+                // Determine tile type and styling
+                let tileColor = '';
+                let tileText = '';
+                let showSeparator = false;
+                
+                if (event.type === 'out_of_bed') {
+                  tileColor = user?.darkMode ? 'bg-gray-700' : 'bg-gray-200';
+                  tileText = `${durationString} out of bed`;
+                  showSeparator = true;
+                } else if (event.type === 'fell_asleep') {
+                  tileColor = user?.darkMode ? 'bg-[#6B5B95]' : 'bg-[#9B7EBD]';
+                  tileText = `${durationString} asleep`;
+                } else if (event.type === 'put_in_bed' || event.type === 'woke_up') {
+                  tileColor = user?.darkMode ? 'bg-[#8B5A8C]' : 'bg-[#F0B4E4]';
+                  tileText = `${durationString} awake in bed`;
+                }
+                
+                return (
+                  <div key={`${logId}-${index}`}>
+                    {/* Gray separator before out of bed tiles */}
+                    {showSeparator && (
+                      <div className={`h-px my-2 ${
+                        user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                      }`} />
+                    )}
+                    
+                    {/* Tile */}
+                    <div className="flex items-center mb-2">
+                      {/* Time label */}
+                      <div className={`text-sm mr-4 ${
+                        user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`} style={{ minWidth: '70px' }}>
+                        {event.localTime}
+                      </div>
+                      
+                      {/* Duration tile */}
+                      <div
+                        onClick={() => navigateToLogDetail(logId)}
+                        className={`flex-1 px-4 py-3 rounded-2xl cursor-pointer transition-opacity hover:opacity-90 ${tileColor} ${
+                          user?.darkMode ? 'text-white' : 'text-gray-800'
+                        }`}
+                      >
+                        <span className="text-base">{tileText}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Gray separator after out of bed tiles */}
+                    {showSeparator && index < windowsData.length - 2 && (
+                      <div className={`h-px my-2 ${
+                        user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                      }`} />
+                    )}
+                  </div>
                 );
               });
             })()}
