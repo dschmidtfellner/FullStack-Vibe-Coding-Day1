@@ -530,7 +530,7 @@ function MessagingSkeleton({ user }: { user: any }) {
       </div>
 
       {/* Message Input skeleton */}
-      <div className={`fixed left-0 right-0 border-t z-10 ${
+      <div className={`absolute left-0 right-0 border-t z-10 ${
         user?.darkMode 
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
@@ -999,7 +999,7 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Floating at bottom with space for Bubble nav */}
-      <div className={`fixed left-0 right-0 border-t z-10 ${
+      <div className={`absolute left-0 right-0 border-t z-10 ${
         user?.darkMode 
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
@@ -1643,7 +1643,7 @@ function LogsListView() {
       </div>
 
       {/* Floating Action Button - Centered and Bigger */}
-      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
@@ -2119,7 +2119,7 @@ function LogDetailView() {
       </div>
 
       {/* Comment Input - Pinned to bottom */}
-      <div className={`fixed left-0 right-0 bottom-0 border-t z-10 ${
+      <div className={`absolute left-0 right-0 bottom-0 border-t z-10 ${
         user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
       }`}>
         <div className="max-w-[800px] mx-auto p-4">
