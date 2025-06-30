@@ -39,6 +39,7 @@
 - **COMPLETED: Conversation-based messaging** ✅ - child-specific conversations with URL routing
 - **COMPLETED: JWT authentication system** ✅ - replaced Clerk with Bubble-compatible JWT tokens
 - **COMPLETED: Sleep statistics calculations** ✅ - comprehensive sleep analytics for Sleep Consulting children with 5 key metrics
+- **COMPLETED: Wake-Windows view** ✅ - chronological timeline of sleep periods with duration calculations
 - Ready for integration as module in Bubble app
 
 ## Important Context
@@ -132,10 +133,20 @@ Implement an Edit interface for the Log Detail page that allows users to:
   - Proper spacing and alignment
   - Subtle gray delete icons
 
+### Modal to Full-Screen Page Transformation
+✅ Converted EditLogModal from modal overlay to full-screen page
+✅ Removed backdrop and modal constraints 
+✅ Fixed scrolling issues by removing fixed positioning
+✅ Updated navigation to go back to LogDetailView instead of LogsListView
+✅ Hidden comment input bar when EditLogModal is visible
+✅ Added validation for consecutive same event types with red formatting and exclamation marks
+✅ Implemented validation dialog to prevent saving with consecutive same types
+
 ### Commits Made During Session
 1. "feat: Add Edit interface for sleep logs with date selector, inline time editing, and interjection support"
 2. "fix: Polish Edit interface styling to match design specifications"
-3. "fix: Change event type display text from 'Fell asleep'/'Woke up' to 'Asleep'/'Awake'"
+3. "fix: Restructure EditLogView as modal overlay to show LogDetailView background"
+4. Multiple fixes for modal behavior, scrolling, and validation
 
 ### Important Implementation Details
 - Created new 'edit-log' view type in NavigationState
@@ -144,9 +155,51 @@ Implement an Edit interface for the Log Detail page that allows users to:
 - Date changes move all events by the same time offset
 - Interjections are placed halfway between existing events
 - Save function updates Firebase and navigates back to log detail
+- Validation prevents saving consecutive same event types (e.g., two "Awake" events in a row)
+
+## Wake-Windows View Implementation
+
+### Objective
+Create an alternative view mode in the Log List that shows wake/sleep periods chronologically with duration calculations between events.
+
+### Progress Status
+✅ Added toggle button in upper right of Log List (Events/Windows)
+✅ Created Windows view showing chronological timeline of sleep periods
+✅ Implemented duration calculation between consecutive subevents
+✅ Styled tiles with proper colors:
+  - Pink (#F0DDEF) for awake in bed periods (Put in bed/Woke up events)
+  - Purple (#745288) with white text for asleep periods (Fell asleep events)
+  - Gray for out of bed periods
+✅ Added gray line separators before/after out of bed tiles
+✅ Made tiles clickable to open associated sleep log
+✅ Fixed timestamp alignment to top of tiles
+✅ Set timestamp color to light purple (#745288)
+✅ Implemented correct event filtering logic:
+  - Shows events from logs that started on selected day
+  - PLUS previous day bedtime's "out of bed" event only
+  - This creates proper bridge showing timespan from previous night to current day
+
+### Commits Made During Session
+1. "feat: Add Windows view toggle to show wake/sleep periods chronologically"
+2. "fix: Polish Windows view with correct colors, alignment, and event filtering logic"
+3. "fix: Remove padding from timestamp to align with top of tiles"
+
+### Technical Implementation
+- Added `viewMode` state with 'events' | 'windows' toggle
+- Created `getWindowsViewData()` function to process chronological events
+- Implemented `formatDuration()` helper for "Xh Ym" format
+- Events sorted chronologically across all relevant logs
+- Duration calculated between consecutive events
+- Smart filtering to show only relevant events per day
+
+### Visual Design
+- Toggle button styled consistently with app design
+- Timestamps in light purple (#745288) aligned with tile tops
+- Color-coded tiles for different sleep states
+- Gray separators visually distinguish out-of-bed periods
+- Maintains clickability to navigate to source logs
 
 ### Next Steps
-- Polish styling to match screenshot more closely
-- Add validation for invalid event sequences
-- Test edge cases and error handling
-- Consider adding undo/redo functionality
+- Feature complete and ready for user testing
+- Consider adding additional analytics or insights to Windows view
+- Monitor user feedback for potential refinements
