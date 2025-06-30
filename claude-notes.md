@@ -277,6 +277,80 @@ Create a modal overlay for viewing unread and all log comments across a child's 
 - Works with existing Firebase message structure
 - Integrates with navigation system for log detail views
 
+## Bubble Integration & Modal Communication System
+
+### Objective
+Optimize the Firebase app for embedding in Bubble with proper handling of floating elements and full-page modals.
+
+### Problem Solved
+When embedded in Bubble's HTML element, the app had two issues:
+1. **Bottom-pinned elements** extended way down the page requiring excessive scrolling
+2. **Full-page modals** were confined to the HTML element instead of covering the entire Bubble page
+
+### Solutions Implemented
+
+#### Case 1: Bottom-Pinned Elements (Fixed)
+✅ Changed from `fixed` to `absolute` positioning for iframe compatibility:
+- **Floating Plus Button**: `fixed bottom-24` → `absolute bottom-24`
+- **Message Input Bars**: `fixed left-0 right-0` → `absolute left-0 right-0`
+- **Comment Input Bars**: `fixed bottom-0` → `absolute bottom-0`
+- **App Containers**: `h-full` → `h-[100vh]` for consistent height
+
+#### Case 2: Modal Communication System (Major Feature)
+✅ Added postMessage communication between Firebase app and Bubble parent:
+- **NEW_LOG_MODAL**: When Plus button clicked
+- **EDIT_LOG_MODAL**: When Edit button clicked  
+- **COMMENTS_MODAL**: When Comments icon clicked
+- **Automatic Detection**: Checks if in iframe (`window.parent !== window`)
+- **Graceful Fallback**: Shows inline modals when not embedded
+
+### Bubble Integration Code
+
+Add this JavaScript to your Bubble page to handle modal communications:
+
+```javascript
+// Listen for modal requests from Firebase app
+window.addEventListener('message', function(event) {
+  // Verify origin if needed: if (event.origin !== 'https://your-firebase-app.vercel.app') return;
+  
+  if (event.data.type === 'FIREBASE_APP_MODAL') {
+    const { modalType, data } = event.data;
+    
+    switch(modalType) {
+      case 'NEW_LOG_MODAL':
+        // Show Bubble popup for creating new log
+        // Pass data.defaultDate and data.childId to your Bubble workflow
+        console.log('Show new log modal for child:', data.childId, 'date:', data.defaultDate);
+        break;
+        
+      case 'EDIT_LOG_MODAL':
+        // Show Bubble popup for editing log
+        // Pass data.logId and data.childId to your Bubble workflow
+        console.log('Show edit log modal for log:', data.logId, 'child:', data.childId);
+        break;
+        
+      case 'COMMENTS_MODAL':
+        // Show Bubble popup for comments
+        // Pass data.childId to your Bubble workflow
+        console.log('Show comments modal for child:', data.childId);
+        break;
+    }
+  }
+});
+```
+
+### Technical Implementation
+- **Detection**: Uses `window.parent !== window` to detect iframe embedding
+- **Communication**: Sends structured postMessage with type and data
+- **Fallback**: Maintains original inline modal functionality for standalone use
+- **Data Passing**: Includes relevant IDs (childId, logId) and context (defaultDate)
+
+### Benefits
+- **Better UX**: Full-page modals in Bubble instead of cramped iframe modals
+- **Native Feel**: Modals use Bubble's native popup system
+- **Responsive**: Proper mobile experience with full-screen coverage
+- **Seamless**: Zero-config - automatically detects embedding context
+
 ## Modal Positioning Fix
 
 ### Objective

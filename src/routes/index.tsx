@@ -1549,7 +1549,7 @@ function LogsListView() {
       </div>
 
       {/* Logs Container */}
-      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
+      <div className="relative overflow-y-auto pb-32 h-[calc(100%-120px)]">
         {selectedDateLogs.length === 0 && !previousDayBedtime ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -1686,10 +1686,9 @@ function LogsListView() {
             })()}
           </div>
         )}
-      </div>
 
-      {/* Floating Action Button - Centered and Bigger */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+        {/* Floating Action Button - Centered and positioned within scrollable area */}
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
@@ -1705,6 +1704,7 @@ function LogsListView() {
         >
           <Plus className="w-8 h-8" />
         </button>
+        </div>
       </div>
 
       {/* Minimal bottom spacing for iframe */}
