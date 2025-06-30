@@ -1209,18 +1209,18 @@ function LogsListView() {
     }).format(date);
   };
 
-  // Format date in the baby's timezone
-  const formatDateInTimezone = (timestamp: any) => {
-    if (!timestamp) return '';
-    
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: state.timezone,
-      month: 'short',
-      day: 'numeric',
-      weekday: 'short'
-    }).format(date);
-  };
+  // Format date in the baby's timezone (commented out as unused)
+  // const formatDateInTimezone = (timestamp: any) => {
+  //   if (!timestamp) return '';
+  //   
+  //   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  //   return new Intl.DateTimeFormat('en-US', {
+  //     timeZone: state.timezone,
+  //     month: 'short',
+  //     day: 'numeric',
+  //     weekday: 'short'
+  //   }).format(date);
+  // };
 
   // Get date in YYYY-MM-DD format for comparison
   const getLocalDateKey = (timestamp: any) => {
@@ -1333,7 +1333,7 @@ function LogsListView() {
         allEvents.push({
           event: outOfBedEvent,
           logId: previousDayBedtime.id,
-          logType: previousDayBedtime.sleepType,
+          logType: previousDayBedtime.sleepType || 'nap',
           timestamp: outOfBedEvent.timestamp.toDate()
         });
       }
@@ -1346,7 +1346,7 @@ function LogsListView() {
           allEvents.push({
             event,
             logId: log.id,
-            logType: log.sleepType,
+            logType: log.sleepType || 'nap',
             timestamp: event.timestamp.toDate()
           });
         });
@@ -1577,7 +1577,7 @@ function LogsListView() {
               const windowsData = getWindowsViewData();
               
               return windowsData.map((window, index) => {
-                const { event, logId, duration, durationString } = window;
+                const { event, logId, durationString } = window;
                 
                 // Don't show duration for the last event
                 if (index === windowsData.length - 1) return null;
@@ -2303,11 +2303,11 @@ function EditLogModal() {
     setEditingTime('');
   };
 
-  // Cancel editing
-  const handleCancelEdit = () => {
-    setEditingEventIndex(null);
-    setEditingTime('');
-  };
+  // Cancel editing (unused but kept for future functionality)
+  // const handleCancelEdit = () => {
+  //   setEditingEventIndex(null);
+  //   setEditingTime('');
+  // };
 
   // Delete an event
   const handleDeleteEvent = (index: number) => {
@@ -2315,32 +2315,32 @@ function EditLogModal() {
     setEvents(updatedEvents);
   };
 
-  // Add an interjection event
-  const handleAddInterjection = (afterIndex: number, type: SleepEvent['type']) => {
-    const updatedEvents = [...events];
-    
-    // Calculate timestamp between current and next event
-    const currentEvent = events[afterIndex];
-    const nextEvent = events[afterIndex + 1];
-    
-    let newTimestamp: Date;
-    if (nextEvent) {
-      // Place new event halfway between current and next
-      const timeDiff = nextEvent.timestamp.getTime() - currentEvent.timestamp.getTime();
-      newTimestamp = new Date(currentEvent.timestamp.getTime() + timeDiff / 2);
-    } else {
-      // If no next event, add 30 minutes after current
-      newTimestamp = new Date(currentEvent.timestamp.getTime() + 30 * 60 * 1000);
-    }
-    
-    const newEvent = {
-      type,
-      timestamp: newTimestamp
-    };
-    
-    updatedEvents.splice(afterIndex + 1, 0, newEvent);
-    setEvents(updatedEvents);
-  };
+  // Add an interjection event (unused but kept for future functionality)
+  // const handleAddInterjection = (afterIndex: number, type: SleepEvent['type']) => {
+  //   const updatedEvents = [...events];
+  //   
+  //   // Calculate timestamp between current and next event
+  //   const currentEvent = events[afterIndex];
+  //   const nextEvent = events[afterIndex + 1];
+  //   
+  //   let newTimestamp: Date;
+  //   if (nextEvent) {
+  //     // Place new event halfway between current and next
+  //     const timeDiff = nextEvent.timestamp.getTime() - currentEvent.timestamp.getTime();
+  //     newTimestamp = new Date(currentEvent.timestamp.getTime() + timeDiff / 2);
+  //   } else {
+  //     // If no next event, add 30 minutes after current
+  //     newTimestamp = new Date(currentEvent.timestamp.getTime() + 30 * 60 * 1000);
+  //   }
+  //   
+  //   const newEvent = {
+  //     type,
+  //     timestamp: newTimestamp
+  //   };
+  //   
+  //   updatedEvents.splice(afterIndex + 1, 0, newEvent);
+  //   setEvents(updatedEvents);
+  // };
 
   // Get event type text
   const getEventTypeText = (type: SleepEvent['type']) => {
@@ -2936,14 +2936,12 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
   const [searchQuery, setSearchQuery] = useState('');
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
   const [unreadComments, setUnreadComments] = useState<FirebaseMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false); // Removed - not used in UI
   const { state, navigateToLogDetail } = useNavigation();
 
   // Fetch all log comments for this child
   useEffect(() => {
     if (!isOpen || !childId) return;
-    
-    setIsLoading(true);
     
     // Listen to all messages in the child's conversation that have a logId
     const conversationId = `child_${childId}`;
@@ -2971,7 +2969,6 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
       
       setComments(allMessages);
       setUnreadComments(unreadMessages);
-      setIsLoading(false);
     });
     
     return () => unsubscribe();
@@ -3100,7 +3097,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
                 {filteredComments.map((comment) => {
                   // Find the log type from the logs in state
                   const log = state.logs.find(l => l.id === comment.logId);
-                  const logType = log?.type || 'log';
+                  const logType = log?.sleepType || 'sleep';
                   const logTypeDisplay = logType.charAt(0).toUpperCase() + logType.slice(1);
                   
                   // Format timestamp

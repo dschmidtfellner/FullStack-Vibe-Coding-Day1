@@ -18,6 +18,8 @@ export interface FirebaseMessage {
   audioId?: string;
   timestamp: Timestamp;
   read: boolean;
+  readBy?: string[];  // Array of user IDs who have read this message
+  logId?: string;  // Optional - if this message is a comment on a log
   reactions?: { [emoji: string]: MessageReaction };  // reactions organized by emoji
 }
 
