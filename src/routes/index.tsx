@@ -1688,7 +1688,7 @@ function LogsListView() {
         )}
 
         {/* Floating Action Button - Centered and positioned within scrollable area */}
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="fixed bottom-[100px] left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
