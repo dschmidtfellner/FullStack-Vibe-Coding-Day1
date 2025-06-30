@@ -237,3 +237,42 @@ Improve the visual appearance and usability of date and time input fields throug
 - Better calendar icon visibility in both light and dark modes
 - Cleaner header layout with logical grouping of controls
 - Fixed input field width issues preventing text overlap
+
+## Comments Modal Implementation
+
+### Objective
+Create a modal overlay for viewing unread and all log comments across a child's sleep logs, with search functionality and mark as read capabilities.
+
+### Progress Status
+✅ Added MessageSquare icon button to LogList header
+✅ Created CommentsModal component with proper overlay styling
+✅ Implemented toggle between Unread/All views with "View All"/"View Unread" button
+✅ Added "Mark all as read" button with pink background (#F0DDEF)
+✅ Implemented real-time search bar for All comments view
+✅ Styled comment tiles with:
+  - Gray background tiles
+  - Purple (#745288) author text showing "[Name] commented on [LogType]"
+  - Right-aligned timestamps with time and date on separate lines
+  - Clickable tiles that navigate to the associated log
+✅ Connected to Firebase to:
+  - Fetch all log comments for the child
+  - Filter unread comments based on readBy array
+  - Mark comments as read using arrayUnion
+✅ Added global `window.openCommentsModal()` function for external triggers
+
+### Commits Made During Session
+1. "feat: Add Comments Modal for viewing unread and all log comments"
+
+### Technical Implementation
+- Modal uses same z-index layering as SleepLogModal (z-40 backdrop, z-50 content)
+- Fetches messages from Firebase where logId != null
+- Filters unread messages by checking if user ID is in readBy array
+- Real-time listener updates comments as new ones arrive
+- Search filters comments by text content (case-insensitive)
+- Click handler navigates to log detail and closes modal
+
+### Integration Points
+- Can be triggered from within app via MessageSquare icon
+- Can be triggered externally via `window.openCommentsModal()` 
+- Works with existing Firebase message structure
+- Integrates with navigation system for log detail views

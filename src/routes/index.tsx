@@ -8,7 +8,8 @@ import 'react-clock/dist/Clock.css';
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Timestamp, collection, query, where, orderBy, onSnapshot, updateDoc, doc, arrayUnion } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
-import { calculateSleepStatistics } from "@/utils/sleepStatistics";\nimport { db } from "@/lib/firebase";
+import { calculateSleepStatistics } from "@/utils/sleepStatistics";
+import { db } from "@/lib/firebase";
 import {
   sendMessage,
   sendImageMessage,
@@ -3020,9 +3021,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
           {/* Header */}
           <div className="px-6 pt-6 pb-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-domine text-2xl font-medium ${
-                user?.darkMode ? 'text-white' : 'text-gray-800'
-              }">
+              <h2 className="font-domine text-2xl font-medium" style={{ color: '#745288' }}>
                 {viewMode === 'unread' ? 'Unread comments on log' : 'All comments on log'}
               </h2>
               
