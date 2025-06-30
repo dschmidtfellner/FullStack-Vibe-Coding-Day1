@@ -276,3 +276,25 @@ Create a modal overlay for viewing unread and all log comments across a child's 
 - Can be triggered externally via `window.openCommentsModal()` 
 - Works with existing Firebase message structure
 - Integrates with navigation system for log detail views
+
+## Modal Positioning Fix
+
+### Objective
+Replace "fixed inset-0" with "absolute inset-0" in modal components to make them position relative to the app container instead of the browser viewport.
+
+### Progress Status
+✅ Identified all modal components using "fixed inset-0" positioning
+✅ Updated the following modals to use "absolute inset-0":
+  - Image modal (selectedImage display)
+  - Interjection modal for sleep log events
+  - Validation dialog for time input validation
+  - EditLogView modal overlay components (backdrop and container)
+
+### Commits Made During Session
+1. "fix: Replace fixed inset-0 with absolute inset-0 in modal components for proper container-relative positioning"
+
+### Technical Implementation
+- Changed positioning from viewport-relative (fixed) to container-relative (absolute)
+- Affected 6 different modal overlay elements across various components
+- Maintains same visual appearance but ensures proper containment within app boundaries
+- Improves integration when app is embedded or used as a module

@@ -334,7 +334,7 @@ function AppRouter() {
 // Skeleton loading components that match content shape
 function LogsListSkeleton({ user }: { user: any }) {
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+    <div className={`relative h-[100vh] font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
       {/* Top spacing */}
@@ -1124,7 +1124,7 @@ function MessagingApp() {
       {/* Image Modal */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-8"
+          className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-8"
           onClick={closeImageModal}
         >
           <div className="relative w-full h-full flex items-center justify-center">
@@ -1392,7 +1392,7 @@ function LogsListView() {
   }
 
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+    <div className={`relative h-[100vh] font-['Poppins'] max-w-[800px] mx-auto ${
       user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
     }`}>
       {/* Top spacing - minimal for iframe embedding */}
@@ -2746,7 +2746,7 @@ function EditLogModal() {
 
       {/* Interjection Modal */}
       {showInterjectionModal && interjectionIndex !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-end z-[120]">
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-end z-[120]">
           <div className={`w-full max-w-[800px] mx-auto rounded-t-2xl shadow-xl transform transition-transform duration-300 ease-out ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
           }`}>
@@ -2889,9 +2889,9 @@ function EditLogModal() {
 
       {/* Validation Dialog */}
       {showValidationDialog && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div className="absolute inset-0 z-[130] flex items-center justify-center p-4">
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50" 
+            className="absolute inset-0 bg-black bg-opacity-50" 
             onClick={() => setShowValidationDialog(false)}
           ></div>
           <div className={`relative w-full max-w-md mx-auto rounded-2xl p-8 shadow-xl ${
@@ -3005,13 +3005,13 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
     <>
       {/* Modal Backdrop - subtle overlay for click handling */}
       <div 
-        className="fixed inset-0 z-40" 
+        className="absolute inset-0 z-40" 
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}
         onClick={onClose}
       ></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16">
+      <div className="absolute inset-0 z-50 flex items-end justify-center px-4 pt-16">
         <div className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative flex flex-col ${
           user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
         }`}>
@@ -3725,10 +3725,10 @@ function SleepLogModal() {
   return (
     <>
       {/* Modal Backdrop - subtle overlay for click handling */}
-      <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
+      <div className="absolute inset-0 z-40" style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }} onClick={handleCancel}></div>
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16">
+      <div className="absolute inset-0 z-50 flex items-end justify-center px-4 pt-16">
         <div 
           className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative flex flex-col ${
             user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
