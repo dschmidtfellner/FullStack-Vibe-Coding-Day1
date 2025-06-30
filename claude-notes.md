@@ -203,3 +203,37 @@ Create an alternative view mode in the Log List that shows wake/sleep periods ch
 - Feature complete and ready for user testing
 - Consider adding additional analytics or insights to Windows view
 - Monitor user feedback for potential refinements
+
+## Date and Time Input Styling Enhancements
+
+### Objective
+Improve the visual appearance and usability of date and time input fields throughout the application.
+
+### Progress Status
+✅ Enhanced font sizes for better readability:
+  - Date inputs: `text-base` → `text-xl` (20px)
+  - Time picker inputs: `1rem` → `1.25rem` (20px)
+✅ Added consistent width styling to all TimePicker components (`w-32`)
+✅ Fixed date input calendar icon visibility with `colorScheme` property
+✅ Resolved date input width issues - increased to `w-44` to prevent text overlap with calendar icon
+✅ Restructured header layout for better UX:
+  - Date navigation controls (arrows + date) left-aligned as a group
+  - Windows/Events toggle moved to right side of same row
+✅ Left-aligned date picker dropdown for improved alignment
+
+### Commits Made During Session
+1. "feat: Enhance date and time input styling with larger fonts and improved layout"
+
+### Technical Implementation
+- Updated all TimePicker instances with `w-32` width class
+- Modified CSS font sizes in `src/index.css` for TimePicker components
+- Enhanced date input styling with proper width and color scheme
+- Restructured header layout using flexbox justify-between
+- Improved date picker alignment from center to left
+
+### Visual Improvements
+- Larger, more readable fonts for date and time inputs
+- Consistent sizing across all time picker components
+- Better calendar icon visibility in both light and dark modes
+- Cleaner header layout with logical grouping of controls
+- Fixed input field width issues preventing text overlap

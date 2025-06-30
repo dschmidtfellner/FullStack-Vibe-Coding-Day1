@@ -1,14 +1,14 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight, MessageSquare, Search } from "lucide-react";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
 import { useState, useRef, useEffect, createContext, useContext } from "react";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, collection, query, where, orderBy, onSnapshot, updateDoc, doc, arrayUnion } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
-import { calculateSleepStatistics } from "@/utils/sleepStatistics";
+import { calculateSleepStatistics } from "@/utils/sleepStatistics";\nimport { db } from "@/lib/firebase";
 import {
   sendMessage,
   sendImageMessage,
@@ -1164,6 +1164,18 @@ function LogsListView() {
     }).format(today); // YYYY-MM-DD format
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+
+  // Expose function to open comments modal from outside (e.g., Bubble app)
+  useEffect(() => {
+    (window as any).openCommentsModal = () => {
+      setShowCommentsModal(true);
+    };
+    
+    return () => {
+      delete (window as any).openCommentsModal;
+    };
+  }, []);
 
   // Listen to logs with real-time updates
   useEffect(() => {
@@ -1437,21 +1449,36 @@ function LogsListView() {
             </button>
           </div>
 
-          {/* Right: Windows/Events Toggle */}
-          <button
-            onClick={() => setViewMode(viewMode === 'events' ? 'windows' : 'events')}
-            className={`px-4 py-2 rounded-full border transition-colors ${
-              user?.darkMode
-                ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
-            style={{
-              fontSize: '14px',
-              fontWeight: '400'
-            }}
-          >
-            {viewMode === 'events' ? 'Windows' : 'Events'}
-          </button>
+          {/* Right: Controls */}
+          <div className="flex items-center gap-2">
+            {/* Windows/Events Toggle */}
+            <button
+              onClick={() => setViewMode(viewMode === 'events' ? 'windows' : 'events')}
+              className={`px-4 py-2 rounded-full border transition-colors ${
+                user?.darkMode
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
+              style={{
+                fontSize: '14px',
+                fontWeight: '400'
+              }}
+            >
+              {viewMode === 'events' ? 'Windows' : 'Events'}
+            </button>
+
+            {/* Comments Icon */}
+            <button
+              onClick={() => setShowCommentsModal(true)}
+              className={`p-2 rounded-full transition-colors ${
+                user?.darkMode 
+                  ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <MessageSquare className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Date Picker */}
@@ -1637,6 +1664,14 @@ function LogsListView() {
       <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
+
+      {/* Comments Modal */}
+      <CommentsModal 
+        isOpen={showCommentsModal}
+        onClose={() => setShowCommentsModal(false)}
+        user={user}
+        childId={state.childId}
+      />
     </div>
   );
 }
@@ -2887,6 +2922,247 @@ function EditLogModal() {
         </div>
       )}
     </div>
+  );
+}
+
+function CommentsModal({ isOpen, onClose, user, childId }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  user: any; 
+  childId: string | null;
+}) {
+  const [viewMode, setViewMode] = useState<'unread' | 'all'>('unread');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [comments, setComments] = useState<FirebaseMessage[]>([]);
+  const [unreadComments, setUnreadComments] = useState<FirebaseMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { state, navigateToLogDetail } = useNavigation();
+
+  // Fetch all log comments for this child
+  useEffect(() => {
+    if (!isOpen || !childId) return;
+    
+    setIsLoading(true);
+    
+    // Listen to all messages in the child's conversation that have a logId
+    const conversationId = `child_${childId}`;
+    const q = query(
+      collection(db, 'messages'),
+      where('conversationId', '==', conversationId),
+      where('logId', '!=', null),
+      orderBy('logId'),
+      orderBy('timestamp', 'desc')
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allMessages: FirebaseMessage[] = [];
+      const unreadMessages: FirebaseMessage[] = [];
+      
+      snapshot.forEach((doc) => {
+        const message = { id: doc.id, ...doc.data() } as FirebaseMessage;
+        allMessages.push(message);
+        
+        // Check if message is unread for current user
+        if (!message.readBy || !message.readBy.includes(user?.user?.id)) {
+          unreadMessages.push(message);
+        }
+      });
+      
+      setComments(allMessages);
+      setUnreadComments(unreadMessages);
+      setIsLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [isOpen, childId, user?.user?.id]);
+
+  // Filter comments based on search query
+  const filteredComments = viewMode === 'all' 
+    ? comments.filter(comment => 
+        comment.text?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : unreadComments;
+
+  const handleMarkAllAsRead = async () => {
+    if (!user?.user?.id) return;
+    
+    // Mark all unread comments as read
+    const updatePromises = unreadComments.map(comment => 
+      updateDoc(doc(db, 'messages', comment.id), {
+        readBy: arrayUnion(user.user.id)
+      })
+    );
+    
+    try {
+      await Promise.all(updatePromises);
+      setUnreadComments([]);
+    } catch (error) {
+      console.error('Error marking comments as read:', error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Modal Backdrop - subtle overlay for click handling */}
+      <div 
+        className="fixed inset-0 z-40" 
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}
+        onClick={onClose}
+      ></div>
+      
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pt-16">
+        <div className={`w-full max-w-[600px] h-[85vh] font-['Poppins'] rounded-t-3xl transition-transform duration-300 ease-out shadow-2xl relative flex flex-col ${
+          user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
+        }`}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-domine text-2xl font-medium ${
+                user?.darkMode ? 'text-white' : 'text-gray-800'
+              }">
+                {viewMode === 'unread' ? 'Unread comments on log' : 'All comments on log'}
+              </h2>
+              
+              {/* Toggle Button */}
+              <button
+                onClick={() => setViewMode(viewMode === 'unread' ? 'all' : 'unread')}
+                className={`px-4 py-2 rounded-full border transition-colors ${
+                  user?.darkMode
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                }`}
+                style={{
+                  fontSize: '14px',
+                  fontWeight: '400'
+                }}
+              >
+                {viewMode === 'unread' ? 'View All' : 'View Unread'}
+              </button>
+            </div>
+            
+            {/* Mark all as read button for unread view */}
+            {viewMode === 'unread' && unreadComments.length > 0 && (
+              <button
+                onClick={handleMarkAllAsRead}
+                className="mt-4 px-6 py-2 rounded-full transition-colors"
+                style={{
+                  backgroundColor: '#F0DDEF',
+                  color: '#745288',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+              >
+                Mark all as read
+              </button>
+            )}
+            
+            {/* Search bar for all view */}
+            {viewMode === 'all' && (
+              <div className="mt-4 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search comments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                    user?.darkMode
+                      ? 'bg-[#3a3a3a] border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Comments List */}
+          <div className="flex-1 overflow-y-auto px-6">
+            {filteredComments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <MessageSquare className={`w-12 h-12 mb-4 ${
+                  user?.darkMode ? 'text-gray-600' : 'text-gray-400'
+                }`} />
+                <p className={`text-center ${
+                  user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {viewMode === 'unread' 
+                    ? 'No unread comments' 
+                    : searchQuery 
+                      ? 'No comments match your search' 
+                      : 'No comments yet'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 pb-6">
+                {filteredComments.map((comment) => {
+                  // Find the log type from the logs in state
+                  const log = state.logs.find(l => l.id === comment.logId);
+                  const logType = log?.type || 'log';
+                  const logTypeDisplay = logType.charAt(0).toUpperCase() + logType.slice(1);
+                  
+                  // Format timestamp
+                  const messageDate = comment.timestamp.toDate();
+                  const timeStr = messageDate.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                  });
+                  const dateStr = messageDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: messageDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                  });
+                  
+                  return (
+                    <div
+                      key={comment.id}
+                      className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                        user?.darkMode 
+                          ? 'bg-gray-800 hover:bg-gray-700' 
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      onClick={() => {
+                        if (comment.logId) {
+                          onClose();
+                          navigateToLogDetail(comment.logId);
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <p style={{ color: '#745288', fontWeight: '500' }}>
+                          {comment.senderName} commented on {logTypeDisplay}
+                        </p>
+                        <div className="text-right">
+                          <p className={`text-sm ${
+                            user?.darkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            {timeStr}
+                          </p>
+                          <p className={`text-xs ${
+                            user?.darkMode ? 'text-gray-500' : 'text-gray-500'
+                          }`}>
+                            {dateStr}
+                          </p>
+                        </div>
+                      </div>
+                      <p className={`${
+                        user?.darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        {comment.text}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
