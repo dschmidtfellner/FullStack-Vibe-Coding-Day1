@@ -109,17 +109,16 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToNewLog = (defaultDate?: string) => {
-    // Try to send to Bubble parent first
+    // Notify Bubble parent about modal opening (for nav hiding)
     if (window.parent !== window) {
       window.parent.postMessage({
         type: 'FIREBASE_APP_MODAL',
         modalType: 'NEW_LOG_MODAL',
         data: { defaultDate, childId: initialChildId }
       }, '*');
-      return;
     }
     
-    // Fallback to inline modal
+    // Always show the modal in Firebase app
     setState(prev => ({ 
       ...prev, 
       view: 'log-sleep', 
@@ -131,17 +130,16 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToEditLog = (logId: string) => {
-    // Try to send to Bubble parent first
+    // Notify Bubble parent about modal opening (for nav hiding)
     if (window.parent !== window) {
       window.parent.postMessage({
         type: 'FIREBASE_APP_MODAL',
         modalType: 'EDIT_LOG_MODAL',
         data: { logId, childId: initialChildId }
       }, '*');
-      return;
     }
     
-    // Fallback to inline modal
+    // Always show the modal in Firebase app
     setState(prev => ({ ...prev, view: 'edit-log', logId, previousView: prev.view === 'edit-log' ? prev.previousView : prev.view }));
     updateURL('edit-log', logId);
   };
@@ -1215,17 +1213,16 @@ function LogsListView() {
   // Expose function to open comments modal from outside (e.g., Bubble app)
   useEffect(() => {
     (window as any).openCommentsModal = () => {
-      // Try to send to Bubble parent first
+      // Notify Bubble parent about modal opening (for nav hiding)
       if (window.parent !== window) {
         window.parent.postMessage({
           type: 'FIREBASE_APP_MODAL',
           modalType: 'COMMENTS_MODAL',
           data: { childId: state.childId }
         }, '*');
-        return;
       }
       
-      // Fallback to inline modal
+      // Always show the modal in Firebase app
       setShowCommentsModal(true);
     };
     
@@ -1527,17 +1524,16 @@ function LogsListView() {
             {/* Comments Icon */}
             <button
               onClick={() => {
-                // Try to send to Bubble parent first
+                // Notify Bubble parent about modal opening (for nav hiding)
                 if (window.parent !== window) {
                   window.parent.postMessage({
                     type: 'FIREBASE_APP_MODAL',
                     modalType: 'COMMENTS_MODAL',
                     data: { childId: state.childId }
                   }, '*');
-                  return;
                 }
                 
-                // Fallback to inline modal
+                // Always show the modal in Firebase app
                 setShowCommentsModal(true);
               }}
               className={`p-2 rounded-full transition-colors ${
