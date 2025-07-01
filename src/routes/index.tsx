@@ -1651,7 +1651,7 @@ function LogsListView() {
         )}
 
         {/* Floating Action Button - Centered and positioned within scrollable area */}
-        <div className="fixed bottom-[192px] left-1/2 transform -translate-x-1/2 z-20">
+        <div className="fixed bottom-[120px] left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
@@ -4084,7 +4084,7 @@ function SleepLogModal() {
       </div>
 
       {/* Bottom actions - now inside modal */}
-      <div className={`border-t p-4 mt-auto ${
+      <div className={`absolute bottom-[92px] left-0 right-0 border-t p-4 ${
         user?.darkMode 
           ? 'border-gray-700 bg-[#2d2637]' 
           : 'border-gray-200 bg-white'
