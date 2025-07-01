@@ -47,18 +47,6 @@ async function updateConversationLastMessage(conversationId: string, lastMessage
  */
 export async function getOrCreateConversation(childId: string, childName?: string): Promise<string> {
   try {
-    // Check Firebase Auth first
-    const { auth } = await import('./firebase');
-    const currentUser = auth.currentUser;
-    console.log('🔍 Firebase Auth Debug:', {
-      currentUser: currentUser ? {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        isAnonymous: currentUser.isAnonymous
-      } : null,
-      authState: !!currentUser
-    });
-
     const conversationId = `child_${childId}`;
     const conversationRef = doc(db, 'conversations', conversationId);
     
@@ -67,6 +55,7 @@ export async function getOrCreateConversation(childId: string, childName?: strin
     
     if (!conversationDoc.exists()) {
       // Create new conversation
+      console.log('🔍 Creating new conversation:', conversationId);
       await setDoc(conversationRef, {
         id: conversationId,
         childId,
