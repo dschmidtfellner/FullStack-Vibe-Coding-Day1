@@ -355,7 +355,7 @@ function LogsListSkeleton({ user }: { user: any }) {
       </div>
 
       {/* Log tiles skeleton */}
-      <div className="overflow-y-auto pb-32 h-[calc(100%-120px)]">
+      <div className="overflow-y-auto pb-[124px] h-[calc(100%-120px)]">
         <div className="mb-6">
           {/* Date header skeleton */}
           <div className={`sticky top-0 px-4 py-2 ${
@@ -502,7 +502,7 @@ function MessagingSkeleton({ user }: { user: any }) {
       <div className={`${user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'}`}></div>
       
       {/* Messages Container */}
-      <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
+      <div className={`overflow-y-auto px-4 py-6 pb-[116px] space-y-4 ${
         user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
       }`}>
         {[1, 2, 3].map((i) => (
@@ -908,7 +908,7 @@ function MessagingApp() {
       }`}></div>
       
       {/* Messages Container */}
-      <div className={`overflow-y-auto px-4 py-6 pb-24 space-y-4 ${
+      <div className={`overflow-y-auto px-4 py-6 pb-[116px] space-y-4 ${
         user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
       }`}>
         {messages.map((message) => {
@@ -1512,7 +1512,7 @@ function LogsListView() {
       </div>
 
       {/* Logs Container */}
-      <div className="relative overflow-y-auto pb-32 h-[calc(100%-120px)]">
+      <div className="relative overflow-y-auto pb-[124px] h-[calc(100%-120px)]">
         {selectedDateLogs.length === 0 && !previousDayBedtime ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -1651,7 +1651,7 @@ function LogsListView() {
         )}
 
         {/* Floating Action Button - Centered and positioned within scrollable area */}
-        <div className="fixed bottom-[100px] left-1/2 transform -translate-x-1/2 z-20">
+        <div className="fixed bottom-[192px] left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
           className={`btn btn-circle shadow-lg border-none ${
@@ -2076,7 +2076,7 @@ function LogDetailView() {
           </button>
 
           {commentsExpanded && (
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="flex-1 overflow-y-auto px-4 pb-[96px]">
               {comments.length === 0 ? (
                 <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                   <div className="flex justify-between items-center">
@@ -2128,7 +2128,7 @@ function LogDetailView() {
       </div>
 
       {/* Comment Input - Pinned to bottom */}
-      <div className={`absolute left-0 right-0 bottom-0 border-t z-10 ${
+      <div className={`absolute left-0 right-0 bottom-[92px] border-t z-10 ${
         user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
       }`}>
         <div className="max-w-[800px] mx-auto p-4">
@@ -3098,7 +3098,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
           </div>
           
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-6">
+          <div className="flex-1 overflow-y-auto px-6 pb-[92px]">
             {filteredComments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <MessageSquare className={`w-12 h-12 mb-4 ${
@@ -3780,7 +3780,7 @@ function SleepLogModal() {
           <div className="h-[20px]"></div>
 
       {/* Content - Ensure space for fixed buttons */}
-      <div className="overflow-y-auto px-8 py-8 flex-1">
+      <div className="overflow-y-auto px-8 py-8 flex-1 pb-[92px]">
         
         {/* Sleep Consulting Client Flow - First Screen */}
         {clientType === 'sleep-consulting' && events.length === 0 && (
