@@ -152,6 +152,16 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
+    // Send modal close message to Bubble parent if in iframe and coming from modal views
+    if (window.parent !== window) {
+      if (state.view === 'log-sleep' || state.view === 'edit-log') {
+        window.parent.postMessage({
+          type: 'FIREBASE_APP_MODAL_CLOSE',
+          modalType: state.view === 'log-sleep' ? 'NEW_LOG_MODAL' : 'EDIT_LOG_MODAL'
+        }, '*');
+      }
+    }
+    
     // Different logic based on current view
     if (state.view === 'log-sleep') {
       // From modal: go to Log Detail if we have a logId, otherwise use previousView
@@ -1189,6 +1199,19 @@ function LogsListView() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
 
+  // Helper function to close comments modal with Bubble notification
+  const closeCommentsModal = () => {
+    // Send modal close message to Bubble parent if in iframe
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'FIREBASE_APP_MODAL_CLOSE',
+        modalType: 'COMMENTS_MODAL'
+      }, '*');
+    }
+    
+    setShowCommentsModal(false);
+  };
+
   // Expose function to open comments modal from outside (e.g., Bubble app)
   useEffect(() => {
     (window as any).openCommentsModal = () => {
@@ -1715,7 +1738,7 @@ function LogsListView() {
       {/* Comments Modal */}
       <CommentsModal 
         isOpen={showCommentsModal}
-        onClose={() => setShowCommentsModal(false)}
+        onClose={closeCommentsModal}
         user={user}
         childId={state.childId}
       />
