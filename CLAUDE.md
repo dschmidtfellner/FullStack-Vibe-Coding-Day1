@@ -11,6 +11,12 @@
 - Environment variables: Client vars need `VITE_` prefix
 - Package manager: Always use `pnpm`, not npm
 
+## Deployment
+
+- **Primary deployment**: `dcmsg2` project on Vercel (https://dcmsg2.vercel.app)
+- Deploy with: `npx vercel --prod --yes` (project is already linked to dcmsg2)
+- **DEPRECATED**: `full-stack-vibe-coding-day1` and `dcmsg1` projects are no longer used
+
 ## Git Workflow
 
 - **Commit after each user request**: When completing what the user asked for, immediately commit: `git add -A && git commit -m "[action]: [what was accomplished]"`

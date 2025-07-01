@@ -98,6 +98,25 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     window.history.replaceState({}, '', url.toString());
   };
 
+  // Helper functions to trigger Bubble workflows via hidden buttons
+  const triggerBubbleButton = (buttonId: string) => {
+    if (window.parent !== window) {
+      try {
+        const button = window.parent.document.getElementById(buttonId);
+        if (button) {
+          (button as HTMLElement).click();
+        } else {
+          console.warn(`Bubble button with id "${buttonId}" not found`);
+        }
+      } catch (error) {
+        console.error('Error triggering Bubble button:', error);
+      }
+    }
+  };
+
+  const hideNavbar = () => triggerBubbleButton('btn_hide_navbar');
+  const showNavbar = () => triggerBubbleButton('btn_show_navbar');
+
   const navigateToLogs = () => {
     setState(prev => ({ ...prev, view: 'logs', logId: null }));
     updateURL('logs');
@@ -109,14 +128,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToNewLog = (defaultDate?: string) => {
-    // Notify Bubble parent about modal opening (for nav hiding)
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'FIREBASE_APP_MODAL',
-        modalType: 'NEW_LOG_MODAL',
-        data: { defaultDate, childId: initialChildId }
-      }, '*');
-    }
+    // Hide navbar when opening modal
+    hideNavbar();
     
     // Always show the modal in Firebase app
     setState(prev => ({ 
@@ -130,14 +143,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToEditLog = (logId: string) => {
-    // Notify Bubble parent about modal opening (for nav hiding)
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'FIREBASE_APP_MODAL',
-        modalType: 'EDIT_LOG_MODAL',
-        data: { logId, childId: initialChildId }
-      }, '*');
-    }
+    // Hide navbar when opening modal
+    hideNavbar();
     
     // Always show the modal in Firebase app
     setState(prev => ({ ...prev, view: 'edit-log', logId, previousView: prev.view === 'edit-log' ? prev.previousView : prev.view }));
@@ -150,14 +157,9 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
-    // Send modal close message to Bubble parent if in iframe and coming from modal views
-    if (window.parent !== window) {
-      if (state.view === 'log-sleep' || state.view === 'edit-log') {
-        window.parent.postMessage({
-          type: 'FIREBASE_APP_MODAL_CLOSE',
-          modalType: state.view === 'log-sleep' ? 'NEW_LOG_MODAL' : 'EDIT_LOG_MODAL'
-        }, '*');
-      }
+    // Show navbar when closing modal views
+    if (state.view === 'log-sleep' || state.view === 'edit-log') {
+      showNavbar();
     }
     
     // Different logic based on current view
@@ -1199,13 +1201,8 @@ function LogsListView() {
 
   // Helper function to close comments modal with Bubble notification
   const closeCommentsModal = () => {
-    // Send modal close message to Bubble parent if in iframe
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'FIREBASE_APP_MODAL_CLOSE',
-        modalType: 'COMMENTS_MODAL'
-      }, '*');
-    }
+    // Show navbar when closing comments modal
+    showNavbar();
     
     setShowCommentsModal(false);
   };
@@ -1213,14 +1210,8 @@ function LogsListView() {
   // Expose function to open comments modal from outside (e.g., Bubble app)
   useEffect(() => {
     (window as any).openCommentsModal = () => {
-      // Notify Bubble parent about modal opening (for nav hiding)
-      if (window.parent !== window) {
-        window.parent.postMessage({
-          type: 'FIREBASE_APP_MODAL',
-          modalType: 'COMMENTS_MODAL',
-          data: { childId: state.childId }
-        }, '*');
-      }
+      // Hide navbar when opening modal
+      hideNavbar();
       
       // Always show the modal in Firebase app
       setShowCommentsModal(true);
@@ -1524,14 +1515,8 @@ function LogsListView() {
             {/* Comments Icon */}
             <button
               onClick={() => {
-                // Notify Bubble parent about modal opening (for nav hiding)
-                if (window.parent !== window) {
-                  window.parent.postMessage({
-                    type: 'FIREBASE_APP_MODAL',
-                    modalType: 'COMMENTS_MODAL',
-                    data: { childId: state.childId }
-                  }, '*');
-                }
+                // Hide navbar when opening modal
+                hideNavbar();
                 
                 // Always show the modal in Firebase app
                 setShowCommentsModal(true);
@@ -3087,21 +3072,35 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
                 {viewMode === 'unread' ? 'Unread comments on log' : 'All comments on log'}
               </h2>
               
-              {/* Toggle Button */}
-              <button
-                onClick={() => setViewMode(viewMode === 'unread' ? 'all' : 'unread')}
-                className={`px-4 py-2 rounded-full border transition-colors ${
-                  user?.darkMode
-                    ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                }`}
-                style={{
-                  fontSize: '14px',
-                  fontWeight: '400'
-                }}
-              >
-                {viewMode === 'unread' ? 'View All' : 'View Unread'}
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Toggle Button */}
+                <button
+                  onClick={() => setViewMode(viewMode === 'unread' ? 'all' : 'unread')}
+                  className={`px-4 py-2 rounded-full border transition-colors ${
+                    user?.darkMode
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '400'
+                  }}
+                >
+                  {viewMode === 'unread' ? 'View All' : 'View Unread'}
+                </button>
+                
+                {/* Exit Button */}
+                <button
+                  onClick={onClose}
+                  className={`p-2 rounded-full transition-colors ${
+                    user?.darkMode
+                      ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                  }`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             {/* Mark all as read button for unread view */}
