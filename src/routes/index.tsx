@@ -53,8 +53,6 @@ type NavigationContextType = {
   navigateBack: () => void;
   updateLog: (log: SleepLog) => void;
   setLogs: (logs: SleepLog[]) => void;
-  hideNavbar: () => void;
-  showNavbar: () => void;
 };
 
 const NavigationContext = createContext<NavigationContextType | null>(null);
@@ -100,24 +98,6 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Helper functions to trigger Bubble workflows via postMessage
-  const hideNavbar = () => {
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'TRIGGER_BUBBLE_BUTTON',
-        buttonId: 'btn_hide_navbar'
-      }, '*');
-    }
-  };
-
-  const showNavbar = () => {
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        type: 'TRIGGER_BUBBLE_BUTTON',
-        buttonId: 'btn_show_navbar'
-      }, '*');
-    }
-  };
 
   const navigateToLogs = () => {
     setState(prev => ({ ...prev, view: 'logs', logId: null }));
@@ -130,10 +110,6 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToNewLog = (defaultDate?: string) => {
-    // Hide navbar when opening modal
-    hideNavbar();
-    
-    // Always show the modal in Firebase app
     setState(prev => ({ 
       ...prev, 
       view: 'log-sleep', 
@@ -145,10 +121,6 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateToEditLog = (logId: string) => {
-    // Hide navbar when opening modal
-    hideNavbar();
-    
-    // Always show the modal in Firebase app
     setState(prev => ({ ...prev, view: 'edit-log', logId, previousView: prev.view === 'edit-log' ? prev.previousView : prev.view }));
     updateURL('edit-log', logId);
   };
@@ -159,10 +131,6 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   };
 
   const navigateBack = () => {
-    // Show navbar when closing modal views
-    if (state.view === 'log-sleep' || state.view === 'edit-log') {
-      showNavbar();
-    }
     
     // Different logic based on current view
     if (state.view === 'log-sleep') {
@@ -218,8 +186,6 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     navigateBack,
     updateLog,
     setLogs,
-    hideNavbar,
-    showNavbar,
   };
 
   return (
@@ -1188,7 +1154,7 @@ function MessagingApp() {
 // Log List View Component - now uses navigation context
 function LogsListView() {
   const { user } = useBubbleAuth();
-  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs, hideNavbar, showNavbar } = useNavigation();
+  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [viewMode, setViewMode] = useState<'events' | 'windows'>('events');
@@ -1203,21 +1169,14 @@ function LogsListView() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
 
-  // Helper function to close comments modal with Bubble notification
+  // Helper function to close comments modal
   const closeCommentsModal = () => {
-    // Show navbar when closing comments modal
-    showNavbar();
-    
     setShowCommentsModal(false);
   };
 
   // Expose function to open comments modal from outside (e.g., Bubble app)
   useEffect(() => {
     (window as any).openCommentsModal = () => {
-      // Hide navbar when opening modal
-      hideNavbar();
-      
-      // Always show the modal in Firebase app
       setShowCommentsModal(true);
     };
     
@@ -1519,10 +1478,6 @@ function LogsListView() {
             {/* Comments Icon */}
             <button
               onClick={() => {
-                // Hide navbar when opening modal
-                hideNavbar();
-                
-                // Always show the modal in Firebase app
                 setShowCommentsModal(true);
               }}
               className={`p-2 rounded-full transition-colors ${
