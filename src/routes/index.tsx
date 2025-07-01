@@ -1731,14 +1731,19 @@ function LogDetailView() {
 
   // Get conversation ID for this child
   useEffect(() => {
-    if (!state.childId) return;
+    if (!state.childId) {
+      console.log('❌ No childId available for conversation setup');
+      return;
+    }
 
+    console.log('🔍 Setting up conversation for childId:', state.childId);
     getOrCreateConversation(state.childId)
       .then((convId) => {
+        console.log('✅ Conversation ID obtained:', convId);
         setConversationId(convId);
       })
       .catch((error) => {
-        console.error('Error getting conversation:', error);
+        console.error('❌ Error getting conversation:', error);
       });
   }, [state.childId]);
 
@@ -1804,8 +1809,26 @@ function LogDetailView() {
 
   // Handle comment send
   const handleSendComment = async () => {
-    if (!newComment.trim() || !user || !conversationId || !state.logId) return;
+    console.log('🔍 handleSendComment called with:', {
+      newComment: newComment.trim(),
+      user: !!user,
+      conversationId,
+      logId: state.logId,
+      childId: state.childId
+    });
 
+    if (!newComment.trim() || !user || !conversationId || !state.logId) {
+      console.log('❌ Missing required data for sending comment:', {
+        hasNewComment: !!newComment.trim(),
+        hasUser: !!user,
+        hasConversationId: !!conversationId,
+        hasLogId: !!state.logId,
+        hasChildId: !!state.childId
+      });
+      return;
+    }
+
+    console.log('✅ All data available, sending comment...');
     try {
       await sendLogComment(
         user.id,
@@ -1815,9 +1838,10 @@ function LogDetailView() {
         state.childId!,
         state.logId
       );
+      console.log('🎉 Comment sent successfully!');
       setNewComment("");
     } catch (error) {
-      console.error("Failed to send comment:", error);
+      console.error("❌ Failed to send comment:", error);
       alert(`Failed to send comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
