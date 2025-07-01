@@ -53,6 +53,8 @@ type NavigationContextType = {
   navigateBack: () => void;
   updateLog: (log: SleepLog) => void;
   setLogs: (logs: SleepLog[]) => void;
+  hideNavbar: () => void;
+  showNavbar: () => void;
 };
 
 const NavigationContext = createContext<NavigationContextType | null>(null);
@@ -98,24 +100,24 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Helper functions to trigger Bubble workflows via hidden buttons
-  const triggerBubbleButton = (buttonId: string) => {
+  // Helper functions to trigger Bubble workflows via postMessage
+  const hideNavbar = () => {
     if (window.parent !== window) {
-      try {
-        const button = window.parent.document.getElementById(buttonId);
-        if (button) {
-          (button as HTMLElement).click();
-        } else {
-          console.warn(`Bubble button with id "${buttonId}" not found`);
-        }
-      } catch (error) {
-        console.error('Error triggering Bubble button:', error);
-      }
+      window.parent.postMessage({
+        type: 'TRIGGER_BUBBLE_BUTTON',
+        buttonId: 'btn_hide_navbar'
+      }, '*');
     }
   };
 
-  const hideNavbar = () => triggerBubbleButton('btn_hide_navbar');
-  const showNavbar = () => triggerBubbleButton('btn_show_navbar');
+  const showNavbar = () => {
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'TRIGGER_BUBBLE_BUTTON',
+        buttonId: 'btn_show_navbar'
+      }, '*');
+    }
+  };
 
   const navigateToLogs = () => {
     setState(prev => ({ ...prev, view: 'logs', logId: null }));
@@ -216,6 +218,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     navigateBack,
     updateLog,
     setLogs,
+    hideNavbar,
+    showNavbar,
   };
 
   return (
@@ -1184,7 +1188,7 @@ function MessagingApp() {
 // Log List View Component - now uses navigation context
 function LogsListView() {
   const { user } = useBubbleAuth();
-  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
+  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs, hideNavbar, showNavbar } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [viewMode, setViewMode] = useState<'events' | 'windows'>('events');
