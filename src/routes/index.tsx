@@ -1737,6 +1737,12 @@ function LogDetailView() {
     }
 
     console.log('🔍 Setting up conversation for childId:', state.childId);
+    console.log('🔍 Current user info:', {
+      userId: user?.id,
+      userName: user?.name,
+      isAuthenticated: !!user
+    });
+    
     getOrCreateConversation(state.childId)
       .then((convId) => {
         console.log('✅ Conversation ID obtained:', convId);
@@ -1744,6 +1750,12 @@ function LogDetailView() {
       })
       .catch((error) => {
         console.error('❌ Error getting conversation:', error);
+        console.error('❌ Error details:', {
+          code: error.code,
+          message: error.message,
+          childId: state.childId,
+          user: user ? { id: user.id, name: user.name } : null
+        });
       });
   }, [state.childId]);
 
