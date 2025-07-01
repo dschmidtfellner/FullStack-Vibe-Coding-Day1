@@ -1729,18 +1729,23 @@ function LogDetailView() {
       });
   }, [state.logId, state.logCache, updateLog]);
 
-  // Get conversation ID for this child
+  // Get conversation ID for this child - but only after user is authenticated
   useEffect(() => {
     if (!state.childId) {
       console.log('❌ No childId available for conversation setup');
       return;
     }
 
+    if (!user) {
+      console.log('⏳ Waiting for user authentication before setting up conversation...');
+      return;
+    }
+
     console.log('🔍 Setting up conversation for childId:', state.childId);
     console.log('🔍 Current user info:', {
-      userId: user?.id,
-      userName: user?.name,
-      isAuthenticated: !!user
+      userId: user.id,
+      userName: user.name,
+      isAuthenticated: true
     });
     
     getOrCreateConversation(state.childId)
@@ -1754,10 +1759,10 @@ function LogDetailView() {
           code: error.code,
           message: error.message,
           childId: state.childId,
-          user: user ? { id: user.id, name: user.name } : null
+          user: { id: user.id, name: user.name }
         });
       });
-  }, [state.childId]);
+  }, [state.childId, user]); // Added user as dependency
 
   // Listen to comments for this log
   useEffect(() => {
