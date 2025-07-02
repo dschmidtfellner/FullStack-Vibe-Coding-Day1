@@ -21,8 +21,32 @@ exports.onMessageCreated = functions.firestore
     .onCreate(async (snap, context) => {
     try {
         const message = snap.data();
+        console.log('New message created:', {
+            messageId: context.params.messageId,
+            senderId: message.senderId,
+            childId: message.childId,
+            logId: message.logId,
+            conversationId: message.conversationId
+        });
         // Get all users who should see this message (conversation participants)
-        const participants = await getConversationParticipants(message.conversationId);
+        let participants = await getConversationParticipants(message.conversationId);
+        // If no participants found, get all users who have access to this child
+        if (participants.length === 0) {
+            console.log('No participants found in conversation, getting all users with child access');
+            // For now, we'll get all messages in this conversation to find unique users
+            const messagesSnapshot = await db.collection('messages')
+                .where('conversationId', '==', message.conversationId)
+                .get();
+            const uniqueUsers = new Set();
+            messagesSnapshot.forEach(doc => {
+                const msg = doc.data();
+                if (msg.senderId) {
+                    uniqueUsers.add(msg.senderId);
+                }
+            });
+            participants = Array.from(uniqueUsers);
+            console.log('Found participants from message history:', participants);
+        }
         // Batch update all user counters
         const batch = db.batch();
         for (const userId of participants) {

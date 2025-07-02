@@ -491,3 +491,68 @@ Clean up the appearance of the unread message modal for narrow screen sizes to i
 2. **Improved readability**: Proper text sizing and spacing on mobile
 3. **Touch-friendly**: Buttons and interactive elements properly sized
 4. **Clean layout**: Information hierarchy maintained across screen sizes
+
+## Unread Message Counter System Implementation
+
+### Objective
+Create a performant, scalable system for tracking unread message counts per user across chat messages and log comments, with real-time updates and automatic mark-as-read functionality.
+
+### Progress Status
+✅ **Complete implementation of unread counter system**:
+  - Denormalized counter documents in Firestore for O(1) lookups
+  - Firebase Cloud Functions for automatic counter updates
+  - Real-time counter listeners with React hooks
+  - Mark-as-read functionality for chat and log comments
+  - UI integration with unread count badges
+  - Automatic marking as read when viewing content
+
+### Commits Made During Session
+1. "fix: Complete responsive design cleanup for CommentsModal on narrow screens"
+2. "feat: Implement comprehensive unread message counter system with Firebase Cloud Functions"
+
+### Technical Architecture
+1. **Counter Document Structure** (`unread_counters` collection):
+   ```typescript
+   {
+     id: "user_{userId}_child_{childId}",
+     userId: string,
+     childId: string,
+     chatUnreadCount: number,
+     logUnreadCount: number,
+     logUnreadByLogId: { [logId: string]: number },
+     totalUnreadCount: number,
+     lastUpdated: Timestamp
+   }
+   ```
+
+2. **Cloud Functions Implemented**:
+   - `onMessageCreated`: Trigger that updates counters when new messages are created
+   - `getUnreadCounters`: API endpoint to fetch counters for a user/child combination
+   - `markChatAsRead`: Mark all chat messages as read
+   - `markLogAsRead`: Mark log comments as read for a specific log
+   - `markAllLogsAsRead`: Mark all log comments as read across all logs
+
+3. **React Integration**:
+   - `useUnreadCounters` hook for real-time counter listening
+   - Automatic mark-as-read when viewing Chat (1s delay)
+   - Automatic mark-as-read when viewing LogDetail (1s delay)
+   - Mark all as read button in CommentsModal
+
+4. **UI Components Updated**:
+   - MessageSquare icon in LogList header shows total log unread count
+   - Individual SleepLogTile components show per-log unread counts
+   - Red badges with white numbers (99+ for counts > 99)
+   - CommentsModal filters actually unread messages based on readBy status
+
+### Performance Benefits
+1. **O(1) Counter Reads**: No complex queries or filtering needed
+2. **Real-time Updates**: Counters update instantly via Firestore listeners
+3. **Scalable**: Works efficiently with thousands of messages
+4. **Minimal Client Logic**: All counting handled by Cloud Functions
+5. **Bubble-Ready**: Simple API endpoints for external integration
+
+### Next Steps
+- Monitor Cloud Function performance and costs
+- Add API endpoints for Bubble to fetch unread counts
+- Consider adding push notifications for new messages
+- Add analytics to track counter update frequency

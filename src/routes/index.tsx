@@ -605,12 +605,13 @@ function MessagingApp() {
       fullURL: window.location.href,
       childIdParam,
       childNameParam,
+      hasUser: !!user
     });
     
-    if (childIdParam) {
-      console.log('✅ Found childId, creating conversation...');
+    if (childIdParam && user) {
+      console.log('✅ Found childId and user, creating conversation...');
       // Create or get conversation for this child
-      getOrCreateConversation(childIdParam, childNameParam || undefined)
+      getOrCreateConversation(childIdParam, childNameParam || undefined, user.id, user.name)
         .then((convId) => {
           console.log('🎉 Conversation created successfully:', convId);
           setConversationId(convId);
@@ -621,12 +622,14 @@ function MessagingApp() {
           console.error('❌ Error initializing conversation:', error);
           setIsLoadingConversation(false);
         });
+    } else if (childIdParam && !user) {
+      console.log('⏳ Waiting for user authentication...');
     } else {
       console.log('❌ No childId parameter found');
       // Development mode - require childId parameter
       setIsLoadingConversation(false);
     }
-  }, []);
+  }, [user]);
 
   // Listen to messages for the current conversation
   useEffect(() => {
@@ -1494,7 +1497,7 @@ function LogDetailView() {
       isAuthenticated: true
     });
     
-    getOrCreateConversation(state.childId)
+    getOrCreateConversation(state.childId, undefined, user.id, user.name)
       .then((convId) => {
         console.log('✅ Conversation ID obtained:', convId);
         setConversationId(convId);
@@ -2738,13 +2741,11 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
   useEffect(() => {
     if (!isOpen || !childId) return;
     
-    // Listen to all messages in the child's conversation that have a logId
+    // Listen to all messages in the child's conversation
     const conversationId = `child_${childId}`;
     const q = query(
       collection(db, 'messages'),
       where('conversationId', '==', conversationId),
-      where('logId', '!=', null),
-      orderBy('logId'),
       orderBy('timestamp', 'desc')
     );
     
@@ -2754,12 +2755,16 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
       
       snapshot.forEach((doc) => {
         const message = { id: doc.id, ...doc.data() } as FirebaseMessage;
-        allMessages.push(message);
         
-        // Check if message is unread for current user
-        const isRead = message.readBy && typeof message.readBy === 'object' && message.readBy[user?.id] === true;
-        if (!isRead) {
-          unreadMessages.push(message);
+        // Only include messages that have a logId (are log comments)
+        if (message.logId) {
+          allMessages.push(message);
+          
+          // Check if message is unread for current user
+          const isRead = message.readBy && typeof message.readBy === 'object' && message.readBy[user?.id] === true;
+          if (!isRead) {
+            unreadMessages.push(message);
+          }
         }
       });
       

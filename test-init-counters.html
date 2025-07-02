@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initialize Unread Counters</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #503460;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 20px;
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .error {
+      color: #d32f2f;
+    }
+    .success {
+      color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Initialize Unread Counters</h1>
+    
+    <div class="info">
+      <p><strong>Purpose:</strong> This tool initializes unread message counters for all existing messages in the system.</p>
+      <p><strong>How it works:</strong> It finds all unique user/child combinations from existing messages and creates counter documents.</p>
+    </div>
+    
+    <button id="initBtn" onclick="initializeCounters()">Initialize Counters</button>
+    <button id="clearBtn" onclick="clearResults()">Clear Results</button>
+    
+    <div id="results" class="results" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
+    import { 
+      getFirestore, 
+      collection, 
+      getDocs, 
+      doc, 
+      setDoc,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQN2h-nCkuzasgVTMWvZrKFVURE-1QFAo",
+      authDomain: "doulaconnect-messaging.firebaseapp.com",
+      projectId: "doulaconnect-messaging",
+      storageBucket: "doulaconnect-messaging.firebasestorage.app",
+      messagingSenderId: "988736436305",
+      appId: "1:988736436305:web:aed18eb77c7e3ec5c396f1"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    window.initializeCounters = async function() {
+      const btn = document.getElementById('initBtn');
+      const results = document.getElementById('results');
+      
+      btn.disabled = true;
+      results.style.display = 'block';
+      results.innerHTML = 'Starting initialization...\n\n';
+      
+      try {
+        // Step 1: Get all messages
+        results.innerHTML += 'Fetching all messages...\n';
+        const messagesSnapshot = await getDocs(collection(db, 'messages'));
+        results.innerHTML += `Found ${messagesSnapshot.size} messages\n\n`;
+        
+        // Step 2: Find unique user/child combinations
+        const userChildCombos = new Map();
+        const usersByChild = new Map();
+        
+        messagesSnapshot.forEach(doc => {
+          const message = doc.data();
+          const childId = message.childId;
+          
+          if (!usersByChild.has(childId)) {
+            usersByChild.set(childId, new Set());
+          }
+          
+          // Add sender to this child's users
+          if (message.senderId) {
+            usersByChild.get(childId).add(message.senderId);
+          }
+        });
+        
+        // Step 3: Count messages for each user/child combo
+        results.innerHTML += 'Counting messages per user/child...\n';
+        
+        for (const [childId, userIds] of usersByChild.entries()) {
+          for (const userId of userIds) {
+            const counterId = `user_${userId}_child_${childId}`;
+            let chatCount = 0;
+            let logCount = 0;
+            const logCounts = {};
+            
+            // Count messages for this user/child
+            messagesSnapshot.forEach(doc => {
+              const message = doc.data();
+              
+              // Skip if it's from this user (they don't see their own as unread)
+              if (message.senderId === userId) return;
+              
+              // Skip if it's not for this child
+              if (message.childId !== childId) return;
+              
+              // Check if already read
+              const isRead = message.readBy && message.readBy[userId] === true;
+              if (isRead) return;
+              
+              // Count unread messages
+              if (message.logId) {
+                logCount++;
+                logCounts[message.logId] = (logCounts[message.logId] || 0) + 1;
+              } else {
+                chatCount++;
+              }
+            });
+            
+            userChildCombos.set(counterId, {
+              userId,
+              childId,
+              chatCount,
+              logCount,
+              logCounts
+            });
+          }
+        }
+        
+        results.innerHTML += `Found ${userChildCombos.size} user/child combinations\n\n`;
+        
+        // Step 4: Create counter documents
+        results.innerHTML += 'Creating counter documents...\n';
+        let created = 0;
+        
+        for (const [counterId, data] of userChildCombos.entries()) {
+          try {
+            const counterRef = doc(db, 'unread_counters', counterId);
+            await setDoc(counterRef, {
+              id: counterId,
+              userId: data.userId,
+              childId: data.childId,
+              chatUnreadCount: data.chatCount,
+              logUnreadCount: data.logCount,
+              logUnreadByLogId: data.logCounts,
+              totalUnreadCount: data.chatCount + data.logCount,
+              lastUpdated: serverTimestamp()
+            }, { merge: true });
+            
+            created++;
+            results.innerHTML += `  ✓ Created counter for ${counterId} (${data.chatCount + data.logCount} unread)\n`;
+          } catch (error) {
+            results.innerHTML += `  ✗ Error creating ${counterId}: ${error.message}\n`;
+          }
+        }
+        
+        results.innerHTML += `\n<span class="success">✓ Successfully created ${created} counter documents!</span>\n`;
+        
+      } catch (error) {
+        console.error('Error:', error);
+        results.innerHTML += `\n<span class="error">✗ Error: ${error.message}</span>\n`;
+      } finally {
+        btn.disabled = false;
+      }
+    };
+    
+    window.clearResults = function() {
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('results').innerHTML = '';
+    };
+  </script>
+</body>
+</html>

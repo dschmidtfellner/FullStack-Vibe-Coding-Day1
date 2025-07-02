@@ -45,7 +45,7 @@ async function updateConversationLastMessage(conversationId: string, lastMessage
 /**
  * Create or get conversation for a child
  */
-export async function getOrCreateConversation(childId: string, childName?: string): Promise<string> {
+export async function getOrCreateConversation(childId: string, childName?: string, userId?: string, userName?: string): Promise<string> {
   try {
     const conversationId = `child_${childId}`;
     const conversationRef = doc(db, 'conversations', conversationId);
@@ -56,17 +56,26 @@ export async function getOrCreateConversation(childId: string, childName?: strin
     if (!conversationDoc.exists()) {
       // Create new conversation
       console.log('🔍 Creating new conversation:', conversationId);
-      await setDoc(conversationRef, {
+      const conversationData: any = {
         id: conversationId,
         childId,
         childName: childName || `Child ${childId}`,
-        participants: [], // Will be populated based on permissions
-        participantNames: {},
+        participants: userId ? [userId] : [],
+        participantNames: userId && userName ? { [userId]: userName } : {},
         createdAt: serverTimestamp(),
-      });
+      };
+      
+      await setDoc(conversationRef, conversationData);
       if (import.meta.env.DEV) {
         console.log('Created new conversation:', conversationId);
       }
+    } else if (userId && conversationDoc.data()?.participants && !conversationDoc.data()?.participants.includes(userId)) {
+      // Add user to participants if not already there
+      console.log('Adding user to conversation participants:', userId);
+      await updateDoc(conversationRef, {
+        participants: arrayUnion(userId),
+        [`participantNames.${userId}`]: userName || 'Unknown User'
+      });
     }
     
     return conversationId;
