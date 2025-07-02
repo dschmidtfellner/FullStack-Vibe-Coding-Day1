@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Send, Plus, Mic, Square } from 'lucide-react';
-import { sendMessage, sendImageMessage, sendAudioMessage, setTypingStatus, sendLogComment } from '@/lib/firebase-messaging';
+import { sendMessage, sendImageMessage, sendAudioMessage, setTypingStatus, sendLogComment, sendLogImageComment, sendLogAudioComment } from '@/lib/firebase-messaging';
 import { BubbleUser } from '@/lib/jwt-auth';
 
 interface MessageInputBarProps {
@@ -80,14 +80,29 @@ export function MessageInputBar({
     setIsUploading(true);
 
     try {
-      const messageId = await sendImageMessage(
-        user.id,
-        user.name,
-        file,
-        conversationId,
-        childId
-      );
-      console.log('Image message sent successfully:', messageId);
+      let messageId;
+      if (logId) {
+        // Send as log comment
+        messageId = await sendLogImageComment(
+          user.id,
+          user.name,
+          file,
+          conversationId,
+          childId,
+          logId
+        );
+        console.log('Log image comment sent successfully:', messageId);
+      } else {
+        // Send as regular message
+        messageId = await sendImageMessage(
+          user.id,
+          user.name,
+          file,
+          conversationId,
+          childId
+        );
+        console.log('Image message sent successfully:', messageId);
+      }
       onMessageSent?.();
     } catch (error) {
       console.error("Failed to upload image:", error);
@@ -122,13 +137,28 @@ export function MessageInputBar({
         if (user && conversationId && childId) {
           setIsUploading(true);
           try {
-            await sendAudioMessage(
-              user.id,
-              user.name,
-              audioBlob,
-              conversationId,
-              childId
-            );
+            if (logId) {
+              // Send as log comment
+              await sendLogAudioComment(
+                user.id,
+                user.name,
+                audioBlob,
+                conversationId,
+                childId,
+                logId
+              );
+              console.log('Log audio comment sent successfully');
+            } else {
+              // Send as regular message
+              await sendAudioMessage(
+                user.id,
+                user.name,
+                audioBlob,
+                conversationId,
+                childId
+              );
+              console.log('Audio message sent successfully');
+            }
             onMessageSent?.();
           } catch (error) {
             console.error("Failed to upload audio:", error);

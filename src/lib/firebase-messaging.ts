@@ -780,6 +780,125 @@ export async function sendLogComment(
 }
 
 /**
+ * Send an image comment for a log
+ */
+export async function sendLogImageComment(
+  senderId: string,
+  senderName: string,
+  imageFile: File,
+  conversationId: string,
+  childId: string,
+  logId: string
+) {
+  try {
+    console.log('sendLogImageComment called with:', {
+      senderId,
+      senderName,
+      fileName: imageFile.name,
+      fileSize: imageFile.size,
+      conversationId,
+      childId,
+      logId
+    });
+    
+    // Upload image to Firebase Storage
+    console.log('Uploading image to Firebase Storage...');
+    const imageUrl = await uploadFile(imageFile, 'images');
+    console.log('Image uploaded, URL:', imageUrl);
+    
+    // Send message with image and logId
+    console.log('Creating log image comment in Firestore...');
+    const messageData = {
+      senderId,
+      senderName,
+      conversationId,
+      childId,
+      logId, // Add logId for log comments
+      type: 'image',
+      imageId: imageUrl, // Store the download URL directly
+      timestamp: serverTimestamp(),
+      read: false,
+    };
+    
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
+    console.log('Log image comment created successfully:', messageRef.id);
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, '📷 Image', serverTimestamp());
+    
+    // Update log comment count
+    await updateLogCommentCount(logId);
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error sending log image comment:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
+ * Send an audio comment for a log
+ */
+export async function sendLogAudioComment(
+  senderId: string,
+  senderName: string,
+  audioBlob: Blob,
+  conversationId: string,
+  childId: string,
+  logId: string
+) {
+  try {
+    console.log('sendLogAudioComment called with:', {
+      senderId,
+      senderName,
+      audioSize: audioBlob.size,
+      conversationId,
+      childId,
+      logId
+    });
+    
+    // Convert blob to file
+    const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, {
+      type: audioBlob.type
+    });
+    
+    // Upload audio to Firebase Storage
+    console.log('Uploading audio to Firebase Storage...');
+    const audioUrl = await uploadFile(audioFile, 'audio');
+    console.log('Audio uploaded, URL:', audioUrl);
+    
+    // Send message with audio and logId
+    console.log('Creating log audio comment in Firestore...');
+    const messageData = {
+      senderId,
+      senderName,
+      conversationId,
+      childId,
+      logId, // Add logId for log comments
+      type: 'audio',
+      audioId: audioUrl, // Store the download URL directly
+      timestamp: serverTimestamp(),
+      read: false,
+    };
+
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
+    console.log('Log audio comment created successfully:', messageRef.id);
+
+    // Update conversation with last message info
+    await updateConversationLastMessage(conversationId, '🎵 Audio', serverTimestamp());
+    
+    // Update log comment count
+    await updateLogCommentCount(logId);
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error sending log audio comment:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
+  }
+}
+
+/**
  * Update log comment count
  */
 async function updateLogCommentCount(logId: string) {
