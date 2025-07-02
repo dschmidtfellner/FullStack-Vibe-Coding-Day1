@@ -1,6 +1,6 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight, MessageSquare, Search } from "lucide-react";
+import { Plus, X, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight, MessageSquare, Search } from "lucide-react";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { MessageInputBar } from "@/components/MessageInputBar";
 import TimePicker from 'react-time-picker';
@@ -12,11 +12,7 @@ import { FirebaseMessage } from "@/types/firebase";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { db } from "@/lib/firebase";
 import {
-  sendMessage,
-  sendImageMessage,
-  sendAudioMessage,
   listenToMessages,
-  setTypingStatus,
   listenToTypingIndicators,
   toggleMessageReaction,
   getOrCreateConversation,
@@ -27,7 +23,6 @@ import {
   createSleepLog,
   updateSleepLog,
   getLog,
-  sendLogComment,
   listenToLogComments,
 } from "@/lib/firebase-messaging";
 
@@ -820,15 +815,17 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Shared component with all advanced features */}
-      <MessageInputBar
-        user={user}
-        conversationId={conversationId!}
-        childId={childId!}
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        placeholder="Start typing here"
-        typingUsers={typingUsers}
-      />
+      {user && (
+        <MessageInputBar
+          user={user}
+          conversationId={conversationId!}
+          childId={childId!}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          placeholder="Start typing here"
+          typingUsers={typingUsers}
+        />
+      )}
 
       {/* Minimal bottom spacing for iframe */}
       <div className={`h-[20px] ${
@@ -1843,15 +1840,17 @@ function LogDetailView() {
       </div>
 
       {/* Comment Input - Shared component with all advanced features */}
-      <MessageInputBar
-        user={user}
-        conversationId={conversationId!}
-        childId={state.childId!}
-        newMessage={newComment}
-        setNewMessage={setNewComment}
-        placeholder="Add a comment..."
-        logId={state.logId}
-      />
+      {user && (
+        <MessageInputBar
+          user={user}
+          conversationId={conversationId!}
+          childId={state.childId!}
+          newMessage={newComment}
+          setNewMessage={setNewComment}
+          placeholder="Add a comment..."
+          logId={state.logId}
+        />
+      )}
 
       {/* Minimal bottom spacing for iframe */}
       <div className={`h-[20px] ${
