@@ -2752,27 +2752,23 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
           user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
         }`}>
           {/* Header */}
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-domine text-2xl font-medium" style={{ color: '#745288' }}>
-                {viewMode === 'unread' ? 'Unread comments on log' : 'All comments on log'}
+          <div className="px-4 sm:px-6 pt-6 pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="font-domine text-xl sm:text-2xl font-medium" style={{ color: '#745288' }}>
+                {viewMode === 'unread' ? 'Unread comments' : 'All comments'}
               </h2>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 justify-between sm:justify-end">
                 {/* Toggle Button */}
                 <button
                   onClick={() => setViewMode(viewMode === 'unread' ? 'all' : 'unread')}
-                  className={`px-4 py-2 rounded-full border transition-colors ${
+                  className={`px-3 py-2 rounded-full border transition-colors text-sm ${
                     user?.darkMode
                       ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
                       : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                   }`}
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: '400'
-                  }}
                 >
-                  {viewMode === 'unread' ? 'View All' : 'View Unread'}
+                  {viewMode === 'unread' ? 'All' : 'Unread'}
                 </button>
                 
                 {/* Exit Button */}
@@ -2825,7 +2821,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
           </div>
           
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-6 pb-[92px]">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-[92px]">
             {filteredComments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <MessageSquare className={`w-12 h-12 mb-4 ${
@@ -2878,11 +2874,11 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
                         }
                       }}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <p style={{ color: '#745288', fontWeight: '500' }}>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0 mb-2">
+                        <p className="text-sm sm:text-base" style={{ color: '#745288', fontWeight: '500' }}>
                           {comment.senderName} commented on {logTypeDisplay}
                         </p>
-                        <div className="text-right">
+                        <div className="flex gap-2 sm:text-right sm:flex-col">
                           <p className={`text-sm ${
                             user?.darkMode ? 'text-gray-400' : 'text-gray-600'
                           }`}>
