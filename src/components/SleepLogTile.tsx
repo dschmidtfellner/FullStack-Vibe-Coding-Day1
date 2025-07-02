@@ -64,10 +64,17 @@ export function SleepLogTile({
   const tileContent = (
     <div className="flex justify-between items-center">
       <div className="flex-1">
-        {/* Time range - standard dark text */}
-        <div className={`text-sm mb-1 ${
-          user?.darkMode ? 'text-gray-300' : 'text-gray-600'
-        }`}>
+        {/* Time range - Poppins 16px */}
+        <div 
+          className={`font-poppins mb-1 ${
+            user?.darkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}
+          style={{ 
+            fontSize: '16px',
+            fontWeight: '400',
+            lineHeight: '1.2'
+          }}
+        >
           {getTimeRange()}
         </div>
         
@@ -99,7 +106,7 @@ export function SleepLogTile({
               fontWeight: '400'
             }}
           >
-            Continue Logging
+            Continue
           </button>
         )}
         
@@ -107,7 +114,15 @@ export function SleepLogTile({
         {unreadCount > 0 && (
           <div className="flex items-center gap-1 text-[#4b355e]">
             <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">{unreadCount}</span>
+            <span 
+              className="font-poppins"
+              style={{ 
+                fontSize: '16px',
+                fontWeight: '400'
+              }}
+            >
+              {unreadCount}
+            </span>
           </div>
         )}
       </div>
