@@ -1848,7 +1848,7 @@ function LogDetailView() {
           newMessage={newComment}
           setNewMessage={setNewComment}
           placeholder="Add a comment..."
-          logId={state.logId}
+          logId={state.logId || undefined}
         />
       )}
 
