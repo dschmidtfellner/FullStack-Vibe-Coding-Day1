@@ -274,9 +274,8 @@ export function MessageInputBar({
         )}
 
         <div className={`flex items-center gap-3 ${logId ? 'max-w-full' : ''}`}>
-          {/* Photo upload button (only for chat) */}
-          {!logId && (
-            <button 
+          {/* Photo upload button */}
+          <button 
               onClick={handlePhotoSelect}
               disabled={isUploading}
               className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
@@ -295,11 +294,9 @@ export function MessageInputBar({
                 <Plus className="w-4 h-4" />
               )}
             </button>
-          )}
 
-          {/* Voice recording button (only for chat) */}
-          {!logId && (
-            <button 
+          {/* Voice recording button */}
+          <button 
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isUploading}
               className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
@@ -320,7 +317,6 @@ export function MessageInputBar({
                 <Mic className="w-4 h-4" />
               )}
             </button>
-          )}
           
           {/* Text input and send button */}
           <div className="flex-1 relative">
