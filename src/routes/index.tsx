@@ -2,6 +2,7 @@ import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Send, X, Mic, Square, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight, MessageSquare, Search } from "lucide-react";
 import { SleepLogTile } from "@/components/SleepLogTile";
+import { MessageInputBar } from "@/components/MessageInputBar";
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
@@ -571,9 +572,7 @@ function MessagingApp() {
   const { user } = useBubbleAuth();
   const [messages, setMessages] = useState<FirebaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null); // messageId or null
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -582,10 +581,6 @@ function MessagingApp() {
   
   // Check if user has access to the current child
   const hasChildAccess = useChildAccess(childId);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
@@ -667,96 +662,8 @@ function MessagingApp() {
     }
   }, [showReactionPicker]);
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || !user || !conversationId || !childId) {
-      console.log('Cannot send: missing required data', { 
-        newMessage: newMessage.trim(), 
-        user: !!user, 
-        conversationId, 
-        childId 
-      });
-      return;
-    }
-    
-    console.log('Attempting to send message:', {
-      userId: user.id,
-      userName: user.name,
-      text: newMessage.trim(),
-      conversationId,
-      childId
-    });
-    
-    try {
-      const messageId = await sendMessage(
-        user.id,
-        user.name,
-        newMessage.trim(),
-        conversationId,
-        childId
-      );
-      console.log('Message sent successfully:', messageId);
-      setNewMessage("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      alert(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
-  const handlePhotoSelect = () => {
-    fileInputRef.current?.click();
-  };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user || !conversationId || !childId) {
-      console.log('Missing required data for file upload:', { 
-        file: !!file, 
-        user: !!user, 
-        conversationId, 
-        childId 
-      });
-      return;
-    }
-
-    // Check if it's an image
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    console.log('Starting image upload:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      userId: user.id,
-      userName: user.name,
-      conversationId,
-      childId
-    });
-
-    setIsUploading(true);
-
-    try {
-      const messageId = await sendImageMessage(
-        user.id,
-        user.name,
-        file,
-        conversationId,
-        childId
-      );
-      console.log('Image message sent successfully:', messageId);
-    } catch (error) {
-      console.error("Failed to upload image:", error);
-      console.error("Error details:", error instanceof Error ? error.message : 'Unknown error');
-      alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return '';
@@ -784,95 +691,7 @@ function MessagingApp() {
     setSelectedImage(null);
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        
-        // Automatically send the audio
-        if (user && conversationId && childId) {
-          setIsUploading(true);
-          try {
-            await sendAudioMessage(
-              user.id,
-              user.name,
-              audioBlob,
-              conversationId,
-              childId
-            );
-          } catch (error) {
-            console.error("Failed to upload audio:", error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Failed to upload audio: ${errorMessage}`);
-          } finally {
-            setIsUploading(false);
-          }
-        }
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('Unable to access microphone');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setNewMessage(value);
-
-    if (!user) return;
-
-    // If user is typing, set typing status to true
-    if (value.trim()) {
-      setTypingStatus(user.id, user.name, true);
-      
-      // Clear any existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      // Set a timeout to stop typing indicator after 2 seconds of inactivity
-      typingTimeoutRef.current = setTimeout(() => {
-        setTypingStatus(user.id, user.name, false);
-      }, 2000);
-    } else {
-      // If input is empty, immediately stop typing indicator
-      setTypingStatus(user.id, user.name, false);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
-  };
-
-  const handleSendWithTypingCleanup = async () => {
-    // Stop typing indicator when sending message
-    if (user) {
-      setTypingStatus(user.id, user.name, false);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
-    await handleSend();
-  };
 
   const handleReaction = async (messageId: string, emoji: string) => {
     if (!user) return;
@@ -1000,123 +819,16 @@ function MessagingApp() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input - Floating at bottom with space for Bubble nav */}
-      <div className={`absolute left-0 right-0 border-t z-10 ${
-        user?.darkMode 
-          ? 'border-gray-700 bg-[#2d2637]' 
-          : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '81px' }}>
-        <div className="max-w-[800px] mx-auto p-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          
-          {/* Typing Indicators */}
-          {typingUsers.length > 0 && (
-            <div className={`mb-3 px-4 py-2 text-sm ${
-              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`} style={{ animationDelay: '0.1s' }}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    user?.darkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`} style={{ animationDelay: '0.2s' }}></div>
-                </div>
-                <span>
-                  {typingUsers.length === 1 
-                    ? `${typingUsers[0].userName} is typing...`
-                    : typingUsers.length === 2
-                    ? `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing...`
-                    : `${typingUsers[0].userName} and ${typingUsers.length - 1} others are typing...`
-                  }
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 max-w-full">
-            <button 
-              onClick={handlePhotoSelect}
-              disabled={isUploading}
-              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
-                user?.darkMode 
-                  ? 'hover:opacity-90' 
-                  : 'text-white hover:opacity-90'
-              }`}
-              style={{ 
-                backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
-                color: user?.darkMode ? '#503460' : 'white'
-              }}
-            >
-            {isUploading ? (
-              <div className="loading loading-spinner w-4 h-4"></div>
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-          </button>
-
-            <button 
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isUploading}
-              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
-                isRecording 
-                  ? 'bg-red-500 text-white hover:bg-red-600' 
-                  : user?.darkMode
-                  ? 'hover:opacity-90'
-                  : 'text-white hover:opacity-90'
-              }`}
-              style={{ 
-                backgroundColor: isRecording ? undefined : (user?.darkMode ? '#F0DDEF' : '#503460'),
-                color: isRecording ? undefined : (user?.darkMode ? '#503460' : 'white')
-              }}
-            >
-            {isRecording ? (
-              <Square className="w-4 h-4" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
-          </button>
-          
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={handleInputChange}
-              onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
-              placeholder="Start typing here"
-              className={`input input-bordered w-full pr-12 rounded-full focus:outline-none h-12 box-border ${
-                user?.darkMode 
-                  ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
-                  : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
-              }`}
-            />
-            <button 
-              onClick={handleSendWithTypingCleanup}
-              disabled={isUploading || !newMessage.trim()}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
-                user?.darkMode ? '' : 'text-white'
-              }`}
-              style={{ 
-                backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
-                color: user?.darkMode ? '#503460' : 'white'
-              }}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
+      {/* Message Input - Shared component with all advanced features */}
+      <MessageInputBar
+        user={user}
+        conversationId={conversationId!}
+        childId={childId!}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        placeholder="Start typing here"
+        typingUsers={typingUsers}
+      />
 
       {/* Minimal bottom spacing for iframe */}
       <div className={`h-[20px] ${
@@ -1824,44 +1536,6 @@ function LogDetailView() {
   };
 
 
-  // Handle comment send
-  const handleSendComment = async () => {
-    console.log('🔍 handleSendComment called with:', {
-      newComment: newComment.trim(),
-      user: !!user,
-      conversationId,
-      logId: state.logId,
-      childId: state.childId
-    });
-
-    if (!newComment.trim() || !user || !conversationId || !state.logId) {
-      console.log('❌ Missing required data for sending comment:', {
-        hasNewComment: !!newComment.trim(),
-        hasUser: !!user,
-        hasConversationId: !!conversationId,
-        hasLogId: !!state.logId,
-        hasChildId: !!state.childId
-      });
-      return;
-    }
-
-    console.log('✅ All data available, sending comment...');
-    try {
-      await sendLogComment(
-        user.id,
-        user.name,
-        newComment.trim(),
-        conversationId,
-        state.childId!,
-        state.logId
-      );
-      console.log('🎉 Comment sent successfully!');
-      setNewComment("");
-    } catch (error) {
-      console.error("❌ Failed to send comment:", error);
-      alert(`Failed to send comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
   // Temporary delete function for testing
   const handleDeleteLog = async () => {
@@ -2168,42 +1842,16 @@ function LogDetailView() {
         </div>
       </div>
 
-      {/* Comment Input - Pinned to bottom */}
-      <div className={`absolute left-0 right-0 border-t z-10 ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '81px' }}>
-        <div className="max-w-[800px] mx-auto p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
-                placeholder="Add a comment..."
-                className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
-                  user?.darkMode 
-                    ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
-                    : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
-                }`}
-              />
-              <button 
-                onClick={handleSendComment}
-                disabled={!newComment.trim()}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
-                  user?.darkMode ? '' : 'text-white'
-                }`}
-                style={{ 
-                  backgroundColor: user?.darkMode ? '#F0DDEF' : '#503460',
-                  color: user?.darkMode ? '#503460' : 'white'
-                }}
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Comment Input - Shared component with all advanced features */}
+      <MessageInputBar
+        user={user}
+        conversationId={conversationId!}
+        childId={state.childId!}
+        newMessage={newComment}
+        setNewMessage={setNewComment}
+        placeholder="Add a comment..."
+        logId={state.logId}
+      />
 
       {/* Minimal bottom spacing for iframe */}
       <div className={`h-[20px] ${
