@@ -268,12 +268,15 @@ export function listenToMessages(
   );
 
   return onSnapshot(q, (snapshot) => {
-    const messages = snapshot.docs.map((doc) => ({
+    const allMessages = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as FirebaseMessage[];
     
-    callback(messages);
+    // Filter out log comments (messages with logId) from general chat
+    const chatMessages = allMessages.filter(message => !message.logId);
+    
+    callback(chatMessages);
   });
 }
 
