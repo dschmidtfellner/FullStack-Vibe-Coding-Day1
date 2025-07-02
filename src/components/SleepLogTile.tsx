@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { SleepLog } from "@/lib/firebase-messaging";
 
 interface SleepLogTileProps {
@@ -66,9 +66,7 @@ export function SleepLogTile({
       <div className="flex-1">
         {/* Time range - Poppins 16px */}
         <div 
-          className={`font-poppins mb-1 ${
-            user?.darkMode ? 'text-gray-300' : 'text-gray-600'
-          }`}
+          className="font-poppins mb-1 text-[#745288]"
           style={{ 
             fontSize: '16px',
             fontWeight: '400',
@@ -113,7 +111,7 @@ export function SleepLogTile({
         {/* Comment indicator - far right */}
         {unreadCount > 0 && (
           <div className="flex items-center gap-1 text-[#4b355e]">
-            <MessageCircle className="w-4 h-4" />
+            <MessageSquare className="w-4 h-4 fill-current" />
             <span 
               className="font-poppins"
               style={{ 
