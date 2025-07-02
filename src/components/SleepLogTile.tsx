@@ -104,12 +104,12 @@ export function SleepLogTile({
         )}
         
         {/* Comment indicator - far right */}
-        {log.commentCount > 0 && (
+        {unreadCount > 0 && (
           <div className={`flex items-center gap-1 ${
             user?.darkMode ? 'text-white' : 'text-gray-700'
           }`}>
             <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">{log.commentCount}</span>
+            <span className="text-sm">{unreadCount}</span>
           </div>
         )}
       </div>
