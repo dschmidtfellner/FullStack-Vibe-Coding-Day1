@@ -1980,7 +1980,7 @@ function LogDetailView() {
       </div>
 
       {/* Content Container with Collapsible Sections */}
-      <div className="flex flex-col h-full h-[calc(100%-180px)]">
+      <div className="flex flex-col flex-1 min-h-0">
         
         {/* Headlines Section */}
         <div>
@@ -2117,7 +2117,7 @@ function LogDetailView() {
           </button>
 
           {commentsExpanded && (
-            <div className="flex-1 overflow-y-auto px-4 pb-[96px]">
+            <div className="flex-1 overflow-y-auto px-4 pb-[116px]">
               {comments.length === 0 ? (
                 <div className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                   <div className="flex justify-between items-center">
@@ -2169,9 +2169,9 @@ function LogDetailView() {
       </div>
 
       {/* Comment Input - Pinned to bottom */}
-      <div className={`absolute left-0 right-0 bottom-[92px] border-t z-10 ${
+      <div className={`absolute left-0 right-0 border-t z-10 ${
         user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
+      }`} style={{ bottom: '81px' }}>
         <div className="max-w-[800px] mx-auto p-4">
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
