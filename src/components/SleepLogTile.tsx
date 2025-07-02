@@ -105,9 +105,7 @@ export function SleepLogTile({
         
         {/* Comment indicator - far right */}
         {unreadCount > 0 && (
-          <div className={`flex items-center gap-1 ${
-            user?.darkMode ? 'text-white' : 'text-gray-700'
-          }`}>
+          <div className="flex items-center gap-1 text-[#4b355e]">
             <MessageCircle className="w-4 h-4" />
             <span className="text-sm">{unreadCount}</span>
           </div>
@@ -122,12 +120,6 @@ export function SleepLogTile({
         ? 'bg-[#4a3f5a]' 
         : 'bg-[#F0DDEF]'  // Purple background for all logs
     }`}>
-      {/* Unread count badge */}
-      {unreadCount > 0 && (
-        <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium z-10">
-          {unreadCount > 99 ? '99+' : unreadCount}
-        </div>
-      )}
       
       {showClickable && onClick ? (
         <div 
