@@ -973,10 +973,11 @@ export function listenToUnreadCounters(
   
   return onSnapshot(counterRef, (doc) => {
     if (doc.exists()) {
-      callback(doc.data() as UnreadCounters);
+      const data = doc.data() as UnreadCounters;
+      callback(data);
     } else {
       // Initialize counters if they don't exist
-      callback({
+      const defaultCounters = {
         id: counterId,
         userId,
         childId,
@@ -985,12 +986,13 @@ export function listenToUnreadCounters(
         logUnreadByLogId: {},
         totalUnreadCount: 0,
         lastUpdated: Timestamp.now()
-      });
+      };
+      callback(defaultCounters);
     }
   }, (error) => {
     console.error('Error listening to unread counters:', error);
     // Return zero counts on error
-    callback({
+    const errorCounters = {
       id: counterId,
       userId,
       childId,
@@ -999,7 +1001,8 @@ export function listenToUnreadCounters(
       logUnreadByLogId: {},
       totalUnreadCount: 0,
       lastUpdated: Timestamp.now()
-    });
+    };
+    callback(errorCounters);
   });
 }
 
