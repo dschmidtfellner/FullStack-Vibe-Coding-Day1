@@ -1827,7 +1827,7 @@ function LogDetailView() {
                           
                           {/* Comment bubble */}
                           <div 
-                            className={`min-w-[100px] rounded-2xl ${
+                            className={`min-w-[120px] rounded-2xl ${
                               isOwn 
                                 ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
                                 : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
