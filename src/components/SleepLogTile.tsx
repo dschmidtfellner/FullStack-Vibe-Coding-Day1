@@ -11,6 +11,7 @@ interface SleepLogTileProps {
   showClickable?: boolean; // Whether the tile should be clickable
   isNightBefore?: boolean; // Whether this is a previous night's bedtime
   nightBeforeEndTime?: string; // End time for night before display
+  unreadCount?: number; // Number of unread comments for this log
 }
 
 export function SleepLogTile({
@@ -23,6 +24,7 @@ export function SleepLogTile({
   showClickable = true,
   isNightBefore = false,
   nightBeforeEndTime = '',
+  unreadCount = 0,
 }: SleepLogTileProps) {
   // Get time range for log display (e.g., "11:45 am—1:50 pm") or night before subtitle
   const getTimeRange = () => {
@@ -120,6 +122,13 @@ export function SleepLogTile({
         ? 'bg-[#4a3f5a]' 
         : 'bg-[#F0DDEF]'  // Purple background for all logs
     }`}>
+      {/* Unread count badge */}
+      {unreadCount > 0 && (
+        <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium z-10">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </div>
+      )}
+      
       {showClickable && onClick ? (
         <div 
           onClick={onClick}

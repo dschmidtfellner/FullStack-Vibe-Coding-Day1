@@ -461,3 +461,33 @@ The Chat input bar had comprehensive advanced features (photo upload, voice reco
 - **Upload states**: Loading spinners, disabled buttons during uploads
 - **Error handling**: User-friendly alerts and comprehensive error management
 - **Responsive design**: Consistent positioning and theming across devices
+
+## CommentsModal Responsive Design Improvements
+
+### Objective
+Clean up the appearance of the unread message modal for narrow screen sizes to improve mobile user experience.
+
+### Progress Status
+✅ **Completed responsive design enhancements**:
+  - Header layout using `flex-col gap-3 sm:flex-row` for proper mobile stacking
+  - Reduced padding from `px-6` to `px-4 sm:px-6` for better mobile spacing
+  - Shortened button text from "View All"/"View Unread" to "All"/"Unread" for mobile
+  - Comment item layout stacks vertically on mobile with `flex-col sm:flex-row`
+  - Proper timestamp alignment with time/date stacking on mobile
+  - Exit button positioned correctly with responsive spacing
+
+### Commits Made During Session
+1. "fix: Complete responsive design cleanup for CommentsModal on narrow screens"
+
+### Technical Implementation
+- **Mobile-first approach**: Used responsive classes throughout (sm: prefixes)
+- **Header layout**: Stacks title, buttons, and search vertically on mobile
+- **Button sizing**: Consistent mobile-friendly button sizes and spacing
+- **Comment tiles**: Responsive flex layout for author info and timestamps
+- **Spacing optimization**: Reduced margins and padding for mobile screens
+
+### Benefits Achieved
+1. **Better mobile UX**: Modal no longer cramped on narrow screens
+2. **Improved readability**: Proper text sizing and spacing on mobile
+3. **Touch-friendly**: Buttons and interactive elements properly sized
+4. **Clean layout**: Information hierarchy maintained across screen sizes

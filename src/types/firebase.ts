@@ -18,7 +18,7 @@ export interface FirebaseMessage {
   audioId?: string;
   timestamp: Timestamp;
   read: boolean;
-  readBy?: string[];  // Array of user IDs who have read this message
+  readBy?: { [userId: string]: boolean };  // Object mapping user IDs to read status
   logId?: string;  // Optional - if this message is a comment on a log
   reactions?: { [emoji: string]: MessageReaction };  // reactions organized by emoji
 }
@@ -42,4 +42,23 @@ export interface FirebaseUser {
   email?: string;
   avatarUrl?: string;
   createdAt: Timestamp;
+}
+
+export interface UnreadCounters {
+  id: string; // Format: "user_{userId}_child_{childId}"
+  userId: string;
+  childId: string;
+  
+  // Chat counters
+  chatUnreadCount: number;
+  
+  // Log counters  
+  logUnreadCount: number; // Total across all logs
+  logUnreadByLogId: { [logId: string]: number }; // Per-log counts
+  
+  // Combined counters
+  totalUnreadCount: number; // Chat + Logs combined
+  
+  // Metadata
+  lastUpdated: Timestamp;
 }

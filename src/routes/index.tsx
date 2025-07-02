@@ -7,7 +7,7 @@ import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
 import { useState, useRef, useEffect, createContext, useContext } from "react";
-import { Timestamp, collection, query, where, orderBy, onSnapshot, updateDoc, doc, arrayUnion } from "firebase/firestore";
+import { Timestamp, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { db } from "@/lib/firebase";
@@ -24,7 +24,12 @@ import {
   updateSleepLog,
   getLog,
   listenToLogComments,
+  // Unread counter imports
+  markChatMessagesAsRead,
+  markLogCommentsAsRead,
+  markAllLogCommentsAsRead,
 } from "@/lib/firebase-messaging";
+import { useUnreadCounters } from "@/hooks/useUnreadCounters";
 
 // Navigation Context for client-side routing
 type NavigationState = {
@@ -577,6 +582,9 @@ function MessagingApp() {
   // Check if user has access to the current child
   const hasChildAccess = useChildAccess(childId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Get unread counters (for future use)
+  // const { counters } = useUnreadCounters(user?.id || null, childId);
 
   // Auto-scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -641,6 +649,24 @@ function MessagingApp() {
 
     return unsubscribe;
   }, [user?.id]);
+  
+  // Mark chat messages as read when viewing conversation
+  useEffect(() => {
+    if (!conversationId || !user?.id || !childId) return;
+    
+    // Mark as read after a small delay to ensure user is actually viewing
+    const timer = setTimeout(() => {
+      markChatMessagesAsRead(user.id, childId, conversationId)
+        .then(() => {
+          console.log('Chat messages marked as read');
+        })
+        .catch((error) => {
+          console.error('Error marking chat messages as read:', error);
+        });
+    }, 1000); // 1 second delay
+    
+    return () => clearTimeout(timer);
+  }, [conversationId, user?.id, childId]);
 
   // Close reaction picker when clicking outside
   useEffect(() => {
@@ -877,6 +903,9 @@ function LogsListView() {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
+  
+  // Get unread counters
+  const { counters } = useUnreadCounters(user?.id || null, state.childId);
 
   // Helper function to close comments modal
   const closeCommentsModal = () => {
@@ -1189,13 +1218,18 @@ function LogsListView() {
               onClick={() => {
                 setShowCommentsModal(true);
               }}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2 rounded-full transition-colors relative ${
                 user?.darkMode 
                   ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200' 
                   : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
               }`}
             >
               <MessageSquare className="w-6 h-6" />
+              {counters.logUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium">
+                  {counters.logUnreadCount > 99 ? '99+' : counters.logUnreadCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -1260,6 +1294,7 @@ function LogsListView() {
                       ? formatTimeInTimezone(previousDayBedtime.events[previousDayBedtime.events.length - 1].timestamp)
                       : ''
                   }
+                  unreadCount={counters.logUnreadByLogId[previousDayBedtime.id] || 0}
                 />
               </div>
             )}
@@ -1283,6 +1318,7 @@ function LogsListView() {
                     onContinueLogging={() => navigateToEditLog(log.id)}
                     formatTimeInTimezone={formatTimeInTimezone}
                     showClickable={true}
+                    unreadCount={counters.logUnreadByLogId[log.id] || 0}
                   />
                 );
               });
@@ -1484,6 +1520,29 @@ function LogDetailView() {
 
     return unsubscribe;
   }, [state.logId]);
+  
+  // Mark log comments as read when viewing this log
+  useEffect(() => {
+    if (!state.logId || !user || !state.childId) return;
+    
+    // Store values to avoid TypeScript null check issues
+    const logId = state.logId;
+    const childId = state.childId;
+    const userId = user.id;
+    
+    // Mark as read after a small delay to ensure user is actually viewing
+    const timer = setTimeout(() => {
+      markLogCommentsAsRead(userId, childId, logId)
+        .then(() => {
+          console.log('Log comments marked as read');
+        })
+        .catch((error) => {
+          console.error('Error marking log comments as read:', error);
+        });
+    }, 1000); // 1 second delay
+    
+    return () => clearTimeout(timer);
+  }, [state.logId, user, state.childId]);
 
   // Auto-scroll to bottom when comments change
   useEffect(() => {
@@ -2698,7 +2757,8 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
         allMessages.push(message);
         
         // Check if message is unread for current user
-        if (!message.readBy || !message.readBy.includes(user?.user?.id)) {
+        const isRead = message.readBy && typeof message.readBy === 'object' && message.readBy[user?.id] === true;
+        if (!isRead) {
           unreadMessages.push(message);
         }
       });
@@ -2708,7 +2768,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
     });
     
     return () => unsubscribe();
-  }, [isOpen, childId, user?.user?.id]);
+  }, [isOpen, childId, user?.id]);
 
   // Filter comments based on search query
   const filteredComments = viewMode === 'all' 
@@ -2718,20 +2778,15 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
     : unreadComments;
 
   const handleMarkAllAsRead = async () => {
-    if (!user?.user?.id) return;
-    
-    // Mark all unread comments as read
-    const updatePromises = unreadComments.map(comment => 
-      updateDoc(doc(db, 'messages', comment.id), {
-        readBy: arrayUnion(user.user.id)
-      })
-    );
+    if (!user?.id || !childId) return;
     
     try {
-      await Promise.all(updatePromises);
-      setUnreadComments([]);
+      // Use the Cloud Function to mark all log comments as read
+      await markAllLogCommentsAsRead(user.id, childId);
+      console.log('All log comments marked as read');
+      // The unreadComments will be updated automatically by the listener
     } catch (error) {
-      console.error('Error marking comments as read:', error);
+      console.error('Error marking all comments as read:', error);
     }
   };
 
