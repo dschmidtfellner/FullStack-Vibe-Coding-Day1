@@ -1402,6 +1402,7 @@ function LogDetailView() {
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const logEventsRef = useRef<HTMLDivElement>(null);
@@ -1556,6 +1557,14 @@ function LogDetailView() {
     }
   };
 
+  // Image modal functions
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
 
   // Only show skeleton if we're loading AND have no log data
   if (isLoading && !log) {
@@ -1862,6 +1871,30 @@ function LogDetailView() {
       <div className={`h-[20px] ${
         user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
       }`}></div>
+
+      {/* Image modal */}
+      {selectedImage && (
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-8"
+          onClick={closeImageModal}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            <button
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Full size image"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxHeight: 'calc(100vh - 8rem)', maxWidth: 'calc(100vw - 4rem)' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
