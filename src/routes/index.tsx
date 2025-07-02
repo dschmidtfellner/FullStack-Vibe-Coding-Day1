@@ -1818,14 +1818,20 @@ function LogDetailView() {
                           
                           {/* Comment bubble */}
                           <div 
-                            className={`min-w-[100px] rounded-2xl px-4 py-3 ${
+                            className={`min-w-[100px] rounded-2xl ${
                               isOwn 
                                 ? `${user?.darkMode ? 'text-white' : 'text-gray-800'} rounded-br-md` 
                                 : `${user?.darkMode ? 'bg-[#3a3a3a] text-gray-200' : 'bg-gray-200 text-gray-800'} rounded-bl-md`
-                            }`} 
+                            } ${comment.type === 'image' ? 'p-2' : 'px-4 py-3'}`} 
                             style={{ backgroundColor: isOwn ? (user?.darkMode ? '#2d2637' : '#F0DDEF') : undefined }}
                           >
-                            <p className="text-sm leading-relaxed">{comment.text}</p>
+                            {comment.type === 'image' && comment.imageId ? (
+                              <ImageMessage imageUrl={comment.imageId} onImageClick={handleImageClick} />
+                            ) : comment.type === 'audio' && comment.audioId ? (
+                              <AudioMessage audioUrl={comment.audioId} />
+                            ) : (
+                              <p className="text-sm leading-relaxed">{comment.text}</p>
+                            )}
                           </div>
                         </div>
                       </div>
