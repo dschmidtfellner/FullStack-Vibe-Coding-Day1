@@ -160,6 +160,21 @@
         <div id="statusResult"></div>
     </div>
 
+    <!-- FCM Token Storage Explorer -->
+    <div class="section">
+        <h2>FCM Token Storage Explorer</h2>
+        <p>Explore how FCM tokens are stored in your old Firebase projects</p>
+        <div class="form-group">
+            <label>Select Project to Explore:</label>
+            <select id="exploreProject">
+                <option value="rested">Rested (rested-bubble)</option>
+                <option value="doulaConnect">DoulaConnect (doulaconnect-119a4)</option>
+            </select>
+        </div>
+        <button onclick="exploreFCMStorage()">Explore FCM Token Storage</button>
+        <div id="exploreResult"></div>
+    </div>
+
     <script>
         let baseUrl = '';
 
@@ -379,6 +394,27 @@
                     functionsAvailable: false,
                     timestamp: new Date().toISOString()
                 }, true);
+            }
+        }
+
+        async function exploreFCMStorage() {
+            updateBaseUrl();
+            const project = document.getElementById('exploreProject').value;
+            
+            try {
+                showInfo('exploreResult', `Exploring ${project} FCM token storage...`);
+                
+                const response = await fetch(`${baseUrl}/exploreFCMTokenStorage?project=${project}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                showResult('exploreResult', result, !response.ok);
+            } catch (error) {
+                showResult('exploreResult', { error: error.message }, true);
             }
         }
 

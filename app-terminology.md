@@ -6,15 +6,16 @@ Use this document to specify exact component names, functions, and data structur
 
 ### Main Views
 - **`messaging`** - Chat interface showing messages between users
-- **`logs`** - List view of all sleep logs for selected child
+- **`LogList`** - List view of all sleep logs for selected child
 - **`log-detail`** - Individual log view showing sleep events and comments
-- **`log-sleep`** - Interface for creating a new sleep log entry
+- **`LoggingModal`** - Interface for creating a new sleep log entry
 - **`edit-log`** - Interface for editing an existing sleep log
+- **`InterjectionModal`** - Modal for adding sleep events between existing events (accessible from edit-log)
 
 ### Navigation Functions
-- **`navigateToLogs()`** - Navigate to logs list view
+- **`navigateToLogs()`** - Navigate to LogList view
 - **`navigateToLogDetail(logId)`** - Navigate to specific log detail view
-- **`navigateToNewLog(defaultDate?)`** - Navigate to new log creation view
+- **`navigateToNewLog(defaultDate?)`** - Navigate to LoggingModal view
 - **`navigateToEditLog(logId)`** - Navigate to log editing view
 - **`navigateToMessaging()`** - Navigate to chat/messaging view
 - **`navigateBack()`** - Navigate to previous view

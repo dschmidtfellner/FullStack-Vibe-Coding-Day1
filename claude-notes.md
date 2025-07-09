@@ -557,39 +557,45 @@ Create a performant, scalable system for tracking unread message counts per user
 - Consider adding push notifications for new messages
 - Add analytics to track counter update frequency
 
-## Cross-Firebase Push Notifications Implementation
+## Multi-Firebase Push Notifications Implementation (Rested + DoulaConnect)
 
 ### Objective
-Implement push notifications for the new Firebase messaging system that can send notifications to devices registered with the old Firebase project, enabling immediate notification delivery without requiring app updates.
+Implement push notifications for the new Firebase messaging system that can send notifications to devices registered with **both** old Firebase projects (Rested and DoulaConnect), enabling immediate notification delivery to all users without requiring app updates.
 
 ### Progress Status
-✅ **Complete implementation of cross-Firebase push notification system**:
-  - Dual Firebase Admin SDK initialization for both old and new projects
-  - Comprehensive FCM token management with multiple fallback strategies
+✅ **Complete implementation of multi-Firebase push notification system**:
+  - **Triple Firebase Admin SDK** initialization: New project + Rested + DoulaConnect
+  - **Multi-channel FCM token management** with retrieval from both old projects
+  - **Comprehensive notification delivery** via all available channels
   - User identity mapping system between old and new Firebase projects
   - Automatic push notification sending on new message creation
   - Robust error handling and testing infrastructure
-  - Configuration management for service account credentials
+  - Configuration management for multiple service account credentials
 
 ### Commits Made During Session
 1. "feat: Implement cross-Firebase push notifications with dual Admin SDK and comprehensive token management"
+2. "feat: Extend push notification system to support both Rested and DoulaConnect Firebase projects"
 
 ### Technical Architecture
 
-#### 1. **Dual Firebase Admin SDK Setup**
-   - New Firebase project: Default initialized instance for app data
-   - Old Firebase project: Secondary instance ('oldProject') for FCM notifications only
-   - Service account credentials stored securely in Firebase config
-   - Automatic fallback if old project is not configured
+#### 1. **Triple Firebase Admin SDK Setup**
+   - **New Firebase project**: Default initialized instance (`doulaconnect-messaging`) for app data
+   - **Rested Firebase project**: Secondary instance (`restedProject`) for FCM notifications to Rested app users
+   - **DoulaConnect Firebase project**: Third instance (`doulaConnectProject`) for FCM notifications to DoulaConnect app users
+   - Service account credentials for both old projects stored securely in Firebase config
+   - Automatic fallback if either old project is not configured
 
-#### 2. **FCM Token Management (Multi-Strategy)**
+#### 2. **Multi-Channel FCM Token Management**
    ```typescript
    class FCMTokenManager {
-     // Strategy A: Direct database access from old Firebase
-     async getTokenFromOldFirebase(userId: string): Promise<string | null>
+     // Get tokens from both Firebase projects
+     async getFCMTokens(userId: string): Promise<{ rested?: string; doulaConnect?: string }>
      
-     // Strategy B: API endpoint call to old Firebase project  
-     async getTokenFromOldAPI(userId: string): Promise<string | null>
+     // Strategy A: Direct database access from both old Firebase projects
+     async getTokensFromOldFirebase(userId: string): Promise<{ rested?: string; doulaConnect?: string }>
+     
+     // Strategy B: API endpoint calls to both old Firebase projects  
+     async getTokensFromOldAPI(userId: string): Promise<{ rested?: string; doulaConnect?: string }>
      
      // Strategy C: Use tokens synced to new Firebase project
      async getTokenFromNewProject(userId: string): Promise<string | null>
@@ -618,12 +624,15 @@ Implement push notifications for the new Firebase messaging system that can send
 
 #### Environment Variables Required:
 ```bash
-# Base64 encoded service account JSON from old Firebase project
-firebase functions:config:set old_firebase.service_account="<base64-encoded-json>"
+# Base64 encoded service account JSON from Rested Firebase project
+firebase functions:config:set rested_firebase.service_account="<rested-base64-encoded-json>"
 
-# Optional: API endpoint configuration
-firebase functions:config:set old_firebase.api_url="https://old-project.cloudfunctions.net"
-firebase functions:config:set old_firebase.api_key="api-key"
+# Base64 encoded service account JSON from DoulaConnect Firebase project  
+firebase functions:config:set doulaconnect_firebase.service_account="<doulaconnect-base64-encoded-json>"
+
+# Optional: API endpoint configuration for both projects
+firebase functions:config:set rested_firebase.api_url="https://rested-project.cloudfunctions.net"
+firebase functions:config:set doulaconnect_firebase.api_url="https://doulaconnect-project.cloudfunctions.net"
 ```
 
 #### Token Storage Patterns Supported:

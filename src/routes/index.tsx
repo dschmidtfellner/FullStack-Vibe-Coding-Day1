@@ -33,14 +33,14 @@ import { useUnreadCounters } from "@/hooks/useUnreadCounters";
 
 // Navigation Context for client-side routing
 type NavigationState = {
-  view: 'messaging' | 'logs' | 'log-detail' | 'log-sleep' | 'edit-log';
+  view: 'messaging' | 'LogList' | 'log-detail' | 'LoggingModal' | 'edit-log';
   logId?: string | null;
   childId: string | null;
   timezone: string;
   logs: SleepLog[];
   logCache: Map<string, SleepLog>;
   isLoading: boolean;
-  previousView?: 'messaging' | 'logs' | 'log-detail' | 'log-sleep' | 'edit-log' | null;
+  previousView?: 'messaging' | 'LogList' | 'log-detail' | 'LoggingModal' | 'edit-log' | null;
   defaultLogDate?: string; // For passing default date to new log modal
 };
 
@@ -74,7 +74,7 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
 }) {
   // Parse initial view from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const initialView = urlParams.get('view') as NavigationState['view'] || 'logs';
+  const initialView = urlParams.get('view') as NavigationState['view'] || 'LogList';
   const initialLogId = urlParams.get('logId');
 
   const [state, setState] = useState<NavigationState>({
@@ -102,8 +102,8 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
 
 
   const navigateToLogs = () => {
-    setState(prev => ({ ...prev, view: 'logs', logId: null }));
-    updateURL('logs');
+    setState(prev => ({ ...prev, view: 'LogList', logId: null }));
+    updateURL('LogList');
   };
 
   const navigateToLogDetail = (logId: string) => {
@@ -114,12 +114,12 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   const navigateToNewLog = (defaultDate?: string) => {
     setState(prev => ({ 
       ...prev, 
-      view: 'log-sleep', 
+      view: 'LoggingModal', 
       logId: null, 
       defaultLogDate: defaultDate,
-      previousView: prev.view === 'log-sleep' ? prev.previousView : prev.view 
+      previousView: prev.view === 'LoggingModal' ? prev.previousView : prev.view 
     }));
-    updateURL('log-sleep');
+    updateURL('LoggingModal');
   };
 
   const navigateToEditLog = (logId: string) => {
@@ -141,11 +141,11 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     setTimeout(() => {
       setState(prev => ({ 
         ...prev, 
-        view: 'log-sleep', 
+        view: 'LoggingModal', 
         logId, 
         previousView: 'log-detail' 
       }));
-      updateURL('log-sleep', logId);
+      updateURL('LoggingModal', logId);
     }, 100);
   };
 
@@ -157,11 +157,11 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
   const navigateBack = () => {
     
     // Different logic based on current view
-    if (state.view === 'log-sleep') {
+    if (state.view === 'LoggingModal') {
       // From modal: go to Log Detail if we have a logId, otherwise use previousView
       if (state.logId) {
         navigateToLogDetail(state.logId);
-      } else if (state.previousView === 'logs') {
+      } else if (state.previousView === 'LogList') {
         navigateToLogs();
       } else if (state.previousView === 'messaging') {
         navigateToMessaging();
@@ -329,11 +329,11 @@ function AppRouter() {
     switch (state.view) {
       case 'messaging':
         return <MessagingApp />;
-      case 'logs':
+      case 'LogList':
         return <LogsListView />;
       case 'log-detail':
         return <LogDetailView />;
-      case 'log-sleep':
+      case 'LoggingModal':
         // When modal is open, we need to determine what to show behind it
         if (state.logId) {
           // If editing an existing log, show the log detail view
@@ -352,7 +352,7 @@ function AppRouter() {
   return (
     <>
       {renderMainView()}
-      {state.view === 'log-sleep' && <SleepLogModal />}
+      {state.view === 'LoggingModal' && <SleepLogModal />}
       {state.view === 'edit-log' && <EditLogModal />}
     </>
   );

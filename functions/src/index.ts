@@ -37,6 +37,7 @@ function initializeRestedFirebaseApp() {
 
     restedFirebaseApp = admin.initializeApp({
       credential: admin.credential.cert(credentials),
+      databaseURL: 'https://rested-bubble-default-rtdb.firebaseio.com/'
     }, 'restedProject');
 
     console.log('Rested Firebase project initialized for push notifications');
@@ -66,6 +67,7 @@ function initializeDoulaConnectFirebaseApp() {
 
     doulaConnectFirebaseApp = admin.initializeApp({
       credential: admin.credential.cert(credentials),
+      databaseURL: 'https://doulaconnect-119a4-default-rtdb.firebaseio.com/'
     }, 'doulaConnectProject');
 
     console.log('DoulaConnect Firebase project initialized for push notifications');
@@ -1043,3 +1045,206 @@ export const createUserMapping = functions.https.onRequest(async (req, res) => {
     });
   }
 });
+
+// Diagnostic endpoint to explore FCM token storage patterns (Firestore + Realtime Database)
+export const exploreFCMTokenStorage = functions.https.onRequest(async (req, res) => {
+  // Enable CORS for all origins
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Max-Age', '3600');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).send('');
+    return;
+  }
+
+  try {
+    const { project } = req.query; // 'rested' or 'doulaConnect'
+    
+    if (!project || (project !== 'rested' && project !== 'doulaConnect')) {
+      res.status(400).json({ 
+        error: 'Must specify project: rested or doulaConnect' 
+      });
+      return;
+    }
+
+    const apps = initializeOldFirebaseApps();
+    const app = project === 'rested' ? apps.rested : apps.doulaConnect;
+    
+    if (!app) {
+      res.status(404).json({ 
+        error: `${project} Firebase app not configured` 
+      });
+      return;
+    }
+
+    const explorationResults: {
+      project: string;
+      databaseType: string;
+      collections: { [key: string]: any };
+      sampleDocuments: { [key: string]: any };
+      errors: string[];
+    } = {
+      project,
+      databaseType: 'unknown',
+      collections: {},
+      sampleDocuments: {},
+      errors: []
+    };
+
+    // Try Realtime Database (most Bubble apps use this) with timeout
+    try {
+      const rtdb = admin.database(app);
+      
+      // Add timeout wrapper
+      const exploreWithTimeout = Promise.race([
+        exploreRealtimeDatabase(rtdb, explorationResults),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: Database exploration took too long')), 10000)
+        )
+      ]);
+      
+      await exploreWithTimeout;
+      explorationResults.databaseType = 'realtime';
+    } catch (rtdbError) {
+      explorationResults.errors.push(`Realtime Database error: ${rtdbError.message}`);
+      
+      // Fallback to Firestore
+      try {
+        const db = admin.firestore(app);
+        await exploreFirestore(db, explorationResults);
+        explorationResults.databaseType = 'firestore';
+      } catch (firestoreError) {
+        explorationResults.errors.push(`Firestore not available: ${firestoreError.message}`);
+      }
+    }
+
+    res.json(explorationResults);
+
+  } catch (error) {
+    console.error('Error exploring FCM token storage:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
+// Helper function to explore Realtime Database
+async function exploreRealtimeDatabase(rtdb: admin.database.Database, results: any) {
+  // First, just try to connect to the root
+  try {
+    const rootSnapshot = await rtdb.ref('/').limitToFirst(1).once('value');
+    const rootData = rootSnapshot.val();
+    
+    if (rootData === null) {
+      results.errors.push('Realtime Database is empty or does not exist');
+      return;
+    }
+    
+    // Get the top-level keys
+    const topLevelKeys = Object.keys(rootData);
+    results.collections.database_root = {
+      exists: true,
+      type: 'realtime_database_root',
+      topLevelKeys: topLevelKeys.slice(0, 10), // Show first 10 keys
+      sampleDocs: []
+    };
+    
+    // Check each top-level path for FCM tokens
+    const pathsToCheck = topLevelKeys.slice(0, 5); // Check first 5 paths
+    
+    for (const path of pathsToCheck) {
+      try {
+        const snapshot = await rtdb.ref(path).limitToFirst(2).once('value');
+        const data = snapshot.val();
+        
+        results.collections[path] = {
+          exists: data !== null,
+          type: 'realtime_database_node',
+          hasData: !!data,
+          sampleKeys: data && typeof data === 'object' ? Object.keys(data).slice(0, 3) : [],
+          sampleDocs: []
+        };
+
+        if (data && typeof data === 'object') {
+          // Analyze first few entries
+          const entries = Object.entries(data).slice(0, 2);
+          for (const [key, value] of entries) {
+            if (typeof value === 'object' && value !== null) {
+              const sampleDoc = {
+                id: key,
+                fields: Object.keys(value),
+                hasTokenFields: []
+              };
+
+              // Check for common FCM token field names
+              const tokenFields = ['fcmToken', 'playerID', 'deviceToken', 'pushToken', 'token', 'registrationToken', 'player_id'];
+              tokenFields.forEach(field => {
+                if (value[field]) {
+                  sampleDoc.hasTokenFields.push({
+                    field,
+                    valueType: typeof value[field],
+                    valueLength: String(value[field]).length,
+                    valuePrefix: String(value[field]).substring(0, 20) + '...'
+                  });
+                }
+              });
+
+              results.collections[path].sampleDocs.push(sampleDoc);
+            }
+          }
+        }
+      } catch (error) {
+        results.errors.push(`Error checking Realtime DB path ${path}: ${error.message}`);
+      }
+    }
+  } catch (error) {
+    results.errors.push(`Error connecting to Realtime Database root: ${error.message}`);
+  }
+}
+
+// Helper function to explore Firestore (for fallback)
+async function exploreFirestore(db: admin.firestore.Firestore, results: any) {
+  const collectionsToCheck = ['users', 'fcmTokens', 'tokens', 'devices', 'players'];
+  
+  for (const collectionName of collectionsToCheck) {
+    try {
+      const snapshot = await db.collection(collectionName).limit(3).get();
+      
+      results.collections[collectionName] = {
+        exists: !snapshot.empty,
+        type: 'firestore_collection',
+        documentCount: snapshot.size,
+        sampleDocs: []
+      };
+
+      if (!snapshot.empty) {
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const sampleDoc = {
+            id: doc.id,
+            fields: Object.keys(data),
+            hasTokenFields: []
+          };
+
+          const tokenFields = ['fcmToken', 'playerID', 'deviceToken', 'pushToken', 'token', 'registrationToken'];
+          tokenFields.forEach(field => {
+            if (data[field]) {
+              sampleDoc.hasTokenFields.push({
+                field,
+                valueLength: String(data[field]).length,
+                valuePrefix: String(data[field]).substring(0, 20) + '...'
+              });
+            }
+          });
+
+          results.collections[collectionName].sampleDocs.push(sampleDoc);
+        });
+      }
+    } catch (error) {
+      results.errors.push(`Error checking Firestore collection ${collectionName}: ${error.message}`);
+    }
+  }
+}
