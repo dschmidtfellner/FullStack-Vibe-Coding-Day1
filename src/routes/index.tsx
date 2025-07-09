@@ -292,7 +292,6 @@ function HomePage() {
 // Main app router that switches views based on navigation state
 function AppRouter() {
   const { state } = useNavigation();
-  const { user } = useBubbleAuth();
   
   // Check if user has access to the current child
   const hasChildAccess = useChildAccess(state.childId);
