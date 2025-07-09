@@ -292,12 +292,13 @@ function HomePage() {
 // Main app router that switches views based on navigation state
 function AppRouter() {
   const { state } = useNavigation();
+  const { user } = useBubbleAuth();
   
   // Check if user has access to the current child
   const hasChildAccess = useChildAccess(state.childId);
   
   if (!hasChildAccess) {
-    return <LoadingScreen message="Checking permissions..." />;
+    return <LogDetailSkeleton user={user || { darkMode: true }} />;
   }
 
   // Route to appropriate view based on navigation state
@@ -551,18 +552,6 @@ function MessagingSkeleton({ user }: { user: any }) {
             }`}></div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Fallback loading screen for initial auth
-function LoadingScreen({ message = "Loading..." }: { message?: string }) {
-  return (
-    <div className="not-prose min-h-screen flex items-center justify-center bg-[#15111B]">
-      <div className="text-center">
-        <div className="loading loading-spinner w-8 h-8 mb-4" style={{ color: '#745288' }}></div>
-        <p className="text-gray-300">{message}</p>
       </div>
     </div>
   );
@@ -2273,7 +2262,7 @@ function EditLogModal() {
   };
 
   if (isLoading || !log) {
-    return <LoadingScreen message="Loading log..." />;
+    return <LogDetailSkeleton user={user || { darkMode: true }} />;
   }
 
   return (
