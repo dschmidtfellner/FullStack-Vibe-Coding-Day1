@@ -1,10 +1,17 @@
-# Cross-Firebase Push Notifications Setup Guide
+# Multi-Firebase Push Notifications Setup Guide
 
-This guide explains how to configure and use the cross-Firebase push notification system.
+This guide explains how to configure and use the multi-Firebase push notification system.
 
 ## Overview
 
-The system allows your new Firebase messaging app to send push notifications through your old Firebase project's FCM service. This enables you to reach devices registered with the old Firebase project without requiring app updates.
+The system allows your new Firebase messaging app to send push notifications through **multiple old Firebase projects** (Rested and DoulaConnect) FCM services. This enables you to reach devices registered with both old Firebase projects without requiring app updates.
+
+### Multi-App Architecture
+
+- **Rested App**: Users with Rested app installed will receive notifications via Rested Firebase project
+- **DoulaConnect App**: Users with DoulaConnect app installed will receive notifications via DoulaConnect Firebase project  
+- **Both Apps**: Users with both apps will receive notifications on both (they can delete the unused app)
+- **Maximum Reach**: Ensures all users receive notifications regardless of which app they have
 
 ## Prerequisites
 
@@ -12,28 +19,46 @@ The system allows your new Firebase messaging app to send push notifications thr
 - Service account key from the old Firebase project
 - Firebase CLI installed and configured
 
-## Step 1: Generate Service Account Key (Old Firebase Project)
+## Step 1: Generate Service Account Keys (Both Old Firebase Projects)
 
+### For Rested Firebase Project:
 1. Go to the [Firebase Console](https://console.firebase.google.com/)
-2. Select your **old Firebase project**
+2. Select your **Rested Firebase project**
 3. Navigate to **Project Settings** > **Service Accounts**
 4. Click **Generate New Private Key**
-5. Download the JSON file
-6. **Important**: Keep this file secure - it contains sensitive credentials
+5. Download the JSON file (save as `rested-service-account.json`)
+
+### For DoulaConnect Firebase Project:
+1. Go to the [Firebase Console](https://console.firebase.google.com/)
+2. Select your **DoulaConnect Firebase project** (`chatapp-vibe-coding`)
+3. Navigate to **Project Settings** > **Service Accounts**
+4. Click **Generate New Private Key**
+5. Download the JSON file (save as `doulaconnect-service-account.json`)
+
+**Important**: Keep both files secure - they contain sensitive credentials
 
 ## Step 2: Configure Environment Variables
 
 ### For Local Development:
 
-1. Base64 encode the service account JSON:
+1. Base64 encode both service account JSON files:
    ```bash
-   cat path/to/your/service-account.json | base64
+   # For Rested
+   cat path/to/rested-service-account.json | base64
+   
+   # For DoulaConnect  
+   cat path/to/doulaconnect-service-account.json | base64
    ```
 
-2. Set the Firebase config:
+2. Set the Firebase config for both projects:
    ```bash
    cd functions
-   firebase functions:config:set old_firebase.service_account="<base64-encoded-json>"
+   
+   # Configure Rested Firebase project
+   firebase functions:config:set rested_firebase.service_account="<rested-base64-encoded-json>"
+   
+   # Configure DoulaConnect Firebase project
+   firebase functions:config:set doulaconnect_firebase.service_account="<doulaconnect-base64-encoded-json>"
    ```
 
 ### Optional Configuration:
@@ -125,8 +150,12 @@ fetch('https://your-functions-url/syncFCMTokens', {
 1. **Message Created**: When a message is sent in the new system
 2. **Get Recipients**: System identifies conversation participants
 3. **Map Users**: Maps new Firebase user IDs to old Firebase user IDs
-4. **Get FCM Tokens**: Retrieves FCM tokens from old Firebase project
-5. **Send Notifications**: Sends notifications using old Firebase's FCM service
+4. **Get FCM Tokens**: Retrieves FCM tokens from **both** Rested and DoulaConnect Firebase projects
+5. **Send Notifications**: Sends notifications via **all available channels**:
+   - If user has Rested token → Send via Rested Firebase FCM
+   - If user has DoulaConnect token → Send via DoulaConnect Firebase FCM  
+   - If user has both tokens → Send via both (user gets notification on both apps)
+6. **Error Handling**: Logs failures and continues with other recipients and apps
 
 ## Available Cloud Functions
 

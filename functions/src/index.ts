@@ -5,55 +5,130 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 const db = admin.firestore();
 
-// Initialize connection to old Firebase project for push notifications
-let oldFirebaseApp: admin.app.App | null = null;
+// Initialize connections to multiple old Firebase projects for push notifications
+let restedFirebaseApp: admin.app.App | null = null;
+let doulaConnectFirebaseApp: admin.app.App | null = null;
 
-function initializeOldFirebaseApp() {
-  if (oldFirebaseApp) {
-    return oldFirebaseApp;
+function initializeOldFirebaseApps() {
+  const apps = {
+    rested: initializeRestedFirebaseApp(),
+    doulaConnect: initializeDoulaConnectFirebaseApp()
+  };
+  
+  return apps;
+}
+
+function initializeRestedFirebaseApp() {
+  if (restedFirebaseApp) {
+    return restedFirebaseApp;
   }
 
   try {
-    // Get old Firebase project service account from environment
-    const oldProjectCredentials = functions.config().old_firebase?.service_account;
+    // Get Rested Firebase project service account from environment
+    const restedCredentials = functions.config().rested_firebase?.service_account;
     
-    if (!oldProjectCredentials) {
-      console.warn('Old Firebase service account not configured - push notifications will be disabled');
+    if (!restedCredentials) {
+      console.warn('Rested Firebase service account not configured');
       return null;
     }
 
     // Parse credentials (they should be base64 encoded JSON)
-    const credentials = JSON.parse(Buffer.from(oldProjectCredentials, 'base64').toString('utf8'));
+    const credentials = JSON.parse(Buffer.from(restedCredentials, 'base64').toString('utf8'));
 
-    oldFirebaseApp = admin.initializeApp({
+    restedFirebaseApp = admin.initializeApp({
       credential: admin.credential.cert(credentials),
-      // Add other old project config if needed
-    }, 'oldProject');
+    }, 'restedProject');
 
-    console.log('Old Firebase project initialized for push notifications');
-    return oldFirebaseApp;
+    console.log('Rested Firebase project initialized for push notifications');
+    return restedFirebaseApp;
   } catch (error) {
-    console.error('Failed to initialize old Firebase project:', error);
+    console.error('Failed to initialize Rested Firebase project:', error);
     return null;
   }
 }
 
-// Push notification service
-async function sendPushNotification(
-  fcmToken: string,
+function initializeDoulaConnectFirebaseApp() {
+  if (doulaConnectFirebaseApp) {
+    return doulaConnectFirebaseApp;
+  }
+
+  try {
+    // Get DoulaConnect Firebase project service account from environment
+    const doulaConnectCredentials = functions.config().doulaconnect_firebase?.service_account;
+    
+    if (!doulaConnectCredentials) {
+      console.warn('DoulaConnect Firebase service account not configured');
+      return null;
+    }
+
+    // Parse credentials (they should be base64 encoded JSON)
+    const credentials = JSON.parse(Buffer.from(doulaConnectCredentials, 'base64').toString('utf8'));
+
+    doulaConnectFirebaseApp = admin.initializeApp({
+      credential: admin.credential.cert(credentials),
+    }, 'doulaConnectProject');
+
+    console.log('DoulaConnect Firebase project initialized for push notifications');
+    return doulaConnectFirebaseApp;
+  } catch (error) {
+    console.error('Failed to initialize DoulaConnect Firebase project:', error);
+    return null;
+  }
+}
+
+// Multi-Firebase push notification service
+async function sendPushNotificationToAllApps(
+  tokens: { rested?: string; doulaConnect?: string },
   title: string,
   body: string,
   data?: { [key: string]: string }
 ) {
-  const oldApp = initializeOldFirebaseApp();
-  
-  if (!oldApp) {
-    console.warn('Old Firebase app not available - skipping push notification');
-    return false;
+  const apps = initializeOldFirebaseApps();
+  const results = [];
+
+  // Send to Rested app if token available
+  if (tokens.rested && apps.rested) {
+    const restedResult = await sendPushNotificationViaApp(
+      apps.rested, 
+      tokens.rested, 
+      title, 
+      body, 
+      data,
+      'Rested'
+    );
+    results.push(restedResult);
   }
 
+  // Send to DoulaConnect app if token available  
+  if (tokens.doulaConnect && apps.doulaConnect) {
+    const doulaConnectResult = await sendPushNotificationViaApp(
+      apps.doulaConnect, 
+      tokens.doulaConnect, 
+      title, 
+      body, 
+      data,
+      'DoulaConnect'
+    );
+    results.push(doulaConnectResult);
+  }
+
+  const successCount = results.filter(r => r).length;
+  console.log(`Sent ${successCount}/${results.length} push notifications successfully`);
+  
+  return successCount > 0;
+}
+
+// Helper function to send via specific Firebase app
+async function sendPushNotificationViaApp(
+  firebaseApp: admin.app.App,
+  fcmToken: string,
+  title: string,
+  body: string,
+  data?: { [key: string]: string },
+  appName?: string
+) {
   try {
-    const messaging = admin.messaging(oldApp);
+    const messaging = admin.messaging(firebaseApp);
     
     const message = {
       token: fcmToken,
@@ -65,12 +140,32 @@ async function sendPushNotification(
     };
 
     await messaging.send(message);
-    console.log('Push notification sent successfully to:', fcmToken);
+    console.log(`Push notification sent successfully via ${appName} to:`, fcmToken);
     return true;
   } catch (error) {
-    console.error('Failed to send push notification:', error);
+    console.error(`Failed to send push notification via ${appName}:`, error);
     return false;
   }
+}
+
+// Legacy function for single-app compatibility
+async function sendPushNotification(
+  fcmToken: string,
+  title: string,
+  body: string,
+  data?: { [key: string]: string }
+) {
+  // Try sending via both apps (for testing purposes)
+  const apps = initializeOldFirebaseApps();
+  
+  if (apps.rested) {
+    return sendPushNotificationViaApp(apps.rested, fcmToken, title, body, data, 'Rested');
+  } else if (apps.doulaConnect) {
+    return sendPushNotificationViaApp(apps.doulaConnect, fcmToken, title, body, data, 'DoulaConnect');
+  }
+  
+  console.warn('No Firebase apps available - skipping push notification');
+  return false;
 }
 
 // FCM Token Management Service
@@ -86,13 +181,30 @@ class FCMTokenManager {
     return FCMTokenManager.instance;
   }
 
-  // Option A: Read directly from old Firebase database
-  async getTokenFromOldFirebase(userId: string): Promise<string | null> {
-    try {
-      const oldApp = initializeOldFirebaseApp();
-      if (!oldApp) return null;
+  // Option A: Read directly from multiple old Firebase databases
+  async getTokensFromOldFirebase(userId: string): Promise<{ rested?: string; doulaConnect?: string }> {
+    const tokens: { rested?: string; doulaConnect?: string } = {};
+    
+    // Get token from Rested Firebase project
+    tokens.rested = await this.getTokenFromSpecificFirebaseProject(userId, 'rested');
+    
+    // Get token from DoulaConnect Firebase project  
+    tokens.doulaConnect = await this.getTokenFromSpecificFirebaseProject(userId, 'doulaConnect');
+    
+    return tokens;
+  }
 
-      const oldDb = admin.firestore(oldApp);
+  private async getTokenFromSpecificFirebaseProject(userId: string, projectType: 'rested' | 'doulaConnect'): Promise<string | null> {
+    try {
+      const apps = initializeOldFirebaseApps();
+      const app = projectType === 'rested' ? apps.rested : apps.doulaConnect;
+      
+      if (!app) {
+        console.warn(`${projectType} Firebase app not available`);
+        return null;
+      }
+
+      const db = admin.firestore(app);
       
       // Try multiple common patterns for FCM token storage
       const patterns = [
@@ -108,7 +220,7 @@ class FCMTokenManager {
         try {
           if (pattern.subcollection) {
             // Handle subcollection pattern
-            const tokensSnapshot = await oldDb
+            const tokensSnapshot = await db
               .collection(pattern.collection)
               .doc(pattern.doc)
               .collection(pattern.subcollection)
@@ -122,36 +234,36 @@ class FCMTokenManager {
               
               for (const field of pattern.fields) {
                 if (tokenData[field]) {
-                  console.log(`Found FCM token for user ${userId} in ${pattern.collection}/${pattern.doc}/${pattern.subcollection}.${field}`);
+                  console.log(`Found FCM token for user ${userId} in ${projectType} ${pattern.collection}/${pattern.doc}/${pattern.subcollection}.${field}`);
                   return tokenData[field];
                 }
               }
             }
           } else {
             // Handle document pattern
-            const doc = await oldDb.collection(pattern.collection).doc(pattern.doc).get();
+            const doc = await db.collection(pattern.collection).doc(pattern.doc).get();
             
             if (doc.exists) {
               const data = doc.data();
               
               for (const field of pattern.fields) {
                 if (data && data[field]) {
-                  console.log(`Found FCM token for user ${userId} in ${pattern.collection}/${pattern.doc}.${field}`);
+                  console.log(`Found FCM token for user ${userId} in ${projectType} ${pattern.collection}/${pattern.doc}.${field}`);
                   return data[field];
                 }
               }
             }
           }
         } catch (patternError) {
-          console.warn(`Failed to check pattern ${pattern.collection}/${pattern.doc}:`, patternError);
+          console.warn(`Failed to check ${projectType} pattern ${pattern.collection}/${pattern.doc}:`, patternError);
         }
       }
 
-      console.warn(`No FCM token found for user: ${userId} in old Firebase project`);
+      console.warn(`No FCM token found for user: ${userId} in ${projectType} Firebase project`);
       return null;
 
     } catch (error) {
-      console.error('Error getting FCM token from old Firebase:', error);
+      console.error(`Error getting FCM token from ${projectType} Firebase:`, error);
       return null;
     }
   }
@@ -209,35 +321,41 @@ class FCMTokenManager {
     }
   }
 
-  // Main method to get FCM token with caching and fallback strategies
-  async getFCMToken(userId: string): Promise<string | null> {
-    // Check cache first
-    const cached = this.tokenCache.get(userId);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
-      return cached.token;
-    }
-
+  // Main method to get FCM tokens from all apps with caching and fallback strategies
+  async getFCMTokens(userId: string): Promise<{ rested?: string; doulaConnect?: string }> {
+    // Check cache first (simplified for now - could cache per app)
+    // For now, let's always fetch fresh to ensure we get all available tokens
+    
     // Try strategies in order based on configuration
-    const strategies = [
-      this.getTokenFromOldFirebase.bind(this),
-      this.getTokenFromOldAPI.bind(this),
-      this.getTokenFromNewProject.bind(this)
-    ];
-
-    for (const strategy of strategies) {
-      const token = await strategy(userId);
-      if (token) {
-        // Cache the successful result
-        this.tokenCache.set(userId, {
-          token,
-          timestamp: Date.now()
-        });
-        return token;
-      }
+    let tokens: { rested?: string; doulaConnect?: string } = {};
+    
+    // Strategy A: Read from old Firebase projects
+    const oldFirebaseTokens = await this.getTokensFromOldFirebase(userId);
+    if (oldFirebaseTokens.rested) tokens.rested = oldFirebaseTokens.rested;
+    if (oldFirebaseTokens.doulaConnect) tokens.doulaConnect = oldFirebaseTokens.doulaConnect;
+    
+    // Strategy B: API endpoints (if needed later)
+    // const apiTokens = await this.getTokensFromOldAPI(userId);
+    
+    // Strategy C: Synced tokens from new project
+    const syncedToken = await this.getTokenFromNewProject(userId);
+    if (syncedToken && !tokens.rested && !tokens.doulaConnect) {
+      // If we only have a synced token and don't know which app it's for,
+      // we could try sending through both (or add app detection logic)
+      tokens.rested = syncedToken; // Default to one for now
     }
 
-    console.warn(`No FCM token found for user ${userId} using any strategy`);
-    return null;
+    const tokenCount = (tokens.rested ? 1 : 0) + (tokens.doulaConnect ? 1 : 0);
+    console.log(`Found ${tokenCount} FCM tokens for user ${userId}:`, tokens);
+    
+    return tokens;
+  }
+
+  // Legacy method for backward compatibility
+  async getFCMToken(userId: string): Promise<string | null> {
+    const tokens = await this.getFCMTokens(userId);
+    // Return first available token for legacy compatibility
+    return tokens.rested || tokens.doulaConnect || null;
   }
 
   // Clear cache for a specific user (useful when token updates)
@@ -286,12 +404,13 @@ async function sendPushNotificationsForMessage(message: any, participants: strin
     const notificationPromises = participants
       .filter(userId => userId !== message.senderId)
       .map(async (userId) => {
-        // Get FCM token for this user from old Firebase project
-        const fcmToken = await getFCMTokenForUser(userId);
+        // Get FCM tokens for this user from all Firebase projects
+        const tokenManager = FCMTokenManager.getInstance();
+        const tokens = await tokenManager.getFCMTokens(userId);
         
-        if (fcmToken) {
-          return sendPushNotification(
-            fcmToken,
+        if (tokens.rested || tokens.doulaConnect) {
+          return sendPushNotificationToAllApps(
+            tokens,
             notificationTitle,
             finalBody,
             {
@@ -309,7 +428,7 @@ async function sendPushNotificationsForMessage(message: any, participants: strin
     const results = await Promise.allSettled(notificationPromises);
     const successCount = results.filter(result => result.status === 'fulfilled' && result.value).length;
     
-    console.log(`Sent ${successCount} push notifications for message: ${message.id}`);
+    console.log(`Sent push notifications to ${successCount} users for message: ${message.id}`);
     
   } catch (error) {
     console.error('Error sending push notifications for message:', error);
@@ -734,11 +853,17 @@ export const testPushNotification = functions.https.onRequest(async (req, res) =
       body || 'This is a test message from the new Firebase messaging system'
     );
 
+    const apps = initializeOldFirebaseApps();
+    
     res.json({
       success,
       message: success ? 'Push notification sent' : 'Failed to send push notification',
       fcmToken: tokenToUse,
-      oldFirebaseConfigured: !!initializeOldFirebaseApp()
+      firebaseAppsConfigured: {
+        rested: !!apps.rested,
+        doulaConnect: !!apps.doulaConnect,
+        total: (apps.rested ? 1 : 0) + (apps.doulaConnect ? 1 : 0)
+      }
     });
 
   } catch (error) {
