@@ -395,47 +395,29 @@ function LogsListSkeleton({ user }: { user: any }) {
 
 function LogDetailSkeleton({ user }: { user: any }) {
   return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
+    <div className="relative h-full font-['Poppins'] max-w-[800px] mx-auto">
       {/* Top spacing */}
       <div className="h-[20px]"></div>
       
       {/* Header skeleton */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
+      <div className="px-4 py-4 border-b border-gray-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full animate-pulse ${
-              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-            }`}></div>
+            <div className="w-8 h-8 rounded-full animate-pulse bg-gray-300"></div>
             <div>
-              <div className={`h-6 w-24 rounded animate-pulse mb-2 ${
-                user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-              }`}></div>
-              <div className={`h-4 w-36 rounded animate-pulse ${
-                user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
-              }`}></div>
+              <div className="h-6 w-24 rounded animate-pulse mb-2 bg-gray-300"></div>
+              <div className="h-4 w-36 rounded animate-pulse bg-gray-400"></div>
             </div>
           </div>
-          <div className={`h-8 w-16 rounded animate-pulse ${
-            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-          }`}></div>
+          <div className="h-8 w-16 rounded animate-pulse bg-gray-300"></div>
         </div>
       </div>
 
       {/* Content skeleton */}
       <div className="px-4 py-4">
-        <div className={`p-4 rounded-lg mb-4 ${
-          user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-gray-50'
-        }`}>
-          <div className={`h-6 w-20 rounded animate-pulse mb-3 ${
-            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-          }`}></div>
-          <div className={`h-4 w-16 rounded animate-pulse ${
-            user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
-          }`}></div>
+        <div className="p-4 rounded-lg mb-4 border border-gray-300">
+          <div className="h-6 w-20 rounded animate-pulse mb-3 bg-gray-300"></div>
+          <div className="h-4 w-16 rounded animate-pulse bg-gray-400"></div>
         </div>
       </div>
     </div>
