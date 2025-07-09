@@ -260,11 +260,11 @@ export function MessageInputBar({
   };
 
   return (
-    <div className={`absolute left-0 right-0 border-t z-10 ${
+    <div className={`fixed left-0 right-0 bottom-0 border-t z-10 ${
       user?.darkMode 
         ? 'border-gray-700 bg-[#2d2637]' 
         : 'border-gray-200 bg-white'
-    }`} style={{ bottom: '81px' }}>
+    }`}>
       <div className="max-w-[800px] mx-auto p-4">
         <input
           ref={fileInputRef}
