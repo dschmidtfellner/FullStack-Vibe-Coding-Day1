@@ -267,7 +267,7 @@ function HomePage() {
 
   // Show loading animation while authenticating or if there's an auth error
   if (isLoading || error || !user) {
-    return <LoadingScreen message="Connecting..." />;
+    return <LogDetailSkeleton user={user || { darkMode: true }} />;
   }
 
   // Parse URL parameters for NavigationProvider
@@ -277,7 +277,7 @@ function HomePage() {
 
   // Only show loading if we don't have required data
   if (!childId) {
-    return <LoadingScreen message="Missing child ID..." />;
+    return <LogDetailSkeleton user={user || { darkMode: true }} />;
   }
 
   return (
