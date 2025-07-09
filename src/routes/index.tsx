@@ -51,6 +51,7 @@ type NavigationContextType = {
   navigateToNewLog: (defaultDate?: string) => void;
   navigateToEditLog: (logId: string) => void;
   navigateToLogDetailAndShowModal: (logId: string) => void;
+  navigateToLogDetailAndShowModalFromDetail: (logId: string) => void;
   navigateToMessaging: () => void;
   navigateBack: () => void;
   updateLog: (log: SleepLog) => void;
@@ -149,6 +150,17 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     }, 100);
   };
 
+  const navigateToLogDetailAndShowModalFromDetail = (logId: string) => {
+    // Already on log-detail, just show the modal
+    setState(prev => ({ 
+      ...prev, 
+      view: 'LoggingModal', 
+      logId, 
+      previousView: 'log-detail' 
+    }));
+    updateURL('LoggingModal', logId);
+  };
+
   const navigateToMessaging = () => {
     setState(prev => ({ ...prev, view: 'messaging', logId: null }));
     updateURL('messaging');
@@ -207,6 +219,7 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     navigateToNewLog,
     navigateToEditLog,
     navigateToLogDetailAndShowModal,
+    navigateToLogDetailAndShowModalFromDetail,
     navigateToMessaging,
     navigateBack,
     updateLog,
@@ -1096,7 +1109,7 @@ function LogsListView() {
                   user={user}
                   napNumber={0}
                   onClick={() => navigateToLogDetail(previousDayBedtime.id)}
-                  onContinueLogging={() => navigateToEditLog(previousDayBedtime.id)}
+                  onContinueLogging={() => navigateToLogDetailAndShowModal(previousDayBedtime.id)}
                   formatTimeInTimezone={formatTimeInTimezone}
                   showClickable={true}
                   isNightBefore={true}
@@ -1244,7 +1257,7 @@ function LogsListView() {
 
 function LogDetailView() {
   const { user } = useBubbleAuth();
-  const { state, navigateToEditLog, navigateBack, updateLog } = useNavigation();
+  const { state, navigateToEditLog, navigateToLogDetailAndShowModalFromDetail, navigateBack, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<FirebaseMessage[]>([]);
@@ -1523,7 +1536,7 @@ function LogDetailView() {
           log={log}
           user={user}
           napNumber={1} // Simplified for detail view - could be made dynamic
-          onContinueLogging={() => navigateToEditLog(state.logId!)}
+          onContinueLogging={() => navigateToLogDetailAndShowModalFromDetail(state.logId!)}
           formatTimeInTimezone={formatTimeInTimezone}
           showClickable={false}
         />
