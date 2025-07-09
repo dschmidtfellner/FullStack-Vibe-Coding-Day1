@@ -267,7 +267,7 @@ function HomePage() {
 
   // Show loading animation while authenticating or if there's an auth error
   if (isLoading || error || !user) {
-    return <UniversalSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton />;
   }
 
   // Parse URL parameters for NavigationProvider
@@ -277,7 +277,7 @@ function HomePage() {
 
   // Only show loading if we don't have required data
   if (!childId) {
-    return <UniversalSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton />;
   }
 
   return (
@@ -298,7 +298,7 @@ function AppRouter() {
   const hasChildAccess = useChildAccess(state.childId);
   
   if (!hasChildAccess) {
-    return <UniversalSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton />;
   }
 
   // Route to appropriate view based on navigation state
@@ -336,7 +336,7 @@ function AppRouter() {
 }
 
 // Universal skeleton loading component
-function UniversalSkeleton({ user }: { user: any }) {
+function UniversalSkeleton() {
   return (
     <div className="relative h-full font-['Poppins'] max-w-[800px] mx-auto px-4 py-4">
       {/* Simple wide gray boxes */}
@@ -523,7 +523,7 @@ function MessagingApp() {
 
   // Show loading for any of these conditions
   if (isLoadingConversation || !conversationId || !childId || !hasChildAccess) {
-    return <UniversalSkeleton user={user || { darkMode: false }} />;
+    return <UniversalSkeleton />;
   }
 
   return (
@@ -921,7 +921,7 @@ function LogsListView() {
 
   // Only show skeleton if we're loading AND have no data to show
   if (isLoading && state.logs.length === 0) {
-    return <UniversalSkeleton user={user} />;
+    return <UniversalSkeleton />;
   }
 
   return (
@@ -1415,7 +1415,7 @@ function LogDetailView() {
 
   // Only show skeleton if we're loading AND have no log data
   if (isLoading && !log) {
-    return <UniversalSkeleton user={user} />;
+    return <UniversalSkeleton />;
   }
   
   // If we don't have log data but aren't loading, show error state
@@ -2058,7 +2058,7 @@ function EditLogModal() {
   };
 
   if (isLoading || !log) {
-    return <UniversalSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton />;
   }
 
   return (
@@ -3310,7 +3310,7 @@ function SleepLogModal() {
   const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
   if (isLoading && isInitialLoading) {
-    return <UniversalSkeleton user={user} />;
+    return <UniversalSkeleton />;
   }
 
   return (
