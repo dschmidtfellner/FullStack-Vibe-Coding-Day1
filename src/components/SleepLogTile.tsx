@@ -98,7 +98,7 @@ export function SleepLogTile({
               e.stopPropagation(); // Prevent tile click
               onContinueLogging();
             }}
-            className="px-4 py-2 rounded-full transition-colors bg-[#503460] text-white hover:bg-[#5d3e70]"
+            className={`px-4 py-2 rounded-full transition-colors bg-[#503460] text-white hover:bg-[#5d3e70] ${isNightBefore ? 'opacity-100' : ''}`}
             style={{
               fontSize: '14px',
               fontWeight: '400'
@@ -132,7 +132,7 @@ export function SleepLogTile({
       user?.darkMode 
         ? 'bg-[#4a3f5a]' 
         : 'bg-[#F0DDEF]'  // Purple background for all logs
-    }`}>
+    } ${isNightBefore ? 'opacity-50' : ''}`}>
       
       {showClickable && onClick ? (
         <div 

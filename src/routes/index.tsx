@@ -50,6 +50,7 @@ type NavigationContextType = {
   navigateToLogDetail: (logId: string) => void;
   navigateToNewLog: (defaultDate?: string) => void;
   navigateToEditLog: (logId: string) => void;
+  navigateToLogDetailAndShowModal: (logId: string) => void;
   navigateToMessaging: () => void;
   navigateBack: () => void;
   updateLog: (log: SleepLog) => void;
@@ -126,6 +127,28 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     updateURL('edit-log', logId);
   };
 
+  const navigateToLogDetailAndShowModal = (logId: string) => {
+    // First navigate to LogDetail, then show the modal
+    setState(prev => ({ 
+      ...prev, 
+      view: 'log-detail', 
+      logId, 
+      previousView: prev.view === 'log-detail' ? prev.previousView : prev.view 
+    }));
+    updateURL('log-detail', logId);
+    
+    // After a brief delay, show the modal
+    setTimeout(() => {
+      setState(prev => ({ 
+        ...prev, 
+        view: 'log-sleep', 
+        logId, 
+        previousView: 'log-detail' 
+      }));
+      updateURL('log-sleep', logId);
+    }, 100);
+  };
+
   const navigateToMessaging = () => {
     setState(prev => ({ ...prev, view: 'messaging', logId: null }));
     updateURL('messaging');
@@ -183,6 +206,7 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     navigateToLogDetail,
     navigateToNewLog,
     navigateToEditLog,
+    navigateToLogDetailAndShowModal,
     navigateToMessaging,
     navigateBack,
     updateLog,
@@ -676,7 +700,7 @@ function MessagingApp() {
 // Log List View Component - now uses navigation context
 function LogsListView() {
   const { user } = useBubbleAuth();
-  const { state, navigateToLogDetail, navigateToNewLog, navigateToEditLog, setLogs } = useNavigation();
+  const { state, navigateToLogDetail, navigateToNewLog, navigateToLogDetailAndShowModal, setLogs } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [viewMode, setViewMode] = useState<'events' | 'windows'>('events');
@@ -1102,7 +1126,7 @@ function LogsListView() {
                     user={user}
                     napNumber={napNumber}
                     onClick={() => navigateToLogDetail(log.id)}
-                    onContinueLogging={() => navigateToEditLog(log.id)}
+                    onContinueLogging={() => navigateToLogDetailAndShowModal(log.id)}
                     formatTimeInTimezone={formatTimeInTimezone}
                     showClickable={true}
                     unreadCount={counters.logUnreadByLogId[log.id] || 0}

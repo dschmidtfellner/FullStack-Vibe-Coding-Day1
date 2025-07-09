@@ -1,9 +1,320 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
+// Initialize the new Firebase project (default)
 admin.initializeApp();
-
 const db = admin.firestore();
+
+// Initialize connection to old Firebase project for push notifications
+let oldFirebaseApp: admin.app.App | null = null;
+
+function initializeOldFirebaseApp() {
+  if (oldFirebaseApp) {
+    return oldFirebaseApp;
+  }
+
+  try {
+    // Get old Firebase project service account from environment
+    const oldProjectCredentials = functions.config().old_firebase?.service_account;
+    
+    if (!oldProjectCredentials) {
+      console.warn('Old Firebase service account not configured - push notifications will be disabled');
+      return null;
+    }
+
+    // Parse credentials (they should be base64 encoded JSON)
+    const credentials = JSON.parse(Buffer.from(oldProjectCredentials, 'base64').toString('utf8'));
+
+    oldFirebaseApp = admin.initializeApp({
+      credential: admin.credential.cert(credentials),
+      // Add other old project config if needed
+    }, 'oldProject');
+
+    console.log('Old Firebase project initialized for push notifications');
+    return oldFirebaseApp;
+  } catch (error) {
+    console.error('Failed to initialize old Firebase project:', error);
+    return null;
+  }
+}
+
+// Push notification service
+async function sendPushNotification(
+  fcmToken: string,
+  title: string,
+  body: string,
+  data?: { [key: string]: string }
+) {
+  const oldApp = initializeOldFirebaseApp();
+  
+  if (!oldApp) {
+    console.warn('Old Firebase app not available - skipping push notification');
+    return false;
+  }
+
+  try {
+    const messaging = admin.messaging(oldApp);
+    
+    const message = {
+      token: fcmToken,
+      notification: {
+        title,
+        body,
+      },
+      data: data || {},
+    };
+
+    await messaging.send(message);
+    console.log('Push notification sent successfully to:', fcmToken);
+    return true;
+  } catch (error) {
+    console.error('Failed to send push notification:', error);
+    return false;
+  }
+}
+
+// FCM Token Management Service
+class FCMTokenManager {
+  private static instance: FCMTokenManager;
+  private tokenCache: Map<string, { token: string; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
+  static getInstance(): FCMTokenManager {
+    if (!FCMTokenManager.instance) {
+      FCMTokenManager.instance = new FCMTokenManager();
+    }
+    return FCMTokenManager.instance;
+  }
+
+  // Option A: Read directly from old Firebase database
+  async getTokenFromOldFirebase(userId: string): Promise<string | null> {
+    try {
+      const oldApp = initializeOldFirebaseApp();
+      if (!oldApp) return null;
+
+      const oldDb = admin.firestore(oldApp);
+      
+      // Try multiple common patterns for FCM token storage
+      const patterns = [
+        // Pattern 1: users/{userId} with fcmToken/playerID field
+        { collection: 'users', doc: userId, fields: ['fcmToken', 'playerID', 'deviceToken', 'pushToken'] },
+        // Pattern 2: fcmTokens/{userId} document
+        { collection: 'fcmTokens', doc: userId, fields: ['token', 'fcmToken', 'playerID'] },
+        // Pattern 3: users/{userId}/tokens subcollection (get most recent)
+        { collection: 'users', doc: userId, subcollection: 'tokens', fields: ['token', 'fcmToken'] }
+      ];
+
+      for (const pattern of patterns) {
+        try {
+          if (pattern.subcollection) {
+            // Handle subcollection pattern
+            const tokensSnapshot = await oldDb
+              .collection(pattern.collection)
+              .doc(pattern.doc)
+              .collection(pattern.subcollection)
+              .orderBy('timestamp', 'desc')
+              .limit(1)
+              .get();
+
+            if (!tokensSnapshot.empty) {
+              const tokenDoc = tokensSnapshot.docs[0];
+              const tokenData = tokenDoc.data();
+              
+              for (const field of pattern.fields) {
+                if (tokenData[field]) {
+                  console.log(`Found FCM token for user ${userId} in ${pattern.collection}/${pattern.doc}/${pattern.subcollection}.${field}`);
+                  return tokenData[field];
+                }
+              }
+            }
+          } else {
+            // Handle document pattern
+            const doc = await oldDb.collection(pattern.collection).doc(pattern.doc).get();
+            
+            if (doc.exists) {
+              const data = doc.data();
+              
+              for (const field of pattern.fields) {
+                if (data && data[field]) {
+                  console.log(`Found FCM token for user ${userId} in ${pattern.collection}/${pattern.doc}.${field}`);
+                  return data[field];
+                }
+              }
+            }
+          }
+        } catch (patternError) {
+          console.warn(`Failed to check pattern ${pattern.collection}/${pattern.doc}:`, patternError);
+        }
+      }
+
+      console.warn(`No FCM token found for user: ${userId} in old Firebase project`);
+      return null;
+
+    } catch (error) {
+      console.error('Error getting FCM token from old Firebase:', error);
+      return null;
+    }
+  }
+
+  // Option B: Call API endpoint in old project
+  async getTokenFromOldAPI(userId: string): Promise<string | null> {
+    try {
+      const oldApiUrl = functions.config().old_firebase?.api_url;
+      if (!oldApiUrl) {
+        console.warn('Old Firebase API URL not configured');
+        return null;
+      }
+
+      // Make HTTP request to old project API
+      const response = await fetch(`${oldApiUrl}/getFCMToken`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${functions.config().old_firebase?.api_key || ''}`
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.fcmToken || data.playerID || null;
+      }
+
+      console.warn(`Old Firebase API returned ${response.status}: ${response.statusText}`);
+      return null;
+
+    } catch (error) {
+      console.error('Error calling old Firebase API:', error);
+      return null;
+    }
+  }
+
+  // Option C: Use synced tokens from new project
+  async getTokenFromNewProject(userId: string): Promise<string | null> {
+    try {
+      // Check if tokens are synced to new project
+      const syncedTokenDoc = await db.collection('fcm_tokens').doc(userId).get();
+      
+      if (syncedTokenDoc.exists) {
+        const data = syncedTokenDoc.data();
+        return data?.token || null;
+      }
+
+      console.warn(`No synced FCM token found for user: ${userId}`);
+      return null;
+
+    } catch (error) {
+      console.error('Error getting synced FCM token:', error);
+      return null;
+    }
+  }
+
+  // Main method to get FCM token with caching and fallback strategies
+  async getFCMToken(userId: string): Promise<string | null> {
+    // Check cache first
+    const cached = this.tokenCache.get(userId);
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
+      return cached.token;
+    }
+
+    // Try strategies in order based on configuration
+    const strategies = [
+      this.getTokenFromOldFirebase.bind(this),
+      this.getTokenFromOldAPI.bind(this),
+      this.getTokenFromNewProject.bind(this)
+    ];
+
+    for (const strategy of strategies) {
+      const token = await strategy(userId);
+      if (token) {
+        // Cache the successful result
+        this.tokenCache.set(userId, {
+          token,
+          timestamp: Date.now()
+        });
+        return token;
+      }
+    }
+
+    console.warn(`No FCM token found for user ${userId} using any strategy`);
+    return null;
+  }
+
+  // Clear cache for a specific user (useful when token updates)
+  clearCache(userId: string) {
+    this.tokenCache.delete(userId);
+  }
+
+  // Clear all cached tokens
+  clearAllCache() {
+    this.tokenCache.clear();
+  }
+}
+
+// Legacy function for backward compatibility
+async function getFCMTokenForUser(userId: string): Promise<string | null> {
+  const tokenManager = FCMTokenManager.getInstance();
+  return tokenManager.getFCMToken(userId);
+}
+
+// Send push notifications for a new message
+async function sendPushNotificationsForMessage(message: any, participants: string[]) {
+  try {
+    // Get sender info for the notification
+    const senderDoc = await db.collection('users').doc(message.senderId).get();
+    const senderName = senderDoc.exists ? senderDoc.data()?.name || 'Someone' : 'Someone';
+    
+    // Prepare notification content
+    const isLogComment = !!message.logId;
+    const notificationTitle = isLogComment ? 'New Log Comment' : 'New Message';
+    
+    let notificationBody = message.content || '';
+    if (message.imageUrl) {
+      notificationBody = '📷 Photo';
+    } else if (message.audioUrl) {
+      notificationBody = '🎵 Audio message';
+    }
+    
+    // Truncate long messages
+    if (notificationBody.length > 100) {
+      notificationBody = notificationBody.substring(0, 97) + '...';
+    }
+    
+    const finalBody = `${senderName}: ${notificationBody}`;
+    
+    // Send notifications to all participants (except sender)
+    const notificationPromises = participants
+      .filter(userId => userId !== message.senderId)
+      .map(async (userId) => {
+        // Get FCM token for this user from old Firebase project
+        const fcmToken = await getFCMTokenForUser(userId);
+        
+        if (fcmToken) {
+          return sendPushNotification(
+            fcmToken,
+            notificationTitle,
+            finalBody,
+            {
+              messageId: message.id || '',
+              conversationId: message.conversationId || '',
+              childId: message.childId || '',
+              logId: message.logId || '',
+              type: isLogComment ? 'log_comment' : 'chat_message'
+            }
+          );
+        }
+        return false;
+      });
+    
+    const results = await Promise.allSettled(notificationPromises);
+    const successCount = results.filter(result => result.status === 'fulfilled' && result.value).length;
+    
+    console.log(`Sent ${successCount} push notifications for message: ${message.id}`);
+    
+  } catch (error) {
+    console.error('Error sending push notifications for message:', error);
+  }
+}
 
 // Helper function to get conversation participants
 async function getConversationParticipants(conversationId: string): Promise<string[]> {
@@ -102,6 +413,9 @@ export const onMessageCreated = functions.firestore
       
       await batch.commit();
       console.log(`Updated unread counters for message: ${context.params.messageId}`);
+      
+      // Send push notifications to recipients
+      await sendPushNotificationsForMessage(message, participants);
       
     } catch (error) {
       console.error('Error updating unread counters:', error);
@@ -374,6 +688,231 @@ export const markAllLogsAsRead = functions.https.onRequest(async (req, res) => {
 
   } catch (error) {
     console.error('Error marking all logs as read:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+// Test endpoint for push notifications
+export const testPushNotification = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    const { userId, fcmToken, title, body } = req.body;
+
+    if (!fcmToken && !userId) {
+      res.status(400).json({ 
+        error: 'Must provide either fcmToken or userId' 
+      });
+      return;
+    }
+
+    let tokenToUse = fcmToken;
+    
+    // If userId provided, try to get FCM token from old Firebase project
+    if (userId && !fcmToken) {
+      tokenToUse = await getFCMTokenForUser(userId);
+      if (!tokenToUse) {
+        res.status(404).json({ 
+          error: 'No FCM token found for user' 
+        });
+        return;
+      }
+    }
+
+    const success = await sendPushNotification(
+      tokenToUse,
+      title || 'Test Notification',
+      body || 'This is a test message from the new Firebase messaging system'
+    );
+
+    res.json({
+      success,
+      message: success ? 'Push notification sent' : 'Failed to send push notification',
+      fcmToken: tokenToUse,
+      oldFirebaseConfigured: !!initializeOldFirebaseApp()
+    });
+
+  } catch (error) {
+    console.error('Error testing push notification:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+// Sync FCM tokens from old Firebase project to new project
+export const syncFCMTokens = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    const { userId, fcmToken } = req.body;
+
+    if (!userId || !fcmToken) {
+      res.status(400).json({ 
+        error: 'Missing required parameters: userId and fcmToken' 
+      });
+      return;
+    }
+
+    // Store the FCM token in the new project for quick access
+    await db.collection('fcm_tokens').doc(userId).set({
+      token: fcmToken,
+      userId,
+      syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // Clear cache for this user so new token is picked up
+    const tokenManager = FCMTokenManager.getInstance();
+    tokenManager.clearCache(userId);
+
+    res.json({
+      success: true,
+      message: 'FCM token synced successfully',
+      userId
+    });
+
+  } catch (error) {
+    console.error('Error syncing FCM token:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+// Get user identity mapping between old and new systems
+export const getUserMapping = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    const { oldUserId, newUserId, email } = req.method === 'GET' ? req.query : req.body;
+
+    if (!oldUserId && !newUserId && !email) {
+      res.status(400).json({ 
+        error: 'Must provide oldUserId, newUserId, or email' 
+      });
+      return;
+    }
+
+    // Check if mapping exists
+    let mappingDoc: admin.firestore.DocumentSnapshot | null = null;
+    
+    if (oldUserId) {
+      mappingDoc = await db.collection('user_mappings').doc(oldUserId).get();
+    } else if (newUserId) {
+      const mappingQuery = await db.collection('user_mappings').where('newUserId', '==', newUserId).limit(1).get();
+      mappingDoc = mappingQuery.empty ? null : mappingQuery.docs[0];
+    } else if (email) {
+      const mappingQuery = await db.collection('user_mappings').where('email', '==', email).limit(1).get();
+      mappingDoc = mappingQuery.empty ? null : mappingQuery.docs[0];
+    }
+
+    if (mappingDoc && mappingDoc.exists) {
+      const data = mappingDoc.data();
+      res.json({
+        found: true,
+        mapping: {
+          oldUserId: data?.oldUserId || mappingDoc.id,
+          newUserId: data?.newUserId,
+          email: data?.email,
+          name: data?.name,
+          createdAt: data?.createdAt,
+          lastUpdated: data?.lastUpdated
+        }
+      });
+    } else {
+      res.json({
+        found: false,
+        message: 'No mapping found'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error getting user mapping:', error);
+    res.status(500).json({ 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+// Create or update user identity mapping
+export const createUserMapping = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    const { oldUserId, newUserId, email, name } = req.body;
+
+    if (!oldUserId || !newUserId) {
+      res.status(400).json({ 
+        error: 'Missing required parameters: oldUserId and newUserId' 
+      });
+      return;
+    }
+
+    // Create or update mapping
+    const mappingData = {
+      oldUserId,
+      newUserId,
+      email: email || null,
+      name: name || null,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const mappingRef = db.collection('user_mappings').doc(oldUserId);
+    const existingMapping = await mappingRef.get();
+
+    if (existingMapping.exists) {
+      await mappingRef.update(mappingData);
+    } else {
+      await mappingRef.set({
+        ...mappingData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User mapping created/updated successfully',
+      mapping: {
+        oldUserId,
+        newUserId,
+        email,
+        name
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating user mapping:', error);
     res.status(500).json({ 
       error: 'Internal server error' 
     });
