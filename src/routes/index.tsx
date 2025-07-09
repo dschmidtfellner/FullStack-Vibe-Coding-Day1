@@ -267,7 +267,7 @@ function HomePage() {
 
   // Show loading animation while authenticating or if there's an auth error
   if (isLoading || error || !user) {
-    return <LogDetailSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton user={user || { darkMode: true }} />;
   }
 
   // Parse URL parameters for NavigationProvider
@@ -277,7 +277,7 @@ function HomePage() {
 
   // Only show loading if we don't have required data
   if (!childId) {
-    return <LogDetailSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton user={user || { darkMode: true }} />;
   }
 
   return (
@@ -298,7 +298,7 @@ function AppRouter() {
   const hasChildAccess = useChildAccess(state.childId);
   
   if (!hasChildAccess) {
-    return <LogDetailSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton user={user || { darkMode: true }} />;
   }
 
   // Route to appropriate view based on navigation state
@@ -335,209 +335,23 @@ function AppRouter() {
   );
 }
 
-// Skeleton loading components that match content shape
-function LogsListSkeleton({ user }: { user: any }) {
+// Universal skeleton loading component
+function UniversalSkeleton({ user }: { user: any }) {
   return (
-    <div className={`relative h-[100vh] font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
-      {/* Top spacing */}
-      <div className="h-[20px]"></div>
-      
-      {/* Header skeleton */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
-        <div className={`h-6 w-24 rounded animate-pulse mb-2 ${
-          user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-        }`}></div>
-        <div className={`h-4 w-48 rounded animate-pulse ${
-          user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
-        }`}></div>
-      </div>
-
-      {/* Log tiles skeleton */}
-      <div className="overflow-y-auto pb-[124px] h-[calc(100%-120px)]">
-        <div className="mb-6">
-          {/* Date header skeleton */}
-          <div className={`sticky top-0 px-4 py-2 ${
-            user?.darkMode ? 'bg-[#2a223a] border-b border-gray-700' : 'bg-gray-50 border-b border-gray-200'
-          }`}>
-            <div className={`h-4 w-20 rounded animate-pulse ${
-              user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
-            }`}></div>
-          </div>
-          
-          {/* Log tile skeletons */}
-          <div className="space-y-3 px-4 pt-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className={`p-4 rounded-2xl ${
-                user?.darkMode ? 'bg-[#4a3f5a]' : 'bg-[#F0DDEF]'
-              }`}>
-                <div className="flex justify-between items-center">
-                  <div className="flex-1">
-                    {/* Time skeleton */}
-                    <div className="h-4 w-32 rounded animate-pulse mb-2" style={{ backgroundColor: '#745288' }}></div>
-                    {/* Title skeleton */}
-                    <div className={`h-6 w-16 rounded animate-pulse ${
-                      user?.darkMode ? 'bg-gray-300' : 'bg-gray-700'
-                    }`}></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="relative h-full font-['Poppins'] max-w-[800px] mx-auto px-4 py-4">
+      {/* Simple wide gray boxes */}
+      <div className="space-y-3">
+        <div className="h-12 w-full rounded animate-pulse bg-gray-300"></div>
+        <div className="h-8 w-3/4 rounded animate-pulse bg-gray-400"></div>
+        <div className="h-6 w-1/2 rounded animate-pulse bg-gray-300"></div>
+        <div className="h-10 w-full rounded animate-pulse bg-gray-300"></div>
+        <div className="h-6 w-2/3 rounded animate-pulse bg-gray-400"></div>
       </div>
     </div>
   );
 }
 
-function LogDetailSkeleton({ user }: { user: any }) {
-  return (
-    <div className="relative h-full font-['Poppins'] max-w-[800px] mx-auto">
-      {/* Top spacing */}
-      <div className="h-[20px]"></div>
-      
-      {/* Header skeleton */}
-      <div className="px-4 py-4 border-b border-gray-300">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full animate-pulse bg-gray-300"></div>
-            <div>
-              <div className="h-6 w-24 rounded animate-pulse mb-2 bg-gray-300"></div>
-              <div className="h-4 w-36 rounded animate-pulse bg-gray-400"></div>
-            </div>
-          </div>
-          <div className="h-8 w-16 rounded animate-pulse bg-gray-300"></div>
-        </div>
-      </div>
 
-      {/* Content skeleton */}
-      <div className="px-4 py-4">
-        <div className="p-4 rounded-lg mb-4 border border-gray-300">
-          <div className="h-6 w-20 rounded animate-pulse mb-3 bg-gray-300"></div>
-          <div className="h-4 w-16 rounded animate-pulse bg-gray-400"></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SleepLogModalSkeleton({ user }: { user: any }) {
-  return (
-    <div className={`relative h-full font-['Poppins'] max-w-[600px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
-      {/* Top spacing */}
-      <div className="h-[20px]"></div>
-      
-      {/* Header skeleton */}
-      <div className={`px-4 py-4 border-b ${
-        user?.darkMode ? 'border-gray-700 bg-[#2d2637]' : 'border-gray-200 bg-white'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className={`h-6 w-32 rounded animate-pulse mb-2 ${
-              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-            }`}></div>
-            <div className={`h-4 w-40 rounded animate-pulse ${
-              user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
-            }`}></div>
-          </div>
-          <div className={`w-8 h-8 rounded-full animate-pulse ${
-            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-          }`}></div>
-        </div>
-      </div>
-
-      {/* Form skeleton */}
-      <div className="px-4 py-6">
-        <div className="mb-6">
-          <div className={`h-4 w-20 rounded animate-pulse mb-3 ${
-            user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-          }`}></div>
-          <div className="flex gap-2">
-            {[1, 2].map((i) => (
-              <div key={i} className={`flex-1 p-3 rounded-lg border-2 ${
-                user?.darkMode ? 'border-gray-600 bg-[#2a223a]' : 'border-gray-300 bg-white'
-              }`}>
-                <div className={`w-5 h-5 rounded animate-pulse mx-auto mb-1 ${
-                  user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-                }`}></div>
-                <div className={`h-4 w-12 rounded animate-pulse mx-auto ${
-                  user?.darkMode ? 'bg-gray-700' : 'bg-gray-100'
-                }`}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MessagingSkeleton({ user }: { user: any }) {
-  return (
-    <div className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
-      user?.darkMode ? 'bg-[#15111B]' : 'bg-white'
-    }`}>
-      {/* Top spacing */}
-      <div className={`${user?.needsSpacer ? 'h-[100px]' : 'h-[64px]'}`}></div>
-      
-      {/* Messages Container */}
-      <div className={`overflow-y-auto px-4 py-6 pb-[116px] space-y-4 ${
-        user?.needsSpacer ? 'h-[calc(100%-100px)]' : 'h-[calc(100%-64px)]'
-      }`}>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'items-end' : 'items-start'}`}>
-            <div className="max-w-[75%] flex flex-col">
-              {/* Sender name skeleton */}
-              <div className={`h-3 w-20 rounded animate-pulse mb-1 ${
-                user?.darkMode ? 'bg-gray-600' : 'bg-gray-300'
-              }`}></div>
-              
-              {/* Message bubble skeleton */}
-              <div 
-                className={`min-w-[200px] rounded-2xl px-4 py-3 ${
-                  i % 2 === 0 
-                    ? `rounded-br-md` 
-                    : `${user?.darkMode ? 'bg-[#3a3a3a]' : 'bg-gray-200'} rounded-bl-md`
-                }`} 
-                style={{ backgroundColor: i % 2 === 0 ? (user?.darkMode ? '#2d2637' : '#F0DDEF') : undefined }}
-              >
-                <div className={`h-4 w-32 rounded animate-pulse ${
-                  user?.darkMode ? 'bg-gray-600' : 'bg-gray-400'
-                }`}></div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Message Input skeleton */}
-      <div className={`absolute left-0 right-0 border-t z-10 ${
-        user?.darkMode 
-          ? 'border-gray-700 bg-[#2d2637]' 
-          : 'border-gray-200 bg-white'
-      }`} style={{ bottom: '81px' }}>
-        <div className="max-w-[800px] mx-auto p-4">
-          <div className="flex items-center gap-3 max-w-full">
-            <div className={`w-10 h-10 rounded-full animate-pulse ${
-              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-            }`}></div>
-            <div className={`w-10 h-10 rounded-full animate-pulse ${
-              user?.darkMode ? 'bg-gray-600' : 'bg-gray-200'
-            }`}></div>
-            <div className={`flex-1 h-12 rounded-full animate-pulse ${
-              user?.darkMode ? 'bg-[#3a3a3a]' : 'bg-gray-100'
-            }`}></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MessagingApp() {
   const { user } = useBubbleAuth();
@@ -709,7 +523,7 @@ function MessagingApp() {
 
   // Show loading for any of these conditions
   if (isLoadingConversation || !conversationId || !childId || !hasChildAccess) {
-    return <MessagingSkeleton user={user || { darkMode: false }} />;
+    return <UniversalSkeleton user={user || { darkMode: false }} />;
   }
 
   return (
@@ -1107,7 +921,7 @@ function LogsListView() {
 
   // Only show skeleton if we're loading AND have no data to show
   if (isLoading && state.logs.length === 0) {
-    return <LogsListSkeleton user={user} />;
+    return <UniversalSkeleton user={user} />;
   }
 
   return (
@@ -1601,7 +1415,7 @@ function LogDetailView() {
 
   // Only show skeleton if we're loading AND have no log data
   if (isLoading && !log) {
-    return <LogDetailSkeleton user={user} />;
+    return <UniversalSkeleton user={user} />;
   }
   
   // If we don't have log data but aren't loading, show error state
@@ -2244,7 +2058,7 @@ function EditLogModal() {
   };
 
   if (isLoading || !log) {
-    return <LogDetailSkeleton user={user || { darkMode: true }} />;
+    return <UniversalSkeleton user={user || { darkMode: true }} />;
   }
 
   return (
@@ -3496,7 +3310,7 @@ function SleepLogModal() {
   const canSave = events.length > 0 || (clientType === 'sleep-consulting' && events.length === 0);
 
   if (isLoading && isInitialLoading) {
-    return <SleepLogModalSkeleton user={user} />;
+    return <UniversalSkeleton user={user} />;
   }
 
   return (
