@@ -89,6 +89,9 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     previousView: null,
   });
 
+  // Flag to track if auto-navigation has been attempted
+  const [hasAutoNavigated, setHasAutoNavigated] = useState(false);
+
   // Update URL without page reload
   const updateURL = (view: string, logId?: string | null) => {
     const url = new URL(window.location.href);
@@ -212,6 +215,20 @@ function NavigationProvider({ children, initialChildId, initialTimezone }: {
     setState(prev => ({ ...prev, logCache: newCache }));
   };
 
+  // Auto-navigation for deep linking - check for sleep_ev parameter only once
+  useEffect(() => {
+    if (hasAutoNavigated) return; // Prevent multiple auto-navigation attempts
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const sleepEvParam = urlParams.get('sleep_ev');
+    
+    if (sleepEvParam && state.childId) {
+      console.log('Auto-navigating to log:', sleepEvParam);
+      navigateToLogDetail(sleepEvParam);
+      setHasAutoNavigated(true);
+    }
+  }, [state.childId, hasAutoNavigated]); // Only depend on childId and hasAutoNavigated
+
   const contextValue: NavigationContextType = {
     state,
     navigateToLogs,
@@ -328,7 +345,18 @@ function HomePage() {
 
 // Main app router that switches views based on navigation state
 function AppRouter() {
-  const { state } = useNavigation();
+  const { state, navigateToLogDetail } = useNavigation();
+  
+  // Check for URL parameters and auto-navigate to specific log
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sleepEvParam = urlParams.get('sleep_ev');
+    
+    if (sleepEvParam && state.childId) {
+      console.log('Auto-navigating to log:', sleepEvParam);
+      navigateToLogDetail(sleepEvParam);
+    }
+  }, [state.childId, navigateToLogDetail]);
   
   // Check if user has access to the current child
   const hasChildAccess = useChildAccess(state.childId);

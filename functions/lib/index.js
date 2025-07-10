@@ -68,23 +68,64 @@ function initializeDoulaConnectFirebaseApp() {
         return null;
     }
 }
-// Multi-Firebase push notification service
-async function sendPushNotificationToAllApps(tokens, title, body, data) {
-    const apps = initializeOldFirebaseApps();
+// OneSignal push notification service
+async function sendOneSignalNotificationToAllApps(playerIds, title, body, data) {
     const results = [];
-    // Send to Rested app if token available
-    if (tokens.rested && apps.rested) {
-        const restedResult = await sendPushNotificationViaApp(apps.rested, tokens.rested, title, body, data, 'Rested');
+    // Send to Rested app users
+    if (playerIds.rested && playerIds.rested.length > 0) {
+        const restedResult = await sendOneSignalNotification('rested', playerIds.rested, title, body, data);
         results.push(restedResult);
     }
-    // Send to DoulaConnect app if token available  
-    if (tokens.doulaConnect && apps.doulaConnect) {
-        const doulaConnectResult = await sendPushNotificationViaApp(apps.doulaConnect, tokens.doulaConnect, title, body, data, 'DoulaConnect');
+    // Send to DoulaConnect app users
+    if (playerIds.doulaConnect && playerIds.doulaConnect.length > 0) {
+        const doulaConnectResult = await sendOneSignalNotification('doulaConnect', playerIds.doulaConnect, title, body, data);
         results.push(doulaConnectResult);
     }
-    const successCount = results.filter(r => r).length;
-    console.log(`Sent ${successCount}/${results.length} push notifications successfully`);
+    const successCount = results.filter(r => r.success).length;
+    console.log(`Sent ${successCount}/${results.length} OneSignal notifications successfully`);
     return successCount > 0;
+}
+// Send notification via OneSignal REST API
+async function sendOneSignalNotification(app, playerIds, title, body, data) {
+    try {
+        const config = functions.config().onesignal;
+        const appId = app === 'rested' ? config === null || config === void 0 ? void 0 : config.rested_app_id : config === null || config === void 0 ? void 0 : config.doulaconnect_app_id;
+        const apiKey = app === 'rested' ? config === null || config === void 0 ? void 0 : config.rested_api_key : config === null || config === void 0 ? void 0 : config.doulaconnect_api_key;
+        if (!appId || !apiKey) {
+            console.error(`OneSignal credentials not configured for ${app}`);
+            return { success: false, error: 'Missing credentials' };
+        }
+        const payload = {
+            app_id: appId,
+            include_player_ids: playerIds,
+            headings: { en: title },
+            contents: { en: body },
+            data: {
+                onLoadUrl: (data === null || data === void 0 ? void 0 : data.deepLink) || '' // BDK Native specific key for navigation
+            }
+        };
+        const response = await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            console.log(`OneSignal notification sent successfully to ${app}:`, result.id);
+            return { success: true, id: result.id, recipients: result.recipients };
+        }
+        else {
+            console.error(`OneSignal notification failed for ${app}:`, result);
+            return { success: false, error: result };
+        }
+    }
+    catch (error) {
+        console.error(`Error sending OneSignal notification to ${app}:`, error);
+        return { success: false, error: error.message };
+    }
 }
 // Helper function to send via specific Firebase app
 async function sendPushNotificationViaApp(firebaseApp, fcmToken, title, body, data, appName) {
@@ -299,43 +340,132 @@ async function getFCMTokenForUser(userId) {
     const tokenManager = FCMTokenManager.getInstance();
     return tokenManager.getFCMToken(userId);
 }
-// Send push notifications for a new message
-async function sendPushNotificationsForMessage(message, participants) {
-    var _a;
+// Get Player IDs for a user from Bubble database
+async function getPlayerIdsForUser(userId) {
+    var _a, _b, _c;
     try {
-        // Get sender info for the notification
-        const senderDoc = await db.collection('users').doc(message.senderId).get();
-        const senderName = senderDoc.exists ? ((_a = senderDoc.data()) === null || _a === void 0 ? void 0 : _a.name) || 'Someone' : 'Someone';
+        // Get Bubble API configuration from environment
+        const bubbleConfig = functions.config().bubble;
+        const apiToken = bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_token;
+        if (!apiToken) {
+            console.warn('Bubble API token not configured - cannot retrieve Player IDs');
+            return { rested: [], doulaConnect: [] };
+        }
+        // Try different API endpoints (dev first for testing, then test, then live)
+        const apiEndpoints = [
+            bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_dev,
+            bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_test,
+            bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_live
+        ].filter(Boolean);
+        if (apiEndpoints.length === 0) {
+            console.warn('No Bubble API endpoints configured');
+            return { rested: [], doulaConnect: [] };
+        }
+        // Try each endpoint until we find the user
+        for (const apiUrl of apiEndpoints) {
+            try {
+                // Call Bubble Data API to get user by unique ID
+                const response = await fetch(`${apiUrl}/user/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    const playerIds = ((_a = userData.response) === null || _a === void 0 ? void 0 : _a["Player ID(s)"]) || ((_b = userData.response) === null || _b === void 0 ? void 0 : _b.PlayerIDs) || ((_c = userData.response) === null || _c === void 0 ? void 0 : _c.player_ids) || [];
+                    if (!Array.isArray(playerIds) || playerIds.length === 0) {
+                        console.log(`No Player IDs found for user: ${userId}`);
+                        return { rested: [], doulaConnect: [] };
+                    }
+                    console.log(`Found ${playerIds.length} Player IDs for user ${userId} via ${apiUrl}:`, playerIds);
+                    // Since both Rested and DoulaConnect Player IDs are stored together,
+                    // we'll send to both apps with the same list
+                    // Note: OneSignal will only deliver to devices actually registered with each app
+                    return {
+                        rested: playerIds,
+                        doulaConnect: playerIds
+                    };
+                }
+                console.log(`User not found at ${apiUrl}, trying next endpoint...`);
+            }
+            catch (endpointError) {
+                console.warn(`Error trying endpoint ${apiUrl}:`, endpointError.message);
+                continue;
+            }
+        }
+        console.log(`User ${userId} not found in any Bubble API endpoint`);
+        return { rested: [], doulaConnect: [] };
+    }
+    catch (error) {
+        console.error('Error getting Player IDs for user:', userId, error);
+        return { rested: [], doulaConnect: [] };
+    }
+}
+// Send push notifications for a new message
+async function sendPushNotificationsForMessage(message, notificationData) {
+    try {
+        const { recipients, senderName, primaryCaregiverId, altOrg } = notificationData;
         // Prepare notification content
         const isLogComment = !!message.logId;
-        const notificationTitle = isLogComment ? 'New Log Comment' : 'New Message';
-        let notificationBody = message.content || '';
-        if (message.imageUrl) {
-            notificationBody = '📷 Photo';
+        const cleanSenderName = (senderName === null || senderName === void 0 ? void 0 : senderName.trim()) || 'Someone';
+        const notificationTitle = cleanSenderName; // Use sender's name as title
+        let notificationBody = message.text || message.content || '';
+        if (message.imageId || message.imageUrl) {
+            notificationBody = 'Sent an image';
         }
-        else if (message.audioUrl) {
-            notificationBody = '🎵 Audio message';
+        else if (message.audioId || message.audioUrl) {
+            notificationBody = 'Audio message';
         }
         // Truncate long messages
         if (notificationBody.length > 100) {
             notificationBody = notificationBody.substring(0, 97) + '...';
         }
-        const finalBody = `${senderName}: ${notificationBody}`;
-        // Send notifications to all participants (except sender)
-        const notificationPromises = participants
+        console.log(`Notification content - Title: "${notificationTitle}", Body: "${notificationBody}"`);
+        // Get app context for deep links from message data
+        const version = message.appVersion || 'live'; // Default to live if not specified
+        // Build deep link URL based on version
+        let baseUrl = 'https://app.rested.family';
+        if (version === 'dev') {
+            baseUrl += '/version-62es1';
+        }
+        else if (version === 'test') {
+            baseUrl += '/version-test';
+        }
+        // live version uses base URL without version path
+        const page = isLogComment ? 'log2' : 'chat2';
+        let deepLinkUrl = `${baseUrl}/${page}?Sel_Par=${primaryCaregiverId}&alt_org=${altOrg}`;
+        if (isLogComment && message.logId) {
+            deepLinkUrl += `&sleep_ev=${message.logId}`;
+        }
+        console.log(`App version: ${version}, Deep link: ${deepLinkUrl}`);
+        console.log(`Attempting to send notifications to ${recipients.filter(userId => userId !== message.senderId).length} recipients`);
+        // Send notifications to all recipients (except sender)
+        const notificationPromises = recipients
             .filter(userId => userId !== message.senderId)
             .map(async (userId) => {
-            // Get FCM tokens for this user from all Firebase projects
-            const tokenManager = FCMTokenManager.getInstance();
-            const tokens = await tokenManager.getFCMTokens(userId);
-            if (tokens.rested || tokens.doulaConnect) {
-                return sendPushNotificationToAllApps(tokens, notificationTitle, finalBody, {
+            var _a, _b;
+            console.log(`Getting Player IDs for user: ${userId}`);
+            // Get Player IDs for this user from Bubble database
+            const playerIds = await getPlayerIdsForUser(userId);
+            console.log(`Player IDs for user ${userId}:`, {
+                rested: ((_a = playerIds.rested) === null || _a === void 0 ? void 0 : _a.length) || 0,
+                doulaConnect: ((_b = playerIds.doulaConnect) === null || _b === void 0 ? void 0 : _b.length) || 0
+            });
+            if (playerIds.rested || playerIds.doulaConnect) {
+                console.log(`Sending OneSignal notification to user ${userId}`);
+                return sendOneSignalNotificationToAllApps(playerIds, notificationTitle, notificationBody, {
                     messageId: message.id || '',
                     conversationId: message.conversationId || '',
                     childId: message.childId || '',
                     logId: message.logId || '',
-                    type: isLogComment ? 'log_comment' : 'chat_message'
+                    type: isLogComment ? 'log_comment' : 'chat_message',
+                    deepLink: deepLinkUrl
                 });
+            }
+            else {
+                console.log(`No Player IDs found for user ${userId}, skipping notification`);
             }
             return false;
         });
@@ -347,15 +477,46 @@ async function sendPushNotificationsForMessage(message, participants) {
         console.error('Error sending push notifications for message:', error);
     }
 }
-// Helper function to get conversation participants
-async function getConversationParticipants(conversationId) {
-    var _a;
-    const conversationDoc = await db.collection('conversations').doc(conversationId).get();
-    if (!conversationDoc.exists) {
-        console.error('Conversation not found:', conversationId);
-        return [];
+// Helper function to get push notification recipients and sender info from Bubble
+async function getChildPushRecipientsAndSenderInfo(childId, senderId) {
+    var _a, _b, _c, _d, _e, _f;
+    try {
+        console.log(`Getting push recipients for child: ${childId}, sender: ${senderId}`);
+        // Get Bubble API configuration
+        const bubbleConfig = functions.config().bubble;
+        const apiToken = bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_token;
+        // Use dev version for testing, will switch to live later
+        const apiBaseUrl = (bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_dev) || (bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_test) || (bubbleConfig === null || bubbleConfig === void 0 ? void 0 : bubbleConfig.api_url_live);
+        if (!apiToken || !apiBaseUrl) {
+            console.error('Bubble API not configured for push recipients');
+            return { recipients: [], senderName: 'Someone', primaryCaregiverId: '', altOrg: '' };
+        }
+        // Call Bubble API to get recipients list and sender info
+        const response = await fetch(`${apiBaseUrl.replace('/obj', '')}/wf/push_recipients_list_for_firebase`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ childId, senderId })
+        });
+        if (!response.ok) {
+            console.error(`Bubble API error for push recipients: ${response.status} ${response.statusText}`);
+            return { recipients: [], senderName: 'Someone', primaryCaregiverId: '', altOrg: '' };
+        }
+        const data = await response.json();
+        const recipients = ((_a = data.response) === null || _a === void 0 ? void 0 : _a.userIds) || ((_b = data.response) === null || _b === void 0 ? void 0 : _b.users) || [];
+        const senderName = ((_c = data.response) === null || _c === void 0 ? void 0 : _c.senderName) || 'Someone';
+        const primaryCaregiverId = ((_d = data.response) === null || _d === void 0 ? void 0 : _d.primaryCaregiverId) || '';
+        const altOrg = ((_e = data.response) === null || _e === void 0 ? void 0 : _e.altOrg) || ((_f = data.response) === null || _f === void 0 ? void 0 : _f.alt_org) || '';
+        console.log(`Found ${recipients.length} push recipients for child ${childId}:`, recipients);
+        console.log(`Sender name: ${senderName}, Primary caregiver: ${primaryCaregiverId}, Alt org: ${altOrg}`);
+        return { recipients, senderName, primaryCaregiverId, altOrg };
     }
-    return ((_a = conversationDoc.data()) === null || _a === void 0 ? void 0 : _a.participants) || [];
+    catch (error) {
+        console.error('Error getting push recipients from Bubble:', error);
+        return { recipients: [], senderName: 'Someone', primaryCaregiverId: '', altOrg: '' };
+    }
 }
 // Trigger: When message is created - update unread counters
 exports.onMessageCreated = functions.firestore
@@ -370,28 +531,12 @@ exports.onMessageCreated = functions.firestore
             logId: message.logId,
             conversationId: message.conversationId
         });
-        // Get all users who should see this message (conversation participants)
-        let participants = await getConversationParticipants(message.conversationId);
-        // If no participants found, get all users who have access to this child
-        if (participants.length === 0) {
-            console.log('No participants found in conversation, getting all users with child access');
-            // For now, we'll get all messages in this conversation to find unique users
-            const messagesSnapshot = await db.collection('messages')
-                .where('conversationId', '==', message.conversationId)
-                .get();
-            const uniqueUsers = new Set();
-            messagesSnapshot.forEach(doc => {
-                const msg = doc.data();
-                if (msg.senderId) {
-                    uniqueUsers.add(msg.senderId);
-                }
-            });
-            participants = Array.from(uniqueUsers);
-            console.log('Found participants from message history:', participants);
-        }
+        // Get all users who should receive push notifications for this child and sender info
+        const notificationData = await getChildPushRecipientsAndSenderInfo(message.childId, message.senderId);
+        console.log(`Found ${notificationData.recipients.length} push recipients for child ${message.childId}:`, notificationData.recipients);
         // Batch update all user counters
         const batch = db.batch();
-        for (const userId of participants) {
+        for (const userId of notificationData.recipients) {
             // Don't count for sender
             if (userId === message.senderId)
                 continue;
@@ -436,7 +581,7 @@ exports.onMessageCreated = functions.firestore
         await batch.commit();
         console.log(`Updated unread counters for message: ${context.params.messageId}`);
         // Send push notifications to recipients
-        await sendPushNotificationsForMessage(message, participants);
+        await sendPushNotificationsForMessage(message, notificationData);
     }
     catch (error) {
         console.error('Error updating unread counters:', error);

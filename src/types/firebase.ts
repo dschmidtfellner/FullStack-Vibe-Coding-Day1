@@ -21,6 +21,7 @@ export interface FirebaseMessage {
   readBy?: { [userId: string]: boolean };  // Object mapping user IDs to read status
   logId?: string;  // Optional - if this message is a comment on a log
   reactions?: { [emoji: string]: MessageReaction };  // reactions organized by emoji
+  appVersion?: string;  // App version for push notification deep links (dev, test, live)
 }
 
 export interface FirebaseConversation {

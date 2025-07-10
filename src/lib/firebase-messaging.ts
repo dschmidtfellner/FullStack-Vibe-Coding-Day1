@@ -27,6 +27,19 @@ import { FirebaseMessage, UnreadCounters } from '@/types/firebase';
 const storage = getStorage();
 
 /**
+ * Get app version from URL parameters for push notification deep links
+ */
+function getAppVersion(): string {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('version') || 'live'; // Default to live if not specified
+  } catch (error) {
+    console.warn('Error getting app version from URL:', error);
+    return 'live'; // Fallback to live
+  }
+}
+
+/**
  * Update conversation with last message info
  */
 async function updateConversationLastMessage(conversationId: string, lastMessage: string, timestamp: any) {
@@ -128,6 +141,7 @@ export async function sendMessage(
       type: 'text',
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     };
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
@@ -205,6 +219,7 @@ export async function sendImageMessage(
       imageId: imageUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     };
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
@@ -250,6 +265,7 @@ export async function sendAudioMessage(
       audioId: audioUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     });
 
     // Update conversation with last message info
@@ -772,6 +788,7 @@ export async function sendLogComment(
       type: 'text',
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     };
     
     console.log('Adding log comment to Firestore:', messageData);
@@ -830,6 +847,7 @@ export async function sendLogImageComment(
       imageId: imageUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     };
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
@@ -892,6 +910,7 @@ export async function sendLogAudioComment(
       audioId: audioUrl, // Store the download URL directly
       timestamp: serverTimestamp(),
       read: false,
+      appVersion: getAppVersion(),
     };
 
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
