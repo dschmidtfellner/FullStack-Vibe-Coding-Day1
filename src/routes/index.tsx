@@ -28,6 +28,12 @@ import {
   markChatMessagesAsRead,
   markLogCommentsAsRead,
   markAllLogCommentsAsRead,
+  // Child Local Time utilities
+  toChildLocalTime,
+  fromChildLocalTime,
+  getChildNow,
+  getChildStartOfDay,
+  getChildEndOfDay,
 } from "@/lib/firebase-messaging";
 import { useUnreadCounters } from "@/hooks/useUnreadCounters";
 
@@ -2999,22 +3005,20 @@ function SleepLogModal() {
 
   // Get relative date text for modal date input
   const getModalRelativeDateText = () => {
-    const today = new Date();
-    const todayString = new Intl.DateTimeFormat('en-CA', {
-      timeZone: state.timezone
-    }).format(today);
-    const selectedDateString = currentDate.toISOString().split('T')[0];
+    // Get today in child's timezone
+    const childNow = getChildNow(state.timezone);
+    const childToday = getChildStartOfDay(childNow, state.timezone);
     
-    if (selectedDateString === todayString) {
-      return 'Today';
-    }
+    // Get selected date in child's timezone
+    const selectedDateChildLocal = getChildStartOfDay(currentDate, state.timezone);
     
-    const selectedDateObj = new Date(selectedDateString + 'T12:00:00');
-    const todayObj = new Date(todayString + 'T12:00:00');
-    const diffTime = selectedDateObj.getTime() - todayObj.getTime();
+    // Calculate difference in days
+    const diffTime = selectedDateChildLocal.getTime() - childToday.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === -1) {
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === -1) {
       return 'Yesterday';
     } else if (diffDays < -1) {
       return `${Math.abs(diffDays)} days ago`;
@@ -3066,7 +3070,8 @@ function SleepLogModal() {
     isValid: boolean;
     warning: typeof validationWarning;
   } => {
-    const now = new Date();
+    // Get "now" in child's timezone
+    const childNow = getChildNow(state.timezone);
     
     // For first event, we need to use the combined date/time
     let timeToCheck = timestamp;
@@ -3076,15 +3081,20 @@ function SleepLogModal() {
       timeToCheck.setHours(timestamp.getHours(), timestamp.getMinutes(), 0, 0);
     }
     
-    // Check if time is more than 5 minutes in the future (only for current date)
-    const selectedDateString = currentDate.toISOString().split('T')[0];
-    const todayString = new Intl.DateTimeFormat('en-CA', {
-      timeZone: state.timezone
-    }).format(now);
+    // Convert timeToCheck to Child Local Time for comparison
+    const childLocalTimeToCheck = toChildLocalTime(timeToCheck, state.timezone);
     
-    if (selectedDateString === todayString) {
-      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-      if (timeToCheck > fiveMinutesFromNow) {
+    // Check if selected date is "today" in child's timezone
+    const selectedDateInChildTz = toChildLocalTime(currentDate, state.timezone);
+    const childTodayStart = getChildStartOfDay(childNow, state.timezone);
+    const childTodayEnd = getChildEndOfDay(childNow, state.timezone);
+    
+    const isToday = selectedDateInChildTz >= childTodayStart && selectedDateInChildTz <= childTodayEnd;
+    
+    if (isToday) {
+      // Check if time is more than 5 minutes in the future
+      const fiveMinutesFromChildNow = new Date(childNow.getTime() + 5 * 60 * 1000);
+      if (childLocalTimeToCheck > fiveMinutesFromChildNow) {
         return {
           isValid: true, // Allow with confirmation
           warning: {
@@ -3100,18 +3110,20 @@ function SleepLogModal() {
       return { isValid: true, warning: null };
     }
     
-    // Get the last event timestamp
+    // Get the last event timestamp and convert to Child Local Time
     const lastEventTimestamp = events[events.length - 1].timestamp;
+    const lastEventChildLocal = toChildLocalTime(lastEventTimestamp, state.timezone);
     
-    // Calculate the prepped time (with overnight logic applied)
-    const preppedTime = createEventTimestamp(
-      events[0].timestamp, // original date from first event
-      timestamp,
-      lastEventTimestamp
+    // Calculate the prepped time (with overnight logic applied) in Child Local Time
+    const firstEventChildLocal = toChildLocalTime(events[0].timestamp, state.timezone);
+    const preppedTimeChildLocal = createEventTimestamp(
+      firstEventChildLocal,
+      childLocalTimeToCheck,
+      lastEventChildLocal
     );
     
-    // Calculate hours difference
-    const hoursDiff = (preppedTime.getTime() - lastEventTimestamp.getTime()) / (1000 * 60 * 60);
+    // Calculate hours difference in Child Local Time
+    const hoursDiff = (preppedTimeChildLocal.getTime() - lastEventChildLocal.getTime()) / (1000 * 60 * 60);
     
     // Valid: 0-12 hours after last event
     if (hoursDiff >= 0 && hoursDiff <= 12) {
