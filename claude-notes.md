@@ -699,3 +699,38 @@ firebase functions:config:set doulaconnect_firebase.api_url="https://doulaconnec
 - Create user identity mappings for existing users
 - Monitor delivery success rates and optimize token retrieval strategies
 - Plan migration timeline for eventually switching to new Firebase project tokens
+
+## Auto-Navigation Logic Removal
+
+### Objective
+Remove duplicate auto-navigation logic that was causing page crashes when loading specific sleep logs via URL parameters.
+
+### Problem Identified
+The codebase had **two duplicate useEffect hooks** handling the same `sleep_ev` URL parameter:
+1. **NavigationProvider useEffect (lines 219-230)**: Properly protected with `hasAutoNavigated` state
+2. **AppRouter useEffect (lines 351-359)**: No protection, causing infinite loops and crashes
+
+### Progress Status
+✅ **Removed duplicate auto-navigation logic**:
+  - Removed the unprotected useEffect hook from AppRouter component
+  - Kept the protected auto-navigation logic in NavigationProvider
+  - Preserved the `hasAutoNavigated` state mechanism for single-execution control
+  - Verified build compiles successfully with no TypeScript errors
+
+### Commits Made During Session
+1. "fix: Remove duplicate auto-navigation logic causing page crashes"
+
+### Technical Implementation
+- **Removed from AppRouter**: Lines 350-359 containing duplicate useEffect
+- **Preserved in NavigationProvider**: Lines 219-230 with proper protection
+- **Protection mechanism**: `hasAutoNavigated` state prevents multiple executions
+- **URL parameter handling**: `sleep_ev` parameter still works, but safely with single execution
+
+### Root Cause
+The duplicate useEffect in AppRouter was running every time `state.childId` or `navigateToLogDetail` changed, causing infinite navigation loops when attempting to auto-navigate to a specific sleep log based on URL parameters.
+
+### Benefits Achieved
+1. **Crash Prevention**: Eliminated infinite loops causing page crashes
+2. **Proper Auto-Navigation**: Single, controlled execution of auto-navigation logic
+3. **Maintained Functionality**: Deep linking via `sleep_ev` parameter still works
+4. **Code Cleanup**: Removed duplicate code that was causing conflicts
