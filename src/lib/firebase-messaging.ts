@@ -450,9 +450,13 @@ export async function toggleMessageReaction(
 // =============================================================================
 
 export interface SleepEvent {
-  timestamp: Timestamp;
+  // Child Local Time fields (primary source of truth)
+  childLocalTimestamp: Timestamp; // "fake UTC" - child's wall clock time stored as if UTC
+  originalTimezone: string;       // timezone when event was recorded
+  
+  // Display fields
   type: 'put_in_bed' | 'fell_asleep' | 'woke_up' | 'out_of_bed';
-  localTime: string; // HH:MM AM/PM in baby's timezone for display
+  localTime: string; // HH:MM AM/PM for display (calculated from childLocalTimestamp)
 }
 
 export interface SleepLog {
@@ -461,7 +465,9 @@ export interface SleepLog {
   userId: string;
   userName: string;
   logType: 'sleep' | 'feeding' | 'diaper' | 'pump' | 'note';
-  timestamp: Timestamp; // UTC timestamp of log creation
+  
+  // Child Local Time fields
+  childTimezone: string; // Child's timezone for this log
   
   // Sleep-specific fields
   sleepType?: 'nap' | 'bedtime';
@@ -470,14 +476,99 @@ export interface SleepLog {
   duration?: number; // Total sleep duration in minutes (calculated)
   
   // Common calculated fields
-  localDate: string; // YYYY-MM-DD in baby's timezone for queries
-  sortTimestamp: number; // For efficient ordering
+  localDate: string; // YYYY-MM-DD in child's timezone for queries
+  sortTimestamp: number; // For efficient ordering (based on first event's childLocalTimestamp)
   
   // Metadata
   createdAt: Timestamp;
   updatedAt: Timestamp;
   commentCount: number;
   lastCommentAt?: Timestamp;
+}
+
+// =============================================================================
+// CHILD LOCAL TIME UTILITIES
+// =============================================================================
+
+/**
+ * Convert a date to Child Local Time (stored as "fake UTC")
+ * This takes the wall clock time in the child's timezone and stores it as if it were UTC
+ * @param date - The actual date/time
+ * @param childTimezone - The child's timezone (e.g., "America/New_York")
+ * @returns A Date object representing the child's wall clock time as UTC
+ */
+export function toChildLocalTime(date: Date, childTimezone: string): Date {
+  // Format the date in the child's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: childTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(date);
+  const dateParts: { [key: string]: string } = {};
+  
+  for (const part of parts) {
+    if (part.type !== 'literal') {
+      dateParts[part.type] = part.value;
+    }
+  }
+  
+  // Create a "fake UTC" date using the child's local time components
+  const childLocalTime = new Date(
+    `${dateParts.year}-${dateParts.month}-${dateParts.day}T${dateParts.hour}:${dateParts.minute}:${dateParts.second}.000Z`
+  );
+  
+  return childLocalTime;
+}
+
+/**
+ * Convert Child Local Time back to display format
+ * Since Child Local Time is already the wall clock time, we just format it
+ * @param childLocalTimestamp - The Firestore timestamp in Child Local Time
+ * @returns The Date object for display (no conversion needed)
+ */
+export function fromChildLocalTime(childLocalTimestamp: Timestamp): Date {
+  // Child Local Time is already the wall clock time, just convert to Date
+  return childLocalTimestamp.toDate();
+}
+
+/**
+ * Get the current time in the child's timezone as Child Local Time
+ * @param childTimezone - The child's timezone
+ * @returns Current time in child's timezone as "fake UTC"
+ */
+export function getChildNow(childTimezone: string): Date {
+  return toChildLocalTime(new Date(), childTimezone);
+}
+
+/**
+ * Get the start of day (midnight) in child's timezone as Child Local Time
+ * @param date - The date to get start of day for
+ * @param childTimezone - The child's timezone
+ * @returns Midnight in child's timezone as "fake UTC"
+ */
+export function getChildStartOfDay(date: Date, childTimezone: string): Date {
+  const childLocal = toChildLocalTime(date, childTimezone);
+  childLocal.setUTCHours(0, 0, 0, 0);
+  return childLocal;
+}
+
+/**
+ * Get the end of day (23:59:59) in child's timezone as Child Local Time
+ * @param date - The date to get end of day for
+ * @param childTimezone - The child's timezone
+ * @returns 23:59:59 in child's timezone as "fake UTC"
+ */
+export function getChildEndOfDay(date: Date, childTimezone: string): Date {
+  const childLocal = toChildLocalTime(date, childTimezone);
+  childLocal.setUTCHours(23, 59, 59, 999);
+  return childLocal;
 }
 
 /**
@@ -518,13 +609,15 @@ export async function createSleepLog(
   try {
     console.log('Creating sleep log:', { childId, userId, userName, sleepType, initialEvent, timezone });
     
-    const now = new Date();
-    const eventTimestamp = Timestamp.fromDate(initialEvent.timestamp);
+    // Convert event timestamp to Child Local Time
+    const childLocalTime = toChildLocalTime(initialEvent.timestamp, timezone);
+    const childLocalTimestamp = Timestamp.fromDate(childLocalTime);
     
     const sleepEvent: SleepEvent = {
-      timestamp: eventTimestamp,
+      childLocalTimestamp,
+      originalTimezone: timezone,
       type: initialEvent.type,
-      localTime: formatLocalTime(initialEvent.timestamp, timezone)
+      localTime: formatLocalTime(childLocalTime, 'UTC') // Since it's already in child local time
     };
     
     const logData: Omit<SleepLog, 'id'> = {
@@ -532,12 +625,12 @@ export async function createSleepLog(
       userId,
       userName,
       logType: 'sleep',
-      timestamp: Timestamp.fromDate(now),
+      childTimezone: timezone,
       sleepType,
       events: [sleepEvent],
       isComplete: false,
-      localDate: formatLocalDate(initialEvent.timestamp, timezone),
-      sortTimestamp: initialEvent.timestamp.getTime(),
+      localDate: formatLocalDate(childLocalTime, 'UTC'), // Use child local time for date
+      sortTimestamp: childLocalTime.getTime(),
       createdAt: serverTimestamp() as any,
       updatedAt: serverTimestamp() as any,
       commentCount: 0,
@@ -573,10 +666,15 @@ export async function addSleepEvent(
       throw new Error('Sleep log not found');
     }
     
+    // Convert event timestamp to Child Local Time
+    const childLocalTime = toChildLocalTime(event.timestamp, timezone);
+    const childLocalTimestamp = Timestamp.fromDate(childLocalTime);
+    
     const sleepEvent: SleepEvent = {
-      timestamp: Timestamp.fromDate(event.timestamp),
+      childLocalTimestamp,
+      originalTimezone: timezone,
       type: event.type,
-      localTime: formatLocalTime(event.timestamp, timezone)
+      localTime: formatLocalTime(childLocalTime, 'UTC') // Since it's already in child local time
     };
     
     const updateData: any = {
@@ -608,11 +706,15 @@ export async function updateSleepLog(
   try {
     console.log('Updating sleep log:', { logId, events, timezone, isComplete });
     
-    const sleepEvents: SleepEvent[] = events.map(event => ({
-      timestamp: Timestamp.fromDate(event.timestamp),
-      type: event.type,
-      localTime: formatLocalTime(event.timestamp, timezone)
-    }));
+    const sleepEvents: SleepEvent[] = events.map(event => {
+      const childLocalTime = toChildLocalTime(event.timestamp, timezone);
+      return {
+        childLocalTimestamp: Timestamp.fromDate(childLocalTime),
+        originalTimezone: timezone,
+        type: event.type,
+        localTime: formatLocalTime(childLocalTime, 'UTC') // Since it's already in child local time
+      };
+    });
     
     // Calculate duration if log is complete
     const updateData: any = {
@@ -648,9 +750,9 @@ function calculateSleepDuration(events: SleepEvent[]): {
     return { totalSleepMinutes: 0, totalAwakeMinutes: 0 };
   }
   
-  // Sort events by timestamp
+  // Sort events by childLocalTimestamp
   const sortedEvents = [...events].sort((a, b) => 
-    a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime()
+    a.childLocalTimestamp.toDate().getTime() - b.childLocalTimestamp.toDate().getTime()
   );
   
   let totalSleepMs = 0;
@@ -659,7 +761,7 @@ function calculateSleepDuration(events: SleepEvent[]): {
   let stateStartTime: Date | null = null;
   
   for (const event of sortedEvents) {
-    const eventTime = event.timestamp.toDate();
+    const eventTime = event.childLocalTimestamp.toDate();
     
     if (stateStartTime && currentState !== 'out') {
       const duration = eventTime.getTime() - stateStartTime.getTime();
