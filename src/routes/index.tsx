@@ -3032,9 +3032,9 @@ function SleepLogModal() {
   };
 
   // Format time for time picker (24-hour HH:MM format for react-time-picker)
+  // Shows user's local time - will be converted to Child Local Time when saving
   const formatTimeForPicker = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
-      timeZone: state.timezone,
       hour12: false,
       hour: '2-digit',
       minute: '2-digit'
@@ -3042,9 +3042,9 @@ function SleepLogModal() {
   };
 
   // Format time for display
+  // Shows user's local time - will be converted to Child Local Time when saving
   const formatTimeForDisplay = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: state.timezone,
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -3430,9 +3430,9 @@ function SleepLogModal() {
                     </span>
                     <input
                       type="date"
-                      value={currentDate.toISOString().split('T')[0]}
+                      value={new Intl.DateTimeFormat('en-CA').format(currentDate)}
                       onChange={(e) => {
-                        const newDate = new Date(e.target.value);
+                        const newDate = new Date(e.target.value + 'T12:00:00');
                         setCurrentDate(newDate);
                         // Revalidate when date changes
                         const combinedDateTime = new Date(newDate);
