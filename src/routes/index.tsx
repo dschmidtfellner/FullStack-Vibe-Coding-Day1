@@ -773,13 +773,14 @@ function LogsListView() {
     return unsubscribe;
   }, [state.childId]);
 
-  // Format time in the baby's timezone
+  // Format time (for Child Local Time, just format as UTC since it's already in child's wall clock time)
   const formatTimeInTimezone = (timestamp: any) => {
     if (!timestamp) return '';
     
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    // For childLocalTimestamp, format as UTC since it already represents child's wall clock time
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: state.timezone,
+      timeZone: 'UTC',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -834,27 +835,26 @@ function LogsListView() {
 
   // Check if selected date is today
   const isToday = () => {
-    const today = new Date();
-    const todayString = new Intl.DateTimeFormat('en-CA', {
-      timeZone: state.timezone
-    }).format(today);
-    return selectedDate === todayString;
+    // Get today in child's timezone
+    const childNow = getChildNow(state.timezone);
+    const childTodayString = childNow.toISOString().split('T')[0];
+    return selectedDate === childTodayString;
   };
 
   // Get relative date text for display under the date
   const getRelativeDateText = () => {
-    const today = new Date();
-    const todayString = new Intl.DateTimeFormat('en-CA', {
-      timeZone: state.timezone
-    }).format(today);
+    // Get today in child's timezone
+    const childNow = getChildNow(state.timezone);
+    const childToday = getChildStartOfDay(childNow, state.timezone);
+    const childTodayString = childToday.toISOString().split('T')[0];
     
-    if (selectedDate === todayString) {
+    if (selectedDate === childTodayString) {
       return 'Today';
     }
     
-    const selectedDateObj = new Date(selectedDate + 'T12:00:00');
-    const todayObj = new Date(todayString + 'T12:00:00');
-    const diffTime = selectedDateObj.getTime() - todayObj.getTime();
+    // Compare selected date with child's today
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00.000Z'); // Already in UTC from date picker
+    const diffTime = selectedDateObj.getTime() - childToday.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === -1) {
@@ -924,7 +924,7 @@ function LogsListView() {
             event,
             logId: log.id,
             logType: log.sleepType || 'nap',
-            timestamp: event.timestamp.toDate()
+            timestamp: fromChildLocalTime(event.childLocalTimestamp)
           });
         });
       }
@@ -1123,7 +1123,7 @@ function LogsListView() {
                   isNightBefore={true}
                   nightBeforeEndTime={
                     previousDayBedtime.events && previousDayBedtime.events.length > 0
-                      ? formatTimeInTimezone(previousDayBedtime.events[previousDayBedtime.events.length - 1].timestamp)
+                      ? formatTimeInTimezone(previousDayBedtime.events[previousDayBedtime.events.length - 1].childLocalTimestamp)
                       : ''
                   }
                   unreadCount={counters.logUnreadByLogId[previousDayBedtime.id] || 0}
@@ -2879,7 +2879,7 @@ function SleepLogModal() {
         if (cachedLog.events) {
           const eventsWithDates = cachedLog.events.map(event => ({
             type: event.type,
-            timestamp: event.timestamp.toDate()
+            timestamp: fromChildLocalTime(event.childLocalTimestamp)
           }));
           setEvents(eventsWithDates);
           
@@ -2904,7 +2904,7 @@ function SleepLogModal() {
             if (log.events) {
               const eventsWithDates = log.events.map(event => ({
                 type: event.type,
-                timestamp: event.timestamp.toDate()
+                timestamp: fromChildLocalTime(event.childLocalTimestamp)
               }));
               setEvents(eventsWithDates);
               
