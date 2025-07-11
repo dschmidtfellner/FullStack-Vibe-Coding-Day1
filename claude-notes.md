@@ -700,37 +700,48 @@ firebase functions:config:set doulaconnect_firebase.api_url="https://doulaconnec
 - Monitor delivery success rates and optimize token retrieval strategies
 - Plan migration timeline for eventually switching to new Firebase project tokens
 
-## Auto-Navigation Logic Removal
+## Auto-Navigation Logic Complete Removal
 
 ### Objective
-Remove duplicate auto-navigation logic that was causing page crashes when loading specific sleep logs via URL parameters.
+Completely remove auto-navigation logic that was causing page crashes when loading specific sleep logs via URL parameters, preparing for direct iframe URL navigation.
 
-### Problem Identified
-The codebase had **two duplicate useEffect hooks** handling the same `sleep_ev` URL parameter:
-1. **NavigationProvider useEffect (lines 219-230)**: Properly protected with `hasAutoNavigated` state
-2. **AppRouter useEffect (lines 351-359)**: No protection, causing infinite loops and crashes
+### Problem Identified  
+Auto-navigation based on `sleep_ev` URL parameter was causing page crashes. Instead of fixing the infinite loops, the decision was made to completely remove auto-navigation in favor of direct iframe URL navigation in Bubble.
 
 ### Progress Status
-✅ **Removed duplicate auto-navigation logic**:
-  - Removed the unprotected useEffect hook from AppRouter component
-  - Kept the protected auto-navigation logic in NavigationProvider
-  - Preserved the `hasAutoNavigated` state mechanism for single-execution control
-  - Verified build compiles successfully with no TypeScript errors
+✅ **Completely removed auto-navigation system**:
+  - Removed `hasAutoNavigated` state and related logic from NavigationProvider
+  - Removed the entire useEffect that handled `sleep_ev` parameter auto-navigation
+  - Preserved all manual navigation functions (navigateToLogDetail, etc.)
+  - Page now safely loads LogList view without attempting auto-navigation
+  - Manual navigation via tile clicks still works perfectly
 
 ### Commits Made During Session
-1. "fix: Remove duplicate auto-navigation logic causing page crashes"
+1. "fix: Remove auto-navigation logic that was causing page crashes"
+2. "checkpoint: Auto-navigation removal complete"
 
 ### Technical Implementation
-- **Removed from AppRouter**: Lines 350-359 containing duplicate useEffect
-- **Preserved in NavigationProvider**: Lines 219-230 with proper protection
-- **Protection mechanism**: `hasAutoNavigated` state prevents multiple executions
-- **URL parameter handling**: `sleep_ev` parameter still works, but safely with single execution
-
-### Root Cause
-The duplicate useEffect in AppRouter was running every time `state.childId` or `navigateToLogDetail` changed, causing infinite navigation loops when attempting to auto-navigate to a specific sleep log based on URL parameters.
+- **Removed from NavigationProvider**: 
+  - `hasAutoNavigated` state variable (line 93)
+  - Complete auto-navigation useEffect (lines 218-230)
+- **Preserved**: All manual navigation context functions and UI interactions
+- **Next Step**: Update Bubble iframe URL to use direct navigation: `?view=log-detail&logId=X4q50Kof2sH2wzdNF6TG&...`
 
 ### Benefits Achieved
-1. **Crash Prevention**: Eliminated infinite loops causing page crashes
-2. **Proper Auto-Navigation**: Single, controlled execution of auto-navigation logic
-3. **Maintained Functionality**: Deep linking via `sleep_ev` parameter still works
-4. **Code Cleanup**: Removed duplicate code that was causing conflicts
+1. **Crash Prevention**: No more page crashes from auto-navigation conflicts
+2. **Simplified Architecture**: Removed complex auto-navigation state management  
+3. **Maintained Functionality**: All manual navigation works perfectly
+4. **Bubble-Ready**: Prepared for direct iframe URL navigation approach
+5. **Reliable Loading**: Page consistently loads LogList view safely
+
+### Next Integration Steps
+Update Bubble iframe source URL from:
+```
+?view=logs&sleep_ev=X4q50Kof2sH2wzdNF6TG&childId=...
+```
+To:
+```  
+?view=log-detail&logId=X4q50Kof2sH2wzdNF6TG&childId=...
+```
+
+This eliminates the need for auto-navigation entirely while achieving the same result.
