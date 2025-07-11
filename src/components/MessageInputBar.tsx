@@ -265,7 +265,7 @@ export function MessageInputBar({
         ? 'border-gray-700 bg-[#2d2637]' 
         : 'border-gray-200 bg-white'
     }`}>
-      <div className="max-w-[800px] mx-auto p-4">
+      <div className="max-w-[800px] mx-auto px-2 py-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -303,7 +303,7 @@ export function MessageInputBar({
           </div>
         )}
 
-        <div className={`flex items-center gap-3 ${logId ? 'max-w-full' : ''}`}>
+        <div className={`flex items-center gap-2 ${logId ? 'max-w-full' : ''}`}>
           {/* Photo upload button */}
           <button 
               onClick={handlePhotoSelect}
@@ -356,9 +356,7 @@ export function MessageInputBar({
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder={placeholder}
-              className={`input input-bordered w-full pr-12 rounded-full focus:outline-none ${
-                logId ? '' : 'h-12 box-border'
-              } ${
+              className={`input input-bordered w-full pr-10 rounded-full focus:outline-none h-10 ${
                 user?.darkMode 
                   ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
                   : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
