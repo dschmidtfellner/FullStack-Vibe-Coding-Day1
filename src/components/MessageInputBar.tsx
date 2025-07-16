@@ -356,7 +356,7 @@ export function MessageInputBar({
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder={placeholder}
-              className={`w-full pr-10 rounded-full focus:outline-none h-10 border ${
+              className={`w-full pl-4 pr-10 rounded-full focus:outline-none h-10 border ${
                 user?.darkMode 
                   ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
                   : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
