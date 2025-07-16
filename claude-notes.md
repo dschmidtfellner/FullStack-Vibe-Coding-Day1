@@ -208,6 +208,37 @@ if (isInIframe()) {
 - Consider implementing response messages from Bubble back to Firebase
 - Document the message API for future developers
 
+## DaisyUI Removal
+
+### Objective
+Remove DaisyUI dependency from the project to focus on custom styling based on existing Rested/DoulaConnect app designs.
+
+### Progress Status
+✅ Removed DaisyUI from package.json dependencies
+✅ Removed DaisyUI plugin configuration from src/index.css
+✅ Replaced DaisyUI classes in MessageInputBar.tsx with Tailwind equivalents:
+  - `btn btn-circle btn-sm` → `flex items-center justify-center w-8 h-8 rounded-full`
+  - `input input-bordered` → `border rounded-full`
+  - `loading loading-spinner` → `border-2 border-current border-t-transparent rounded-full animate-spin`
+✅ Updated CLAUDE.md to remove DaisyUI references and add custom styling guidelines
+✅ Verified no DaisyUI classes remain in other components
+
+### Commits Made During Session
+1. "refactor: Remove DaisyUI dependency and replace with Tailwind equivalents"
+
+### Technical Changes
+- Removed DaisyUI plugin from CSS configuration
+- Replaced component classes with native Tailwind utilities
+- Updated spinner animation to use pure CSS
+- Maintained all existing functionality and styling
+- Focused on custom color variables and design patterns
+
+### Benefits
+- Eliminates unused component library reducing bundle size
+- Forces focus on matching existing app design patterns
+- Removes Claude's tendency to use unapproved DaisyUI colors
+- Simplifies styling approach to pure Tailwind utilities
+
 ## Previous Features Implemented
 
 ### Bedtime Label Update
