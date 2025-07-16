@@ -60,7 +60,7 @@ body {
   display: flex;
   flex-grow: 1;
   flex-shrink: 0;
-  border: 2px solid #d1d5db;
+  border: 2px solid #d1d5db !important;
   border-radius: 0.5rem;
   height: 60px;
   align-items: center;
@@ -144,6 +144,7 @@ body {
   height: 48px;
   font-size: 1.25rem;
   padding: 0 12px;
+  border: 2px solid #d1d5db !important;
 }
 
 /* Right-align time picker content */
