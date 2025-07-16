@@ -1088,11 +1088,11 @@ function LogsListView() {
               <img 
                 src={getAppLogo().src} 
                 alt={getAppLogo().alt}
-                className="w-16 h-16 opacity-30"
+                className="w-32 h-32 opacity-30"
               />
             </div>
             <h3 className={`text-lg font-semibold mb-2 ${
-              user?.darkMode ? 'text-white' : 'text-gray-800'
+              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>No logs for this day</h3>
             <p className={`text-center mb-6 ${
               user?.darkMode ? 'text-gray-400' : 'text-gray-600'

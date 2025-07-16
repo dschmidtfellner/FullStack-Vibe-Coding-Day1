@@ -208,10 +208,10 @@ if (isInIframe()) {
 - Consider implementing response messages from Bubble back to Firebase
 - Document the message API for future developers
 
-## DaisyUI Removal
+## DaisyUI Removal & Logo System Implementation
 
 ### Objective
-Remove DaisyUI dependency from the project to focus on custom styling based on existing Rested/DoulaConnect app designs.
+Remove DaisyUI dependency from the project to focus on custom styling based on existing Rested/DoulaConnect app designs, and implement a branded logo system for different app contexts.
 
 ### Progress Status
 ✅ Removed DaisyUI from package.json dependencies
@@ -220,24 +220,62 @@ Remove DaisyUI dependency from the project to focus on custom styling based on e
   - `btn btn-circle btn-sm` → `flex items-center justify-center w-8 h-8 rounded-full`
   - `input input-bordered` → `border rounded-full`
   - `loading loading-spinner` → `border-2 border-current border-t-transparent rounded-full animate-spin`
+✅ Fixed styling issues after DaisyUI removal:
+  - Floating action button properly circular
+  - Input field padding and borders consistent
+  - Time picker border colors standardized
+✅ Implemented logo-based empty state system:
+  - Created `src/utils/logoUtils.ts` for URL parameter-based logo selection
+  - Added Rested and DoulaConnect logo assets in `src/assets/logos/`
+  - Updated empty state to show branded logos at 30% opacity
+  - Changed empty state text to "No logs for this day / Tap the plus button to start tracking"
+  - Logo switches based on `sender_app` URL parameter (Doula = DoulaConnect, default = Rested)
+✅ Added TypeScript declarations for PNG imports in `src/vite-env.d.ts`
 ✅ Updated CLAUDE.md to remove DaisyUI references and add custom styling guidelines
 ✅ Verified no DaisyUI classes remain in other components
 
 ### Commits Made During Session
 1. "refactor: Remove DaisyUI dependency and replace with Tailwind equivalents"
+2. "feat: Implement logo-based empty state system with URL parameter switching"
 
 ### Technical Changes
 - Removed DaisyUI plugin from CSS configuration
 - Replaced component classes with native Tailwind utilities
 - Updated spinner animation to use pure CSS
-- Maintained all existing functionality and styling
-- Focused on custom color variables and design patterns
+- Fixed CSS specificity issues with !important flags
+- Created scalable asset management system for logos
+- Implemented URL parameter-based branding system
+
+### Logo System Architecture
+```typescript
+// src/utils/logoUtils.ts
+export const getAppLogo = (): LogoConfig => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const senderApp = urlParams.get('sender_app');
+  
+  if (senderApp === 'Doula') {
+    return {
+      src: doulaconnectLogo,
+      alt: 'DoulaConnect Logo',
+      name: 'DoulaConnect'
+    };
+  }
+  
+  return {
+    src: restedLogo,
+    alt: 'Rested Logo',
+    name: 'Rested'
+  };
+};
+```
 
 ### Benefits
 - Eliminates unused component library reducing bundle size
 - Forces focus on matching existing app design patterns
 - Removes Claude's tendency to use unapproved DaisyUI colors
 - Simplifies styling approach to pure Tailwind utilities
+- Provides scalable branding system for multi-app deployment
+- Maintains brand consistency across different contexts
 
 ## Previous Features Implemented
 
