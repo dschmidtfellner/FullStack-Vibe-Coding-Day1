@@ -28,6 +28,12 @@ Use this document to specify exact component names, functions, and data structur
 - **`NavigationProvider`** - Context provider for view navigation
 - **`RootComponent`** - Main app wrapper with QueryClientProvider
 
+### Action Elements
+- **`Add Event Button`** - Purple plus floating action button for creating new sleep logs (src/routes/index.tsx:1223-1238)
+  - Only visible in LogList view
+  - Positioned 120px from bottom center
+  - Calls `navigateToNewLog(selectedDate)` on click
+
 ### Component Props
 - **`SleepLogTile`** props: `log`, `user`, `napNumber`, `onClick`, `onContinueLogging`, `formatTimeInTimezone`, `showClickable`, `isNightBefore`, `nightBeforeEndTime`, `unreadCount`
 - **`MessageInputBar`** props: `user`, `conversationId`, `childId`, `newMessage`, `setNewMessage`, `placeholder`, `logId`, `typingUsers`, `onMessageSent`

@@ -1223,7 +1223,7 @@ function LogsListView() {
         <div className="fixed bottom-[120px] left-1/2 transform -translate-x-1/2 z-20">
         <button
           onClick={() => navigateToNewLog(selectedDate)}
-          className={`btn btn-circle shadow-lg border-none ${
+          className={`flex items-center justify-center rounded-full shadow-lg border-none ${
             user?.darkMode 
               ? 'text-white hover:opacity-90' 
               : 'text-white hover:opacity-90'
