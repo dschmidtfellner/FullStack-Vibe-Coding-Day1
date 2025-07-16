@@ -1084,16 +1084,14 @@ function LogsListView() {
         {selectedDateLogs.length === 0 && !previousDayBedtime ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="mb-4">
+            <div className="mb-8">
               <img 
                 src={getAppLogo().src} 
                 alt={getAppLogo().alt}
                 className="w-32 h-32 opacity-30"
               />
             </div>
-            <h3 className={`text-lg font-semibold mb-2 ${
-              user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>No logs for this day</h3>
+            <h3 className="text-lg text-[#745288] opacity-50 mb-2">No logs for this day</h3>
             <p className={`text-center mb-6 ${
               user?.darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>Tap the plus button to start tracking</p>
