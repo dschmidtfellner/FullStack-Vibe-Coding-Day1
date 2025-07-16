@@ -1,6 +1,7 @@
 import { useBubbleAuth, useChildAccess } from "@/hooks/useBubbleAuth";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, X, Play, Pause, Moon, Sun, Minus, ChevronLeft, ChevronRight, MessageSquare, Search } from "lucide-react";
+import { getAppLogo } from "@/utils/logoUtils";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { MessageInputBar } from "@/components/MessageInputBar";
 import TimePicker from 'react-time-picker';
@@ -1083,19 +1084,19 @@ function LogsListView() {
         {selectedDateLogs.length === 0 && !previousDayBedtime ? (
           // Empty state
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-              user?.darkMode ? 'bg-[#3a2f4a]' : 'bg-gray-100'
-            }`}>
-              <Moon className={`w-8 h-8 ${
-                user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`} />
+            <div className="mb-4">
+              <img 
+                src={getAppLogo().src} 
+                alt={getAppLogo().alt}
+                className="w-16 h-16 opacity-30"
+              />
             </div>
             <h3 className={`text-lg font-semibold mb-2 ${
               user?.darkMode ? 'text-white' : 'text-gray-800'
-            }`}>No sleep logs for this day</h3>
+            }`}>No logs for this day</h3>
             <p className={`text-center mb-6 ${
               user?.darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>Tap the plus button to start tracking sleep</p>
+            }`}>Tap the plus button to start tracking</p>
           </div>
         ) : viewMode === 'events' ? (
           // Events view (original tile view)
