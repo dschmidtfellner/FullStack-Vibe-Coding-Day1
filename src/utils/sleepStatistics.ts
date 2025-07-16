@@ -33,14 +33,14 @@ export function calculateSleepStatistics(log: SleepLog): SleepStatistics {
 
   // Sort events by timestamp
   const sortedEvents = [...log.events].sort((a, b) => 
-    a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime()
+    a.childLocalTimestamp.toDate().getTime() - b.childLocalTimestamp.toDate().getTime()
   );
 
   // Calculate overall duration and time range
   const firstEvent = sortedEvents[0];
   const lastEvent = sortedEvents[sortedEvents.length - 1];
-  const startTime = firstEvent.timestamp.toDate();
-  const endTime = lastEvent.timestamp.toDate();
+  const startTime = firstEvent.childLocalTimestamp.toDate();
+  const endTime = lastEvent.childLocalTimestamp.toDate();
   
   const totalDurationMs = endTime.getTime() - startTime.getTime();
   const totalDuration = formatDuration(totalDurationMs);
@@ -58,8 +58,8 @@ export function calculateSleepStatistics(log: SleepLog): SleepStatistics {
     const currentEvent = sortedEvents[i];
     const nextEvent = sortedEvents[i + 1];
     
-    const segmentStartTime = currentEvent.timestamp.toDate();
-    const segmentEndTime = nextEvent.timestamp.toDate();
+    const segmentStartTime = currentEvent.childLocalTimestamp.toDate();
+    const segmentEndTime = nextEvent.childLocalTimestamp.toDate();
     const segmentDurationMs = segmentEndTime.getTime() - segmentStartTime.getTime();
 
     // Classify segment based on starting event type

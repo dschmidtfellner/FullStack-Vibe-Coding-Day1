@@ -7,7 +7,7 @@ interface SleepLogTileProps {
   napNumber?: number; // Optional nap number for display
   onClick?: () => void; // Optional click handler for tile
   onContinueLogging?: () => void; // Handler for Continue Logging button
-  formatTimeInTimezone: (timestamp: any) => string; // Time formatting function
+  formatTimeInTimezone?: (timestamp: any) => string; // Time formatting function
   showClickable?: boolean; // Whether the tile should be clickable
   isNightBefore?: boolean; // Whether this is a previous night's bedtime
   nightBeforeEndTime?: string; // End time for night before display
@@ -20,7 +20,7 @@ export function SleepLogTile({
   napNumber,
   onClick,
   onContinueLogging,
-  formatTimeInTimezone,
+  // formatTimeInTimezone = () => '',
   showClickable = true,
   isNightBefore = false,
   nightBeforeEndTime = '',
@@ -34,7 +34,7 @@ export function SleepLogTile({
     }
 
     if (!log.events || log.events.length === 0) {
-      return formatTimeInTimezone(log.timestamp);
+      return 'No events';
     }
 
     const firstEvent = log.events[0];

@@ -800,14 +800,6 @@ function LogsListView() {
   //   }).format(date);
   // };
 
-  // Get date in YYYY-MM-DD format for comparison
-  const getLocalDateKey = (timestamp: any) => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: state.timezone
-    }).format(date);
-  };
 
   // Date navigation functions
   const goToPreviousDay = () => {
@@ -874,7 +866,7 @@ function LogsListView() {
   // Filter logs for selected date and get previous day's bedtime
   const getLogsForSelectedDate = () => {
     const selectedDateLogs = state.logs.filter(log => {
-      const logDateKey = log.localDate || getLocalDateKey(log.timestamp);
+      const logDateKey = log.localDate || '';
       return logDateKey === selectedDate;
     });
 
@@ -884,7 +876,7 @@ function LogsListView() {
     const previousDateKey = new Intl.DateTimeFormat('en-CA').format(previousDate);
     
     const previousDayBedtime = state.logs.find(log => {
-      const logDateKey = log.localDate || getLocalDateKey(log.timestamp);
+      const logDateKey = log.localDate || '';
       return logDateKey === previousDateKey && log.sleepType === 'bedtime';
     });
 
@@ -911,7 +903,7 @@ function LogsListView() {
           event: outOfBedEvent,
           logId: previousDayBedtime.id,
           logType: previousDayBedtime.sleepType || 'nap',
-          timestamp: outOfBedEvent.timestamp.toDate()
+          timestamp: outOfBedEvent.childLocalTimestamp.toDate()
         });
       }
     }
@@ -1133,7 +1125,7 @@ function LogsListView() {
 
             {/* Current Day's Logs */}
             {(() => {
-              const sortedLogs = selectedDateLogs.sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime());
+              const sortedLogs = selectedDateLogs.sort((a, b) => a.sortTimestamp - b.sortTimestamp);
               return sortedLogs.map((log, index) => {
                 // Count naps for numbering
                 const napNumber = sortedLogs
@@ -1647,7 +1639,7 @@ function LogDetailView() {
             <div className="px-4 pb-4">
               <div ref={logEventsRef} className="border-l-4 pl-2 space-y-3" style={{ borderColor: '#F0DDEF' }}>
                 {log.events
-                  .sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime())
+                  .sort((a, b) => a.childLocalTimestamp.toDate().getTime() - b.childLocalTimestamp.toDate().getTime())
                   .map((event, index) => (
                     <div key={index} className="flex justify-between items-center">
                       <span className={`text-base ${
@@ -1823,7 +1815,7 @@ function EditLogModal() {
       if (cachedLog.events) {
         const localEvents = cachedLog.events.map(e => ({
           type: e.type,
-          timestamp: e.timestamp.toDate()
+          timestamp: e.childLocalTimestamp.toDate()
         }));
         setEvents(localEvents);
         // Set initial date from first event
@@ -1845,7 +1837,7 @@ function EditLogModal() {
           if (logData.events) {
             const localEvents = logData.events.map(e => ({
               type: e.type,
-              timestamp: e.timestamp.toDate()
+              timestamp: e.childLocalTimestamp.toDate()
             }));
             setEvents(localEvents);
             // Set initial date from first event
@@ -2080,7 +2072,8 @@ function EditLogModal() {
       // Update the cache
       const eventsWithLocalTime = events.map(e => ({
         type: e.type,
-        timestamp: Timestamp.fromDate(e.timestamp),
+        childLocalTimestamp: Timestamp.fromDate(e.timestamp),
+        originalTimezone: state.timezone,
         localTime: formatTimeForDisplay(e.timestamp)
       }));
       const updatedLog = { 
@@ -3275,7 +3268,8 @@ function SleepLogModal() {
         if (currentLog) {
           const eventsWithLocalTime = updatedEvents.map(e => ({
             type: e.type,
-            timestamp: Timestamp.fromDate(e.timestamp),
+            childLocalTimestamp: Timestamp.fromDate(e.timestamp),
+            originalTimezone: state.timezone,
             localTime: new Intl.DateTimeFormat('en-US', {
               timeZone: state.timezone,
               hour: 'numeric',
@@ -3311,7 +3305,8 @@ function SleepLogModal() {
         // Update the cache with new data - need to convert Date to Timestamp and include localTime
         const eventsWithLocalTime = events.map(e => ({
           type: e.type,
-          timestamp: Timestamp.fromDate(e.timestamp),
+          childLocalTimestamp: Timestamp.fromDate(e.timestamp),
+          originalTimezone: state.timezone,
           localTime: formatTimeForDisplay(e.timestamp)
         }));
         const updatedLog = { ...existingLog, events: eventsWithLocalTime, isComplete };
