@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Notifications Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+        button {
+            background-color: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #005a8b;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Claude Code Notifications Test</h1>
+        
+        <div class="test-section">
+            <h3>Quick Tests</h3>
+            <button onclick="testBasicNotification()">Test Basic Notification</button>
+            <button onclick="testWaitingNotification()">Test Waiting Notification</button>
+            <button onclick="testCompletedNotification()">Test Completed Notification</button>
+            <button onclick="testErrorNotification()">Test Error Notification</button>
+            <div id="quickResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Custom Message Test</h3>
+            <textarea id="customMessage" placeholder="Enter custom notification message...">Claude Code is working perfectly! 🚀</textarea>
+            <select id="notificationType">
+                <option value="info">Info</option>
+                <option value="waiting">Waiting</option>
+                <option value="completed">Completed</option>
+                <option value="error">Error</option>
+            </select>
+            <button onclick="testCustomNotification()">Send Custom Notification</button>
+            <div id="customResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Direct API Test</h3>
+            <p>This tests the Firebase Function directly without the TypeScript wrapper.</p>
+            <button onclick="testDirectAPI()">Test Direct API Call</button>
+            <div id="directResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const CLAUDE_NOTIFICATION_ENDPOINT = 'https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification';
+
+        async function sendClaudeNotification(message, type = 'info') {
+            try {
+                const response = await fetch(CLAUDE_NOTIFICATION_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message,
+                        type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                return { success: true, result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function showResult(elementId, success, message, details = null) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${success ? 'success' : 'error'}`;
+            element.innerHTML = `
+                <strong>${success ? 'SUCCESS' : 'ERROR'}:</strong> ${message}
+                ${details ? `<br><small>${JSON.stringify(details, null, 2)}</small>` : ''}
+            `;
+        }
+
+        async function testBasicNotification() {
+            const result = await sendClaudeNotification('Test notification from Claude Code!', 'info');
+            showResult('quickResult', result.success, 
+                result.success ? 'Basic notification sent successfully!' : result.error,
+                result.result
+            );
+        }
+
+        async function testWaitingNotification() {
+            const result = await sendClaudeNotification('Claude is waiting for your input', 'waiting');
+            showResult('quickResult', result.success, 
+                result.success ? 'Waiting notification sent!' : result.error,
+                result.result
+            );
+        }
+
+        async function testCompletedNotification() {
+            const result = await sendClaudeNotification('Task completed successfully!', 'completed');
+            showResult('quickResult', result.success, 
+                result.success ? 'Completed notification sent!' : result.error,
+                result.result
+            );
+        }
+
+        async function testErrorNotification() {
+            const result = await sendClaudeNotification('An error occurred during processing', 'error');
+            showResult('quickResult', result.success, 
+                result.success ? 'Error notification sent!' : result.error,
+                result.result
+            );
+        }
+
+        async function testCustomNotification() {
+            const message = document.getElementById('customMessage').value;
+            const type = document.getElementById('notificationType').value;
+            
+            if (!message.trim()) {
+                showResult('customResult', false, 'Please enter a message');
+                return;
+            }
+
+            const result = await sendClaudeNotification(message, type);
+            showResult('customResult', result.success, 
+                result.success ? 'Custom notification sent!' : result.error,
+                result.result
+            );
+        }
+
+        async function testDirectAPI() {
+            try {
+                const response = await fetch(CLAUDE_NOTIFICATION_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Direct API test from browser',
+                        type: 'info'
+                    })
+                });
+
+                const result = await response.json();
+                showResult('directResult', response.ok, 
+                    response.ok ? 'Direct API call successful!' : 'Direct API call failed',
+                    result
+                );
+            } catch (error) {
+                showResult('directResult', false, 'Direct API call failed', error.message);
+            }
+        }
+
+        // Show initial message
+        document.getElementById('quickResult').innerHTML = '<em>Click any button above to test notifications</em>';
+        document.getElementById('customResult').innerHTML = '<em>Enter a message and click Send Custom Notification</em>';
+        document.getElementById('directResult').innerHTML = '<em>Click Test Direct API Call to test the Firebase Function directly</em>';
+    </script>
+</body>
+</html>

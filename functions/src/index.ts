@@ -1388,6 +1388,68 @@ async function exploreRealtimeDatabase(rtdb: admin.database.Database, results: a
   }
 }
 
+// Claude Code push notification function
+export const sendClaudeNotification = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    console.log('Claude notification request received:', req.body);
+    
+    const { message, type } = req.body;
+    
+    if (!message || !type) {
+      console.error('Missing required parameters:', { message, type });
+      res.status(400).json({ 
+        error: 'Missing required parameters: message and type' 
+      });
+      return;
+    }
+
+    // Your OneSignal Player ID
+    const davidPlayerId = '04618fe6-50c8-4c2a-bb64-9010776e3ec1';
+    
+    console.log('Sending OneSignal notification:', {
+      app: 'doulaConnect',
+      playerId: davidPlayerId,
+      title: `Claude Code - ${type}`,
+      message
+    });
+    
+    // Send notification to DoulaConnect app
+    const result = await sendOneSignalNotification(
+      'doulaConnect',
+      [davidPlayerId],
+      `Claude Code - ${type}`,
+      message
+    );
+
+    console.log('OneSignal notification result:', result);
+
+    res.json({
+      success: result.success,
+      message: result.success ? 'Claude notification sent successfully' : 'Failed to send Claude notification',
+      type,
+      notificationId: result.id,
+      recipients: result.recipients || 0,
+      details: result.error || null
+    });
+
+  } catch (error) {
+    console.error('Error sending Claude notification:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
 // Helper function to explore Firestore (for fallback)
 async function exploreFirestore(db: admin.firestore.Firestore, results: any) {
   const collectionsToCheck = ['users', 'fcmTokens', 'tokens', 'devices', 'players'];
