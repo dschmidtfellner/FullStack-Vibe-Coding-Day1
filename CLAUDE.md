@@ -1,5 +1,14 @@
 - Always follow the guidelines in this file, unless explicitly told otherwise by the user or overided in the CLAUDE.local.md file.
 
+## Push Notification System
+
+- **When completing tasks**: Send completion notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Task completed: [brief description]", "type": "completed"}'`
+- **When waiting for input**: Send waiting notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Waiting for your input", "type": "waiting"}'`
+- **When errors occur**: Send error notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Error: [brief description]", "type": "error"}'`
+- **For significant milestones**: Send info notifications for important updates
+- **Always send notifications after completing user requests** - this helps with workflow awareness
+- **Test interface**: Use `/test-claude-notifications.html` for debugging notifications
+
 ## Project Overview
 
 - Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend), Clerk (auth)
