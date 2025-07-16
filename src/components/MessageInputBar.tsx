@@ -365,7 +365,7 @@ export function MessageInputBar({
             <button 
               onClick={handleSendWithTypingCleanup}
               disabled={isUploading || !newMessage.trim()}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+              className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
                 user?.darkMode ? '' : 'text-white'
               }`}
               style={{ 
