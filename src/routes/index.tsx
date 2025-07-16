@@ -3435,7 +3435,7 @@ function SleepLogModal() {
                         const validation = validateTimeInput(combinedDateTime, events.length === 0);
                         setValidationWarning(validation.warning);
                       }}
-                      className={`input input-bordered text-xl text-right w-44 ${
+                      className={`input text-xl text-right w-44 border-2 ${
                         user?.darkMode 
                           ? 'bg-[#3a3a3a] border-gray-600 text-white' 
                           : 'bg-white border-gray-300 text-gray-800'

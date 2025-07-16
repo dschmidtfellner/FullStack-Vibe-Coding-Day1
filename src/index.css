@@ -60,7 +60,7 @@ body {
   display: flex;
   flex-grow: 1;
   flex-shrink: 0;
-  border: 1px solid #d1d5db;
+  border: 2px solid #d1d5db;
   border-radius: 0.5rem;
   height: 60px;
   align-items: center;
@@ -120,7 +120,7 @@ body {
 
 /* Dark mode styles */
 .dark-theme .react-time-picker__wrapper {
-  border-color: #4b5563;
+  border: 2px solid #4b5563;
   background-color: #3a3a3a;
   color: #ffffff;
 }
