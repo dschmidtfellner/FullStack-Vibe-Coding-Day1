@@ -1172,13 +1172,13 @@ exports.sendClaudeNotification = functions.https.onRequest(async (req, res) => {
         // Your OneSignal Player ID
         const davidPlayerId = '04618fe6-50c8-4c2a-bb64-9010776e3ec1';
         console.log('Sending OneSignal notification:', {
-            app: 'doulaConnect',
+            app: 'rested',
             playerId: davidPlayerId,
             title: `Claude Code - ${type}`,
             message
         });
-        // Send notification to DoulaConnect app
-        const result = await sendOneSignalNotification('doulaConnect', [davidPlayerId], `Claude Code - ${type}`, message);
+        // Send notification to Rested app
+        const result = await sendOneSignalNotification('rested', [davidPlayerId], `Claude Code - ${type}`, message);
         console.log('OneSignal notification result:', result);
         res.json({
             success: result.success,
