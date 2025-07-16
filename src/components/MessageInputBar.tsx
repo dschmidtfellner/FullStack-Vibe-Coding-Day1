@@ -308,7 +308,7 @@ export function MessageInputBar({
           <button 
               onClick={handlePhotoSelect}
               disabled={isUploading}
-              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full border-none flex-shrink-0 disabled:opacity-50 hover:opacity-90 ${
                 user?.darkMode 
                   ? 'hover:opacity-90' 
                   : 'text-white hover:opacity-90'
@@ -319,7 +319,7 @@ export function MessageInputBar({
               }}
             >
               {isUploading ? (
-                <div className="loading loading-spinner w-4 h-4"></div>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <Plus className="w-4 h-4" />
               )}
@@ -329,7 +329,7 @@ export function MessageInputBar({
           <button 
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isUploading}
-              className={`btn btn-circle btn-sm border-none flex-shrink-0 disabled:opacity-50 ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full border-none flex-shrink-0 disabled:opacity-50 hover:opacity-90 ${
                 isRecording 
                   ? 'bg-red-500 text-white hover:bg-red-600' 
                   : user?.darkMode
@@ -356,7 +356,7 @@ export function MessageInputBar({
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
               placeholder={placeholder}
-              className={`input input-bordered w-full pr-10 rounded-full focus:outline-none h-10 ${
+              className={`w-full pr-10 rounded-full focus:outline-none h-10 border ${
                 user?.darkMode 
                   ? 'bg-[#3a3a3a] border-gray-600 text-gray-200 placeholder-gray-500 focus:border-gray-500' 
                   : 'bg-gray-100 border-gray-300 text-gray-700 placeholder-gray-500 focus:border-gray-300'
@@ -365,7 +365,7 @@ export function MessageInputBar({
             <button 
               onClick={handleSendWithTypingCleanup}
               disabled={isUploading || !newMessage.trim()}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-sm flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
+              className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
                 user?.darkMode ? '' : 'text-white'
               }`}
               style={{ 

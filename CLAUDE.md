@@ -2,11 +2,30 @@
 
 ## Push Notification System
 
-- **When completing tasks**: Send completion notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Task completed: [brief description]", "type": "completed"}'`
-- **When waiting for input**: Send waiting notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Waiting for your input", "type": "waiting"}'`
-- **When errors occur**: Send error notifications via `curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Error: [brief description]", "type": "error"}'`
-- **For significant milestones**: Send info notifications for important updates
 - **Always send notifications after completing user requests** - this helps with workflow awareness
+- **Send notifications when asking for permission** - especially for tool use approvals, file operations, or any user decision
+- **CRITICAL**: Use the exact curl format below with NO LINE BREAKS in the command
+- **When completing tasks**: Send completion notifications via:
+  ```bash
+  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Task completed: [brief description]", "type": "completed"}'
+  ```
+- **When waiting for input**: Send waiting notifications via:
+  ```bash
+  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Waiting for your input", "type": "waiting"}'
+  ```
+- **When asking for permission**: Send waiting notifications when asking user to approve tool use or make decisions:
+  ```bash
+  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Need your permission to proceed", "type": "waiting"}'
+  ```
+- **When errors occur**: Send error notifications via:
+  ```bash
+  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Error: [brief description]", "type": "error"}'
+  ```
+- **For significant milestones**: Send info notifications for important updates
+- **IMPORTANT FORMATTING RULES**:
+  - Keep the entire curl command on ONE LINE - no line breaks in the URL
+  - Use single quotes around the JSON data: `'{"message": "text", "type": "info"}'`
+  - If you get "Bad Request" error, it's likely due to line breaks in the command
 - **Test interface**: Use `/test-claude-notifications.html` for debugging notifications
 
 ## Project Overview
@@ -15,7 +34,7 @@
 - Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
 - **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
 - Import alias: `@/` maps to `src/` directory
-- Tailwind CSS 4, daisyUI 5: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
+- Tailwind CSS 4: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
 - Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
 - Environment variables: Client vars need `VITE_` prefix
 - Package manager: Always use `pnpm`, not npm
@@ -83,51 +102,17 @@
 - Disable during submit: `<button disabled={!form.state.canSubmit || form.state.isSubmitting}>`
 - Async validation: use `onChangeAsync` for server-side checks
 
-## Styling with DaisyUI
+## Styling Guidelines
 
-### Class Organization
-
-- `component`: Main class (btn), `part`: Child elements (card-title), `style`: Visual variants (btn-outline)
-- `behavior`: State (btn-active), `color`: Colors (btn-primary), `size`: Sizes (btn-lg)
-- `placement`: Position (dropdown-top), `direction`: Orientation (menu-horizontal), `modifier`: Special (btn-wide)
-
-### Key or Unfamiliar Components Reference
-
-- When using a component you aren't familiar with, always check its docs page.
-- `dock`: Bottom navigation bar with `dock-label` parts, see [docs](https://daisyui.com/components/dock/)
-- `filter`: Radio button groups with `filter-reset` for clearing selection, see [docs](https://daisyui.com/components/filter/)
-- `list`: Vertical layout for data rows using `list-row` class for each item
-- `fieldset`: Form grouping with `fieldset-legend` for titles and `label` for descriptions
-- `floating-label`: Labels that float above inputs when focused, use as parent wrapper
-- `status`: Tiny status indicators (`status-success`, `status-error`, etc.)
-- `validator`: Automatic form validation styling with `validator-hint` for error messages
-- `theme-controller`: Controls page theme via checkbox/radio with `value="{theme-name}"`
-- `diff`: Side-by-side comparison with `diff-item-1`, `diff-item-2`, `diff-resizer` parts
-- `calendar`: Apply `cally`, `pika-single`, or `react-day-picker` classes to respective libraries
-- `swap`: Toggle visibility of elements using `swap-on`/`swap-off` with checkbox or `swap-active` class
-- [Modal](https://daisyui.com/components/modal/): use with HTML dialog
-- [Drawer](https://daisyui.com/components/drawer/): Grid layout with sidebar toggle using `drawer-toggle` checkbox
-- [Dropdown](https://daisyui.com/components/dropdown/): Details/summary, popover API, or CSS focus methods
-- [Accordion](https://daisyui.com/components/accordion/): Radio inputs for exclusive opening using `collapse` class
-
-### Usage Rules
-
-- Use `!` suffix for forced overrides: `btn bg-red-500!`
-- Responsive patterns: `lg:menu-horizontal`, `sm:card-horizontal`
-- Prefer daisyUI colors (`bg-primary`) over Tailwind colors (`bg-blue-500`) for theme consistency
-- Use `*-content` colors for text on colored backgrounds
+- Use custom color variables defined in `src/index.css`: `--brand-pink`, `--brand-purple`, `--brand-purple-light`
+- Match existing app design patterns from Rested and DoulaConnect screenshots
+- Use Tailwind utility classes for styling, not component libraries
 - Typography plugin adds default margins to headings (h1, h2, h3, etc.) - use `mt-0` to override when precise spacing is needed
-
-### Color System
-
-- Semantic colors: `primary`, `secondary`, `accent`, `neutral`, `base-100/200/300`
-- Status colors: `info`, `success`, `warning`, `error`
-- Each color has matching `-content` variant for contrasting text
-- Custom themes use OKLCH format, create at [theme generator](https://daisyui.com/theme-generator/)
+- Custom fonts: Poppins (default), Domine (`.font-domine`), Karla (`.font-karla`)
 
 ## Other Guidelines
 
-- When stuck: check official docs first (firebase.google.com/docs, tanstack.com, daisyui.com)
+- When stuck: check official docs first (firebase.google.com/docs, tanstack.com, tailwindcss.com)
 - Ask before installing new dependencies
 - Verify responsive design at multiple breakpoints
 - Document non-obvious implementation choices in this file
