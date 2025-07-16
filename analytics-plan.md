@@ -172,37 +172,76 @@ function calculateDailySleepStats(input: DailyAggregationInput): Promise<DailyAg
 Implement Cloud Function triggers for robust recalculation:
 
 ```typescript
-// Firestore trigger on logs collection
+// Firestore trigger on logs collection - handles all CRUD operations
 export const recalculateDailyStats = onDocumentWritten(
   'logs/{logId}',
   async (event) => {
-    const log = event.data?.after?.data() as SleepLog;
+    const beforeLog = event.data?.before?.data() as SleepLog | undefined;
+    const afterLog = event.data?.after?.data() as SleepLog | undefined;
     
-    if (log.logType === 'sleep' && log.localDate) {
-      // Recalculate stats for the date this log started
-      await updateDailyStats(log.childId, log.localDate, log.childTimezone);
-      
-      // If log spans multiple dates (bedtime), also recalculate next day's morning stats
-      if (log.sleepType === 'bedtime' && logSpansMultipleDates(log)) {
-        const nextDate = getNextDate(log.localDate);
-        await updateDailyStats(log.childId, nextDate, log.childTimezone);
+    // Handle all modification scenarios:
+    
+    if (!beforeLog && afterLog) {
+      // SCENARIO 1: New log created
+      if (afterLog.logType === 'sleep' && afterLog.localDate) {
+        await updateDailyStats(afterLog.childId, afterLog.localDate, afterLog.childTimezone);
+      }
+    }
+    
+    else if (beforeLog && afterLog) {
+      // SCENARIOS 2-5: Log modified (events added/edited/deleted, or log properties changed)
+      if (afterLog.logType === 'sleep') {
+        
+        // SCENARIO 6: Check if log date changed
+        if (beforeLog.localDate !== afterLog.localDate) {
+          // Recalculate BOTH old and new dates
+          if (beforeLog.localDate) {
+            await updateDailyStats(beforeLog.childId, beforeLog.localDate, beforeLog.childTimezone);
+          }
+          if (afterLog.localDate) {
+            await updateDailyStats(afterLog.childId, afterLog.localDate, afterLog.childTimezone);
+          }
+        } else {
+          // Date unchanged - recalculate current date only
+          if (afterLog.localDate) {
+            await updateDailyStats(afterLog.childId, afterLog.localDate, afterLog.childTimezone);
+          }
+        }
+      }
+    }
+    
+    else if (beforeLog && !afterLog) {
+      // SCENARIO 7: Log deleted
+      if (beforeLog.logType === 'sleep' && beforeLog.localDate) {
+        await updateDailyStats(beforeLog.childId, beforeLog.localDate, beforeLog.childTimezone);
       }
     }
   }
 );
 
-// Manual recalculation function for data fixes
+// Manual recalculation function for data fixes and bulk operations
 export const manualRecalculation = httpsCallable(async (request) => {
   const { childId, startDate, endDate } = request.data;
   // Recalculate range of dates
 });
 ```
 
+**Comprehensive Trigger Scenarios:**
+The trigger system must handle all log modification scenarios:
+
+1. **New log created** - Recalculate stats for `log.localDate`
+2. **Event added to existing log** - Recalculate stats for `log.localDate`
+3. **Event interjected/inserted** - Recalculate stats for `log.localDate`
+4. **Event edited/modified** - Recalculate stats for `log.localDate`
+5. **Event deleted** - Recalculate stats for `log.localDate`
+6. **Log date modified** - Recalculate stats for BOTH old `localDate` AND new `localDate`
+7. **Entire log deleted** - Recalculate stats for `log.localDate` (remove from aggregation)
+
 **Key Features:**
 - **Atomic Transactions**: Prevent race conditions during concurrent updates
 - **Error Handling**: Built-in retry logic with exponential backoff  
 - **Smart Recalculation**: Only recalculate affected dates using log's `localDate`
-- **Cross-Date Logic**: Handle bedtime logs that affect multiple days' statistics
+- **Date Change Handling**: Special logic for logs moving between dates
 
 ### 4. Bubble.io Integration
 
@@ -268,29 +307,20 @@ const statsQuery = query(
    - Add manual recalculation function for data fixes
    - Include error handling and retry logic
 
-### Phase 2: Data Migration
-1. **Historical Data Backfill**
-   - Create migration script for existing sleep logs
-   - Batch process to avoid rate limits
-   - Validate calculations against existing Bubble logic
-
-2. **Testing & Validation**
-   - Test with subset of users
-   - Compare results with current Bubble calculations
-   - Verify real-time update behavior
-
-### Phase 3: Integration
+### Phase 2: Integration & Testing
 1. **Bubble Configuration**
    - Configure Firestore plugin to query new collection
    - Update Summary page to use pre-calculated data
    - Implement Today/Yesterday toggle logic
 
-2. **Gradual Rollout**
-   - Deploy alongside existing system (no disruption)
-   - Monitor performance and accuracy
-   - Full migration once validated
+2. **Testing & Validation**
+   - Test system with new sleep logs (no existing data to migrate)
+   - Verify real-time update behavior
+   - Monitor trigger performance and accuracy
 
-### Phase 4: Future Enhancements
+**Note**: No data migration required - system starts fresh with new sleep logs going forward.
+
+### Phase 3: Future Enhancements
 1. **Table View Preparation**
    - Design query patterns for individual log lookups
    - Plan caching strategy for weekly analysis
@@ -307,7 +337,7 @@ const statsQuery = query(
 - **Incomplete Logs**: Handle logs where `isComplete = false`
 - **Deleted Logs**: Trigger recalculation when logs are removed
 - **Timezone Changes**: Recalculate if child's timezone changes
-- **Data Corrections**: Support for historical data fixes
+- **Data Corrections**: Support for manual recalculation via Cloud Function
 
 ### Performance Edge Cases
 - **High Frequency Updates**: Rate limiting for rapid log changes
@@ -318,7 +348,7 @@ const statsQuery = query(
 - **Multiple Bedtimes**: Handle unexpected multiple bedtimes per day
 - **Missing Events**: Graceful degradation for incomplete event sequences
 - **Clock Changes**: Handle daylight saving time transitions
-- **Data Migration**: Ensure backward compatibility during rollout
+- **Fresh Start**: System begins with new sleep logs only (no legacy data to handle)
 
 ## Success Metrics
 
@@ -328,8 +358,8 @@ const statsQuery = query(
 - **Cost Reduction**: 90%+ reduction in Firestore reads vs current system
 
 ### Reliability Goals
-- **Accuracy**: 100% match with existing Bubble calculations during testing
-- **Uptime**: No disruption to existing functionality during rollout
+- **Accuracy**: Consistent calculation results using proven sleepStatistics.ts logic
+- **Uptime**: Robust trigger system with error handling and retries
 - **Consistency**: Zero missing or incorrect daily stats after implementation
 
 ### User Experience Goals
