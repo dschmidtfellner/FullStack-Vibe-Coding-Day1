@@ -406,7 +406,7 @@ export async function toggleMessageReaction(
         if (updatedUsers.length === 0) {
           console.log('No users left, removing entire reaction');
           // No users left with this reaction, remove the entire emoji reaction
-          const { [emoji]: removed, ...remainingReactions } = currentReactions;
+          const { [emoji]: _removed, ...remainingReactions } = currentReactions;
           await updateDoc(messageRef, {
             reactions: remainingReactions
           });

@@ -195,7 +195,7 @@ export function MessageInputBar({
 
     // If user is typing, set typing status to true
     if (value.trim()) {
-      setTypingStatus(user.id, user.name, true);
+      void setTypingStatus(user.id, user.name, true);
       
       // Clear any existing timeout
       if (typingTimeoutRef.current) {
@@ -204,11 +204,11 @@ export function MessageInputBar({
       
       // Set a timeout to stop typing indicator after 2 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
-        setTypingStatus(user.id, user.name, false);
+        void setTypingStatus(user.id, user.name, false);
       }, 2000);
     } else {
       // If input is empty, immediately stop typing indicator
-      setTypingStatus(user.id, user.name, false);
+      void setTypingStatus(user.id, user.name, false);
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -251,7 +251,7 @@ export function MessageInputBar({
   const handleSendWithTypingCleanup = async () => {
     // Stop typing indicator when sending message (only for chat)
     if (user && !logId) {
-      setTypingStatus(user.id, user.name, false);
+      void setTypingStatus(user.id, user.name, false);
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -270,7 +270,7 @@ export function MessageInputBar({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          onChange={handleFileChange}
+          onChange={(e) => void handleFileChange(e)}
           className="hidden"
         />
         
@@ -354,7 +354,7 @@ export function MessageInputBar({
               type="text"
               value={newMessage}
               onChange={handleInputChange}
-              onKeyDown={(e) => e.key === "Enter" && handleSendWithTypingCleanup()}
+              onKeyDown={(e) => e.key === "Enter" && void handleSendWithTypingCleanup()}
               placeholder={placeholder}
               className={`w-full pl-4 pr-10 rounded-full focus:outline-none h-10 border ${
                 user?.darkMode 
@@ -363,7 +363,7 @@ export function MessageInputBar({
               }`}
             />
             <button 
-              onClick={handleSendWithTypingCleanup}
+              onClick={() => void handleSendWithTypingCleanup()}
               disabled={isUploading || !newMessage.trim()}
               className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 z-10 hover:opacity-90 disabled:opacity-50 ${
                 user?.darkMode ? '' : 'text-white'

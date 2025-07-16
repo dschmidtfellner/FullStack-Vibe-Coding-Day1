@@ -266,7 +266,7 @@ function AudioMessage({ audioUrl }: { audioUrl: string }) {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      void audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
   };
@@ -627,7 +627,7 @@ function MessagingApp() {
                       {commonEmojis.map((emoji) => (
                         <button
                           key={emoji}
-                          onClick={() => handleReaction(message.id, emoji)}
+                          onClick={() => void handleReaction(message.id, emoji)}
                           className={`rounded p-1 text-lg transition-colors ${
                             user?.darkMode 
                               ? 'hover:bg-[#3a3a3a]' 
@@ -646,7 +646,7 @@ function MessagingApp() {
                       {Object.values(message.reactions).map((reaction) => (
                         <button
                           key={reaction.emoji}
-                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                          onClick={() => void handleReaction(message.id, reaction.emoji)}
                           title={`${reaction.userNames?.length === 1 ? reaction.userNames[0] : reaction.userNames?.slice(0, -1).join(', ') + ' and ' + reaction.userNames?.[reaction.userNames.length - 1]} reacted with ${reaction.emoji}`}
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors ${
                             reaction.users.includes(user?.id || '')
@@ -674,11 +674,11 @@ function MessagingApp() {
       </div>
 
       {/* Message Input - Shared component with all advanced features */}
-      {user && (
+      {user && conversationId && childId && (
         <MessageInputBar
           user={user}
-          conversationId={conversationId!}
-          childId={childId!}
+          conversationId={conversationId}
+          childId={childId}
           newMessage={newMessage}
           setNewMessage={setNewMessage}
           placeholder="Start typing here"
@@ -772,7 +772,7 @@ function LogsListView() {
     });
 
     return unsubscribe;
-  }, [state.childId]);
+  }, [state.childId, hasLoadedOnce, state.logs.length, setLogs]);
 
   // Format time (for Child Local Time, just format as UTC since it's already in child's wall clock time)
   const formatTimeInTimezone = (timestamp: any) => {
@@ -1518,7 +1518,7 @@ function LogDetailView() {
           
           {/* Delete Button */}
           <button
-            onClick={handleDeleteLog}
+            onClick={() => void handleDeleteLog()}
             className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2156,7 +2156,7 @@ function EditLogModal() {
           />
           {/* Delete icon in top right of tile */}
           <button
-            onClick={async () => {
+            onClick={() => void (async () => {
               if (confirm('Are you sure you want to delete this log? This action cannot be undone.')) {
                 try {
                   const { deleteDoc, doc } = await import('firebase/firestore');
@@ -2171,7 +2171,7 @@ function EditLogModal() {
                   alert('Failed to delete log. Please try again.');
                 }
               }
-            }}
+            })()}
             className="absolute top-4 right-4 p-2 transition-colors"
             style={{
               color: '#DC2626'
@@ -2669,7 +2669,7 @@ function CommentsModal({ isOpen, onClose, user, childId }: {
             {/* Mark all as read button for unread view */}
             {viewMode === 'unread' && unreadComments.length > 0 && (
               <button
-                onClick={handleMarkAllAsRead}
+                onClick={() => void handleMarkAllAsRead()}
                 className="mt-4 px-6 py-2 rounded-full transition-colors"
                 style={{
                   backgroundColor: '#F0DDEF',

@@ -90,7 +90,7 @@ export function useBubbleAuth(): AuthState {
       }
     };
 
-    initializeAuth();
+    void initializeAuth();
   }, []); // Run once on mount
 
   return authState;
