@@ -32,7 +32,12 @@
 
 - Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend), Clerk (auth)
 - Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
-- **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
+- **DEV SERVER TROUBLESHOOTING**: 
+  - The `--open` flag in `pnpm run dev` causes hanging in headless environments but server starts normally
+  - Use timeout of 10-15 seconds max when running `pnpm run dev` - server is ready when you see "VITE ready"
+  - If command times out but shows "VITE ready", the server is running successfully
+  - Test with `curl http://localhost:5174` to verify server is accessible
+  - Alternative: Run `node_modules/.bin/vite --port 5174` directly to avoid --open flag
 - Import alias: `@/` maps to `src/` directory
 - Tailwind CSS 4: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
 - Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
