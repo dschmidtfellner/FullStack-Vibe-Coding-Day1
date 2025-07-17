@@ -2,7 +2,64 @@
 
 This file tracks ongoing work and important context for Claude Code sessions. It should be included in every commit to preserve context for future sessions.
 
-## Current Feature: Child Local Time Implementation
+## Current Feature: Codebase Reorganization (2025-01-17)
+
+### Objective
+Refactor the massive 4,384-line index.tsx file into smaller, more manageable components to improve:
+- AI agent navigation and understanding
+- Code maintainability
+- Developer learning experience
+
+### Progress Status
+
+#### Completed
+1. ✅ Extracted MessagingView component
+   - Moved from `src/routes/index.tsx` (lines 371-728) to `src/features/messaging/components/messaging-view.tsx`
+   - Successfully removed function from main file and updated imports
+
+2. ✅ Extracted shared media components
+   - Created `src/features/shared/components/media-messages.tsx`
+   - Contains ImageMessage and AudioMessage components used by both messaging and log views
+   - Updated all imports to use shared location
+
+#### In Progress
+- Extracting remaining view components (LogListView, LogDetailView, LoggingModal, EditLogModal)
+
+#### Next Steps
+1. Extract LogListView component
+2. Extract LogDetailView component  
+3. Extract modal components (LoggingModal, EditLogModal)
+4. Move NavigationContext to separate file
+5. Create component index files
+6. Add component documentation map
+
+### Important Context
+- Using kebab-case for file names as requested by user
+- Components are being organized by feature (messaging, logs, shared)
+- The main index.tsx originally contained all 5 major views mixed together
+- ImageMessage and AudioMessage are used in multiple places, so they were extracted to shared
+
+### File Structure Being Created
+```
+src/
+├── features/
+│   ├── messaging/
+│   │   └── components/
+│   │       └── messaging-view.tsx
+│   ├── logs/
+│   │   └── components/
+│   │       ├── log-list-view.tsx (pending)
+│   │       ├── log-detail-view.tsx (pending)
+│   │       ├── logging-modal.tsx (pending)
+│   │       └── edit-log-modal.tsx (pending)
+│   └── shared/
+│       └── components/
+│           └── media-messages.tsx
+└── routes/
+    └── index.tsx (being reduced from 4,384 lines)
+```
+
+## Previous Feature: Child Local Time Implementation
 
 ### Objective
 Implement a timezone-aware system that stores all log timestamps in "Child Local Time" - a normalized format that preserves the child's wall clock time regardless of viewer location or future timezone changes.
