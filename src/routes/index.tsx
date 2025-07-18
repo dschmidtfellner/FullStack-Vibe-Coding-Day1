@@ -1318,7 +1318,7 @@ function LogDetailView() {
                 style={{ borderColor: "#F0DDEF" }}
               >
                 {(() => {
-                  const stats = calculateSleepStatistics(log);
+                  const stats = calculateSleepStatistics([log]);
                   return (
                     <>
                       <div className="flex justify-between items-center">
@@ -1610,7 +1610,6 @@ function LogDetailView() {
     </div>
   );
 }
-
 function EditLogModal() {
   const { user } = useBubbleAuth();
   const { state, navigateBack, updateLog } = useNavigation();
