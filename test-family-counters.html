@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Unread Counter Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+            font-size: 14px;
+        }
+        input {
+            width: 200px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Family Unread Counter Test</h1>
+    
+    <div class="container">
+        <h2>Test Configuration</h2>
+        <div class="info">
+            Enter user ID, original child ID, and comma-separated sibling IDs to test family counter aggregation.
+        </div>
+        <div>
+            <label>User ID: <input type="text" id="userId" placeholder="e.g., user123" value="test-user-123"></label>
+        </div>
+        <div>
+            <label>Original Child ID: <input type="text" id="originalChildId" placeholder="e.g., child456" value="child-original"></label>
+        </div>
+        <div>
+            <label>Siblings (comma-separated): <input type="text" id="siblings" placeholder="e.g., child1,child2,child3" value="child-original,child-sibling1,child-sibling2"></label>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Get Family Counters</h2>
+        <button onclick="getFamilyCounters()">Get Family Unread Counters</button>
+        <div id="familyResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>Test Mark as Read with Family Context</h2>
+        <div>
+            <label>Child ID: <input type="text" id="childId" placeholder="Current child ID" value="child-original"></label>
+        </div>
+        <div>
+            <label>Conversation ID: <input type="text" id="conversationId" placeholder="For chat messages" value="test-conversation"></label>
+        </div>
+        <div>
+            <label>Log ID: <input type="text" id="logId" placeholder="For log comments" value="test-log-123"></label>
+        </div>
+        <button onclick="markChatAsRead()">Mark Chat as Read</button>
+        <button onclick="markLogAsRead()">Mark Log as Read</button>
+        <button onclick="markAllLogsAsRead()">Mark All Logs as Read</button>
+        <div id="markResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>Get Individual Child Counters</h2>
+        <button onclick="getIndividualCounters()">Get Individual Counters</button>
+        <div id="individualResult" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://us-central1-doulaconnect-messaging.cloudfunctions.net';
+
+        async function getFamilyCounters() {
+            const userId = document.getElementById('userId').value;
+            const originalChildId = document.getElementById('originalChildId').value;
+            const siblings = document.getElementById('siblings').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/getFamilyUnreadCounters?userId=${userId}&originalChildId=${originalChildId}&siblings=${siblings}`);
+                const data = await response.json();
+                
+                showResult('familyResult', data, response.ok);
+            } catch (error) {
+                showResult('familyResult', { error: error.message }, false);
+            }
+        }
+
+        async function markChatAsRead() {
+            const userId = document.getElementById('userId').value;
+            const childId = document.getElementById('childId').value;
+            const conversationId = document.getElementById('conversationId').value;
+            const originalChildId = document.getElementById('originalChildId').value;
+            const siblings = document.getElementById('siblings').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/markChatAsRead`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, childId, conversationId, originalChildId, siblings })
+                });
+                const data = await response.json();
+                
+                showResult('markResult', data, response.ok);
+            } catch (error) {
+                showResult('markResult', { error: error.message }, false);
+            }
+        }
+
+        async function markLogAsRead() {
+            const userId = document.getElementById('userId').value;
+            const childId = document.getElementById('childId').value;
+            const logId = document.getElementById('logId').value;
+            const originalChildId = document.getElementById('originalChildId').value;
+            const siblings = document.getElementById('siblings').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/markLogAsRead`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, childId, logId, originalChildId, siblings })
+                });
+                const data = await response.json();
+                
+                showResult('markResult', data, response.ok);
+            } catch (error) {
+                showResult('markResult', { error: error.message }, false);
+            }
+        }
+
+        async function markAllLogsAsRead() {
+            const userId = document.getElementById('userId').value;
+            const childId = document.getElementById('childId').value;
+            const originalChildId = document.getElementById('originalChildId').value;
+            const siblings = document.getElementById('siblings').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/markAllLogsAsRead`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, childId, originalChildId, siblings })
+                });
+                const data = await response.json();
+                
+                showResult('markResult', data, response.ok);
+            } catch (error) {
+                showResult('markResult', { error: error.message }, false);
+            }
+        }
+
+        async function getIndividualCounters() {
+            const userId = document.getElementById('userId').value;
+            const siblings = document.getElementById('siblings').value.split(',');
+            const results = [];
+            
+            for (const childId of siblings) {
+                try {
+                    const response = await fetch(`${API_BASE}/getUnreadCounters?userId=${userId}&childId=${childId.trim()}`);
+                    const data = await response.json();
+                    results.push({ childId: childId.trim(), ...data });
+                } catch (error) {
+                    results.push({ childId: childId.trim(), error: error.message });
+                }
+            }
+            
+            showResult('individualResult', results, true);
+        }
+
+        function showResult(elementId, data, success) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${success ? 'success' : 'error'}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
