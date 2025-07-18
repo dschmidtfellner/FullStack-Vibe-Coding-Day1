@@ -16,7 +16,7 @@ import {
   getChildStartOfDay,
   getChildEndOfDay,
 } from '@/lib/firebase-messaging';
-import { UniversalSkeleton } from './UniversalSkeleton';
+import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 
 export function SleepLogModal() {
   const { user } = useBubbleAuth();

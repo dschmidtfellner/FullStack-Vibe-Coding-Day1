@@ -24,8 +24,9 @@
 
     /* Import paths */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@features/*": ["./features/*"]
     }
   },
-  "include": ["src", "src/**/*"]
+  "include": ["src", "src/**/*", "features", "features/**/*"]
 }

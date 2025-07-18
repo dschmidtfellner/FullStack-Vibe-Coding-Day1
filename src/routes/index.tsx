@@ -12,8 +12,8 @@ import {
 import { getAppLogo } from "@/utils/logoUtils";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
-import { SleepLogModal } from "@/components/SleepLogModal";
-import { UniversalSkeleton } from "@/components/UniversalSkeleton";
+import { SleepLogModal } from "@features/sleep-logging/components/SleepLogModal";
+import { UniversalSkeleton } from "@/components/shared/UniversalSkeleton";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { MessageInputBar } from "@/components/MessageInputBar";
 import { MessagingView } from "@/features/messaging/components/messaging-view";
