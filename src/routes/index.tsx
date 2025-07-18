@@ -16,7 +16,10 @@ import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { MessageInputBar } from "@/components/MessageInputBar";
 import { MessagingView } from "@/features/messaging/components/messaging-view";
-import { ImageMessage, AudioMessage } from "@/features/shared/components/media-messages";
+import {
+  ImageMessage,
+  AudioMessage,
+} from "@/features/shared/components/media-messages";
 import TimePicker from "react-time-picker";
 import "react-time-picker/dist/TimePicker.css";
 import "react-clock/dist/Clock.css";
@@ -269,7 +272,6 @@ function NavigationProvider({
     </NavigationContext.Provider>
   );
 }
-
 
 export const Route = createFileRoute("/")({
   component: HomePage,
