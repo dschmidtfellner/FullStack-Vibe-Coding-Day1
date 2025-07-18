@@ -7,8 +7,8 @@ This document provides a comprehensive map of all components in the sleep loggin
 ## Architecture Summary
 
 **Before Refactor:** 3,938 lines in a single monolithic file  
-**After Refactor:** 90-line orchestrator + 5 focused feature components  
-**Reduction:** 97.7% size reduction with improved maintainability
+**After Refactor:** 90-line orchestrator + 5 focused feature components + extracted custom hook  
+**Reduction:** 97.7% size reduction with improved maintainability and business logic separation
 
 ---
 
@@ -17,13 +17,17 @@ This document provides a comprehensive map of all components in the sleep loggin
 ```
 src/
 ├── features/
-│   ├── sleep-logging/           # Core sleep tracking functionality
+│   ├── logging/                     # Core sleep tracking functionality (renamed from sleep-logging)
 │   │   ├── components/
-│   │   │   ├── SleepLogModal.tsx      # 1,164 lines - New log creation
-│   │   │   ├── EditLogModal.tsx       # 883 lines - Log editing & interjections
-│   │   │   ├── LogDetailView.tsx      # 665 lines - Detailed log view & comments
-│   │   │   ├── LogsListView.tsx       # 580 lines - Main list with date navigation
-│   │   │   ├── CommentsModal.tsx      # 275 lines - Comments management
+│   │   │   ├── log-modal.tsx          # 140 lines - New log creation (refactored)
+│   │   │   ├── log-first-screen.tsx   # 224 lines - Date/time/type selection
+│   │   │   ├── log-subsequent-screen.tsx # 227 lines - Event selection screens
+│   │   │   ├── log-modal-actions.tsx  # 110 lines - Action buttons & validation
+│   │   │   ├── edit-log-modal.tsx     # 883 lines - Log editing & interjections
+│   │   │   ├── log-detail-view.tsx    # 665 lines - Detailed log view & comments
+│   │   │   ├── logs-list-view.tsx     # 580 lines - Main list with date navigation
+│   │   │   ├── comments-modal.tsx     # 275 lines - Comments management
+│   │   │   ├── sleep-log-tile.tsx     # Reusable log tile component
 │   │   │   └── index.ts               # Barrel exports
 │   │   └── index.ts                   # Feature main export
 │   ├── messaging/                     # Real-time messaging
@@ -65,19 +69,52 @@ src/
 
 ### 🛌 **Sleep Logging Feature**
 
-#### `SleepLogModal.tsx` (1,164 lines)
-**Purpose:** Interactive interface for creating new sleep logs  
+#### `log-modal.tsx` (140 lines) - REFACTORED
+**Purpose:** Main orchestration component for creating new sleep logs  
 **Key Features:**
-- Sleep type selection (bedtime/nap)
-- Real-time event tracking (put in bed → asleep → awake → out of bed)
-- Time picker with timezone handling
-- Auto-save and state persistence
-- Complete/incomplete log management
+- Coordinates between first screen, subsequent screens, and actions
+- Manages modal state and navigation
+- Uses extracted custom hook for business logic
+- Simplified UI-focused implementation
 
 **Props:** None (uses navigation context)  
 **Navigation:** Called when user clicks "+" button
 
-#### `EditLogModal.tsx` (883 lines)
+#### `use-log-modal.ts` (564 lines) - NEW CUSTOM HOOK
+**Purpose:** Contains all business logic extracted from original SleepLogModal  
+**Key Features:**
+- 15 state variables for form management
+- 13 utility functions for validation and logic
+- 4 useEffect hooks for data synchronization
+- Sleep type selection and event tracking logic
+- Time picker with timezone handling
+- Auto-save and state persistence
+- Complete/incomplete log management
+
+#### `log-first-screen.tsx` (224 lines) - NEW COMPONENT
+**Purpose:** Initial form screen for date/time/type selection  
+**Key Features:**
+- Date picker with timezone awareness
+- Time picker for initial event
+- Sleep type selection (bedtime/nap)
+- Validation and error handling
+
+#### `log-subsequent-screen.tsx` (227 lines) - NEW COMPONENT
+**Purpose:** Follow-up screens for event type selection  
+**Key Features:**
+- Event history display
+- Next event type selection with time input
+- Recent events tile display
+- Complex UI for event progression
+
+#### `log-modal-actions.tsx` (110 lines) - NEW COMPONENT
+**Purpose:** Action buttons and validation warning display  
+**Key Features:**
+- Confirm/save buttons with state management
+- Validation warning display
+- Button state management based on form validity
+
+#### `edit-log-modal.tsx` (883 lines)
 **Purpose:** Advanced editing interface for existing sleep logs  
 **Key Features:**
 - Event time editing with TimePicker
@@ -90,7 +127,7 @@ src/
 **Props:** None (uses navigation context for logId)  
 **Navigation:** Opened from LogDetailView "Edit" button
 
-#### `LogDetailView.tsx` (665 lines)
+#### `log-detail-view.tsx` (665 lines)
 **Purpose:** Comprehensive detailed view of a single sleep log  
 **Key Features:**
 - Collapsible sections (Headlines, Log, Comments)
@@ -103,7 +140,7 @@ src/
 **Props:** None (uses navigation context for logId)  
 **Navigation:** Opened when user clicks on a log tile
 
-#### `LogsListView.tsx` (580 lines)
+#### `logs-list-view.tsx` (580 lines)
 **Purpose:** Main interface showing all logs with navigation  
 **Key Features:**
 - Date navigation with timezone awareness
@@ -116,7 +153,7 @@ src/
 **Props:** None (uses navigation context)  
 **Navigation:** Default view, always accessible
 
-#### `CommentsModal.tsx` (275 lines)
+#### `comments-modal.tsx` (275 lines)
 **Purpose:** Standalone modal for managing comments across all logs  
 **Key Features:**
 - Unread vs All comments view modes
@@ -186,16 +223,16 @@ All components use the `NavigationContext` for:
 ```typescript
 // ✅ Clean - Single import for all features
 import {
-  SleepLogModal,
+  LogModal,
   EditLogModal,
   LogDetailView,
   LogsListView,
   MessagingView,
 } from "@/features";
 
-// ❌ Verbose - Old pattern
-import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal";
-import { EditLogModal } from "@/features/sleep-logging/components/EditLogModal";
+// ❌ Verbose - Old pattern (before refactoring)
+import { LogModal } from "@/features/logging/components/log-modal";
+import { EditLogModal } from "@/features/logging/components/edit-log-modal";
 // ... etc
 ```
 
@@ -271,4 +308,4 @@ Each component should be tested for:
 
 ---
 
-*Last updated: Component extraction completion - 97.7% reduction achieved*
+*Last updated: Component extraction and kebab-case migration completion - 97.7% reduction achieved with business logic separation*

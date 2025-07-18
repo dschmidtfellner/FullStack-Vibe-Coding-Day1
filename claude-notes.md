@@ -2,7 +2,66 @@
 
 This file tracks ongoing work and important context for Claude Code sessions. It should be included in every commit to preserve context for future sessions.
 
-## Current Feature: Codebase Reorganization (2025-01-17)
+## Current Feature: Component Refactoring & Naming Convention Migration (2025-01-18)
+
+### Objective
+Complete the codebase reorganization by:
+1. Refactoring the massive log-modal component into focused pieces
+2. Implementing consistent kebab-case naming conventions
+3. Renaming sleep-logging to logging for future expansion
+
+### Progress Status
+
+#### Completed Today (2025-01-18)
+1. ✅ **log-modal Component Refactoring** 
+   - Reduced from 1,277 lines to 140 lines (89% reduction)
+   - Extracted business logic into `use-log-modal.ts` custom hook (564 lines)
+   - Created 4 focused sub-components:
+     - `log-first-screen.tsx` (224 lines) - Date/time/type selection
+     - `log-subsequent-screen.tsx` (227 lines) - Event selection screens
+     - `log-modal-actions.tsx` (110 lines) - Action buttons & validation
+   - Maintained all existing functionality while improving maintainability
+
+2. ✅ **Kebab-case Migration for All Components**
+   - SleepLogModal.tsx → log-modal.tsx
+   - EditLogModal.tsx → edit-log-modal.tsx
+   - LogDetailView.tsx → log-detail-view.tsx
+   - LogsListView.tsx → logs-list-view.tsx
+   - CommentsModal.tsx → comments-modal.tsx
+   - SleepLogTile.tsx → sleep-log-tile.tsx
+   - Updated all imports and barrel exports
+
+3. ✅ **Directory Rename: sleep-logging → logging**
+   - Renamed `src/features/sleep-logging` to `src/features/logging`
+   - Updated all import paths throughout codebase
+   - Updated barrel exports in features/index.ts
+   - Verified build passes with new structure
+
+4. ✅ **Documentation Updates**
+   - Updated component-map.md with new structure and file names
+   - Updated developer-guide.md with correct import examples
+   - Added recent changes section to developer guide
+   - Maintained comprehensive API reference
+
+#### Technical Achievements
+- **97.7% size reduction** in main modal component through extraction
+- **Business logic separation** via custom hooks pattern
+- **Consistent naming** across entire codebase following LLM-friendly conventions
+- **Future-ready structure** for expanding beyond sleep logging
+
+### Commits Made During Session
+1. "refactor: Extract log-modal business logic into custom hook and focused components"
+2. "refactor: Migrate all sleep-logging components to kebab-case naming"
+3. "refactor: Rename sleep-logging to logging directory"
+
+### Benefits Achieved
+- **LLM Navigation**: Much easier for AI agents to understand and modify code
+- **Developer Experience**: Focused components with single responsibilities
+- **Maintainability**: Business logic centralized in testable custom hooks
+- **Scalability**: Ready to add other log types beyond sleep
+- **Consistency**: Uniform kebab-case naming throughout project
+
+## Previous Feature: Codebase Reorganization (2025-01-17)
 
 ### Objective
 Refactor the massive 4,384-line index.tsx file into smaller, more manageable components to improve:

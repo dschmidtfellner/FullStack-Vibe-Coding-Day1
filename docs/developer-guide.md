@@ -5,13 +5,17 @@
 ### Component Locations (Quick Reference)
 
 ```bash
-# Sleep logging components
-src/features/sleep-logging/components/
-├── SleepLogModal.tsx     # New log creation
-├── EditLogModal.tsx      # Edit existing logs  
-├── LogDetailView.tsx     # View log details + comments
-├── LogsListView.tsx      # Main list view
-└── CommentsModal.tsx     # Comments management
+# Logging components (renamed from sleep-logging)
+src/features/logging/components/
+├── log-modal.tsx         # New log creation (refactored)
+├── log-first-screen.tsx  # Date/time/type selection
+├── log-subsequent-screen.tsx # Event selection screens
+├── log-modal-actions.tsx # Action buttons & validation
+├── edit-log-modal.tsx    # Edit existing logs  
+├── log-detail-view.tsx   # View log details + comments
+├── logs-list-view.tsx    # Main list view
+├── comments-modal.tsx    # Comments management
+└── sleep-log-tile.tsx    # Reusable log tile component
 
 # Messaging
 src/features/messaging/components/
@@ -26,13 +30,13 @@ src/features/shared/components/
 
 ```typescript
 // ✅ Recommended - Use barrel exports
-import { SleepLogModal, LogDetailView } from "@/features";
+import { LogModal, LogDetailView } from "@/features";
 
 // ✅ Feature-specific imports
-import { SleepLogModal } from "@/features/sleep-logging";
+import { LogModal } from "@/features/logging";
 
 // ❌ Avoid - Direct component imports
-import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal";
+import { LogModal } from "@/features/logging/components/log-modal";
 ```
 
 ### Adding New Components
@@ -229,3 +233,21 @@ pnpm run build
 ---
 
 **Need help?** Check the full [Component Map](./component-map.md) for detailed architecture information.
+
+### Recent Changes (2025-01-18)
+
+#### Directory Restructure
+- Renamed `sleep-logging` to `logging` for future expansion to other log types
+- All import paths updated from `@/features/sleep-logging` to `@/features/logging`
+
+#### Component Refactoring
+- **log-modal.tsx**: Reduced from 1,277 lines to 140 lines through extraction
+- **use-log-modal.ts**: New custom hook containing 564 lines of business logic
+- **log-first-screen.tsx**: Extracted 224-line component for initial form
+- **log-subsequent-screen.tsx**: Extracted 227-line component for event selection
+- **log-modal-actions.tsx**: Extracted 110-line component for actions
+
+#### Naming Convention Migration
+- All components migrated to kebab-case file naming
+- Maintained PascalCase for component names in code
+- Updated all imports and exports to use new file names
