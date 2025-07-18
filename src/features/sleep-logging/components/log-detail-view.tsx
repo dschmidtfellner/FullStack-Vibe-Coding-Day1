@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { Plus, Minus, X } from 'lucide-react';
@@ -13,7 +13,7 @@ import {
 import { FirebaseMessage } from '@/types/firebase';
 import { calculateSleepStatistics } from '@/utils/sleepStatistics';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from './SleepLogTile';
+import { SleepLogTile } from './sleep-log-tile';
 import { MessageInputBar } from '@/components/shared/MessageInputBar';
 import {
   ImageMessage,

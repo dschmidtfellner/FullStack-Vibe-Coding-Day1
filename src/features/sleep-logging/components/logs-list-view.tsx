@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { Plus, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
@@ -12,8 +12,8 @@ import {
 import { getAppLogo } from '@/utils/logoUtils';
 import { useUnreadCounters } from '@/hooks/useUnreadCounters';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from './SleepLogTile';
-import { CommentsModal } from '@/features/sleep-logging/components/CommentsModal';
+import { SleepLogTile } from './sleep-log-tile';
+import { CommentsModal } from '@/features/sleep-logging/components/comments-modal';
 
 export function LogsListView() {
   const { user } = useBubbleAuth();

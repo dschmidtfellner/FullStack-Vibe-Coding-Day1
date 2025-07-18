@@ -947,7 +947,7 @@ interface LogSubsequentScreenProps {
   getEventTypeText: (type: SleepEvent["type"]) => string;
   getEventTypeOptions: () => { primary: SleepEvent["type"]; secondary: SleepEvent["type"] };
   getCurrentEventType: () => SleepEvent["type"];
-  _selectedEventType: SleepEvent["type"] | null;
+  _selectedEventType?: SleepEvent["type"] | null;
   setSelectedEventType: (type: SleepEvent["type"]) => void;
 }
 
@@ -962,7 +962,7 @@ function LogSubsequentScreen({
   getEventTypeText,
   getEventTypeOptions,
   getCurrentEventType,
-  _selectedEventType,
+  _selectedEventType: _unused,
   setSelectedEventType,
 }: LogSubsequentScreenProps) {
   return (
