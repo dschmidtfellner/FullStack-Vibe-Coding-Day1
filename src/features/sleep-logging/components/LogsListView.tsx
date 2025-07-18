@@ -12,7 +12,7 @@ import {
 import { getAppLogo } from '@/utils/logoUtils';
 import { useUnreadCounters } from '@/hooks/useUnreadCounters';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from '@/components/SleepLogTile';
+import { SleepLogTile } from './SleepLogTile';
 import { CommentsModal } from '@/features/sleep-logging/components/CommentsModal';
 
 export function LogsListView() {

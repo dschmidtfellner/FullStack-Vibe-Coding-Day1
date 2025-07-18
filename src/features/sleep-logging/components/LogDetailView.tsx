@@ -13,7 +13,7 @@ import {
 import { FirebaseMessage } from '@/types/firebase';
 import { calculateSleepStatistics } from '@/utils/sleepStatistics';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from '@/components/SleepLogTile';
+import { SleepLogTile } from './SleepLogTile';
 import { MessageInputBar } from '@/components/shared/MessageInputBar';
 import {
   ImageMessage,

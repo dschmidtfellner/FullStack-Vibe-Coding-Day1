@@ -13,7 +13,7 @@ import {
   getLog,
 } from '@/lib/firebase-messaging';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from '@/components/SleepLogTile';
+import { SleepLogTile } from './SleepLogTile';
 
 export function EditLogModal() {
   const { user } = useBubbleAuth();
