@@ -2,7 +2,49 @@
 
 This file tracks ongoing work and important context for Claude Code sessions. It should be included in every commit to preserve context for future sessions.
 
-## Current Feature: Component Refactoring & Naming Convention Migration (2025-01-18)
+## Current Feature: Family Unread Counter Implementation (2025-01-18)
+
+### Objective
+Implement Phase 1 of the family unread counter plan - URL-based family aggregation for Bubble client selector while maintaining individual child counters.
+
+### Progress Status
+
+#### Completed (2025-01-18)
+1. ✅ **Modified mark-as-read functions to accept family context**
+   - Updated `markChatAsReadForUser` to accept optional familyContext parameter
+   - Updated `markLogAsReadForUser` to accept optional familyContext parameter  
+   - Updated `markAllLogsAsReadForUser` to accept optional familyContext parameter
+   - All functions now call `updateFamilyCounters` when family context is provided
+
+2. ✅ **Updated HTTP endpoints to parse family parameters**
+   - Modified all mark-as-read endpoints to accept `originalChildId` and `siblings` parameters
+   - Added parsing logic to handle comma-separated sibling lists
+   - Family context is optional - endpoints work with or without it
+
+3. ✅ **Enhanced getFamilyUnreadCounters endpoint**
+   - Now accepts optional `siblings` parameter
+   - Automatically updates family counters before returning results
+   - Ensures fresh family totals when Bubble queries
+
+#### In Progress
+- Testing family counter updates with sibling data
+
+#### Next Steps
+1. Deploy functions to test environment
+2. Test with actual sibling data
+3. Monitor family counter updates in Firestore
+4. Verify Bubble integration
+
+### Technical Implementation
+- Family counters stored in `family_unread_counters` collection
+- Document ID format: `user_{userId}_family_{originalChildId}`
+- Updates triggered by mark-as-read actions or getFamilyUnreadCounters queries
+- Siblings list passed as comma-separated string or array
+
+### Commits Made During Session
+1. "feat: Implement family unread counter support in Cloud Functions"
+
+## Previous Feature: Component Refactoring & Naming Convention Migration (2025-01-18)
 
 ### Objective
 Complete the codebase reorganization by:

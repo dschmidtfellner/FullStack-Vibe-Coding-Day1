@@ -66,9 +66,6 @@ async function handleMessageCreated(snap, context, db) {
         }
         await batch.commit();
         console.log(`Updated unread counters for message: ${context.params.messageId}`);
-        // Update family counters (if family context exists)
-        // TODO: We'll need URL parameters or family relationship data to determine this
-        // For now, we'll skip family counter updates until we implement the URL parsing
         // Send push notifications to recipients
         await (0, push_notifications_1.sendPushNotificationsForMessage)(message, notificationData);
     }
@@ -80,7 +77,7 @@ exports.handleMessageCreated = handleMessageCreated;
 /**
  * Mark chat messages as read for a user/child combination
  */
-async function markChatAsReadForUser(userId, childId, conversationId, db) {
+async function markChatAsReadForUser(userId, childId, conversationId, db, familyContext) {
     var _a, _b;
     // Get the current counter to know how many to decrement
     const counterId = `user_${userId}_child_${childId}`;
@@ -111,7 +108,10 @@ async function markChatAsReadForUser(userId, childId, conversationId, db) {
         });
     });
     await batch.commit();
-    // TODO: Update family counters if applicable
+    // Update family counters if family context provided
+    if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
     return {
         success: true,
         messagesMarkedRead: messagesSnapshot.size,
@@ -122,7 +122,7 @@ exports.markChatAsReadForUser = markChatAsReadForUser;
 /**
  * Mark log comments as read for a specific log
  */
-async function markLogAsReadForUser(userId, childId, logId, db) {
+async function markLogAsReadForUser(userId, childId, logId, db, familyContext) {
     var _a;
     // Get the current counter
     const counterId = `user_${userId}_child_${childId}`;
@@ -160,7 +160,10 @@ async function markLogAsReadForUser(userId, childId, logId, db) {
         });
     });
     await batch.commit();
-    // TODO: Update family counters if applicable
+    // Update family counters if family context provided
+    if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
     return {
         success: true,
         messagesMarkedRead: messagesSnapshot.size,
@@ -171,7 +174,7 @@ exports.markLogAsReadForUser = markLogAsReadForUser;
 /**
  * Mark all log messages as read for a user/child combination
  */
-async function markAllLogsAsReadForUser(userId, childId, db) {
+async function markAllLogsAsReadForUser(userId, childId, db, familyContext) {
     var _a;
     // Reset all log counters
     const counterId = `user_${userId}_child_${childId}`;
@@ -196,7 +199,10 @@ async function markAllLogsAsReadForUser(userId, childId, db) {
         });
     });
     await batch.commit();
-    // TODO: Update family counters if applicable
+    // Update family counters if family context provided
+    if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
     return {
         success: true,
         messagesMarkedRead: messagesSnapshot.size,

@@ -77,10 +77,6 @@ export async function handleMessageCreated(
     await batch.commit();
     console.log(`Updated unread counters for message: ${context.params.messageId}`);
     
-    // Update family counters (if family context exists)
-    // TODO: We'll need URL parameters or family relationship data to determine this
-    // For now, we'll skip family counter updates until we implement the URL parsing
-    
     // Send push notifications to recipients
     await sendPushNotificationsForMessage(message, notificationData);
     
@@ -96,7 +92,8 @@ export async function markChatAsReadForUser(
   userId: string, 
   childId: string, 
   conversationId: string,
-  db: admin.firestore.Firestore
+  db: admin.firestore.Firestore,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   // Get the current counter to know how many to decrement
   const counterId = `user_${userId}_child_${childId}`;
@@ -134,7 +131,10 @@ export async function markChatAsReadForUser(
 
   await batch.commit();
 
-  // TODO: Update family counters if applicable
+  // Update family counters if family context provided
+  if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+    await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+  }
 
   return {
     success: true,
@@ -150,7 +150,8 @@ export async function markLogAsReadForUser(
   userId: string,
   childId: string,
   logId: string,
-  db: admin.firestore.Firestore
+  db: admin.firestore.Firestore,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   // Get the current counter
   const counterId = `user_${userId}_child_${childId}`;
@@ -196,7 +197,10 @@ export async function markLogAsReadForUser(
 
   await batch.commit();
 
-  // TODO: Update family counters if applicable
+  // Update family counters if family context provided
+  if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+    await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+  }
 
   return {
     success: true,
@@ -211,7 +215,8 @@ export async function markLogAsReadForUser(
 export async function markAllLogsAsReadForUser(
   userId: string,
   childId: string,
-  db: admin.firestore.Firestore
+  db: admin.firestore.Firestore,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   // Reset all log counters
   const counterId = `user_${userId}_child_${childId}`;
@@ -242,7 +247,10 @@ export async function markAllLogsAsReadForUser(
 
   await batch.commit();
 
-  // TODO: Update family counters if applicable
+  // Update family counters if family context provided
+  if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+    await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+  }
 
   return {
     success: true,

@@ -55,12 +55,17 @@ exports.getFamilyUnreadCounters = functions.https.onRequest(async (req, res) => 
         return;
     }
     try {
-        const { userId, originalChildId } = req.query;
+        const { userId, originalChildId, siblings } = req.query;
         if (!userId || !originalChildId) {
             res.status(400).json({
                 error: 'Missing required parameters: userId and originalChildId'
             });
             return;
+        }
+        // If siblings are provided, update family counters first
+        if (siblings) {
+            const siblingList = typeof siblings === 'string' ? siblings.split(',') : siblings;
+            await (0, unread_counters_1.updateFamilyCounters)(userId, originalChildId, siblingList, db);
         }
         const result = await (0, unread_counters_1.getFamilyUnreadCounters)(userId, originalChildId, db);
         res.json(result);
@@ -82,14 +87,19 @@ exports.markChatAsRead = functions.https.onRequest(async (req, res) => {
         return;
     }
     try {
-        const { userId, childId, conversationId } = req.body;
+        const { userId, childId, conversationId, originalChildId, siblings } = req.body;
         if (!userId || !childId || !conversationId) {
             res.status(400).json({
                 error: 'Missing required parameters: userId, childId, conversationId'
             });
             return;
         }
-        const result = await (0, unread_counters_1.markChatAsReadForUser)(userId, childId, conversationId, db);
+        // Parse family context if provided
+        const familyContext = originalChildId && siblings ? {
+            originalChildId,
+            siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+        } : undefined;
+        const result = await (0, unread_counters_1.markChatAsReadForUser)(userId, childId, conversationId, db, familyContext);
         res.json(result);
     }
     catch (error) {
@@ -109,14 +119,19 @@ exports.markLogAsRead = functions.https.onRequest(async (req, res) => {
         return;
     }
     try {
-        const { userId, childId, logId } = req.body;
+        const { userId, childId, logId, originalChildId, siblings } = req.body;
         if (!userId || !childId || !logId) {
             res.status(400).json({
                 error: 'Missing required parameters: userId, childId, logId'
             });
             return;
         }
-        const result = await (0, unread_counters_1.markLogAsReadForUser)(userId, childId, logId, db);
+        // Parse family context if provided
+        const familyContext = originalChildId && siblings ? {
+            originalChildId,
+            siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+        } : undefined;
+        const result = await (0, unread_counters_1.markLogAsReadForUser)(userId, childId, logId, db, familyContext);
         res.json(result);
     }
     catch (error) {
@@ -136,14 +151,19 @@ exports.markAllLogsAsRead = functions.https.onRequest(async (req, res) => {
         return;
     }
     try {
-        const { userId, childId } = req.body;
+        const { userId, childId, originalChildId, siblings } = req.body;
         if (!userId || !childId) {
             res.status(400).json({
                 error: 'Missing required parameters: userId, childId'
             });
             return;
         }
-        const result = await (0, unread_counters_1.markAllLogsAsReadForUser)(userId, childId, db);
+        // Parse family context if provided
+        const familyContext = originalChildId && siblings ? {
+            originalChildId,
+            siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+        } : undefined;
+        const result = await (0, unread_counters_1.markAllLogsAsReadForUser)(userId, childId, db, familyContext);
         res.json(result);
     }
     catch (error) {

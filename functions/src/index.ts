@@ -12,7 +12,8 @@ import {
   markLogAsReadForUser, 
   markAllLogsAsReadForUser, 
   getUnreadCountersForUser, 
-  getFamilyUnreadCounters as getFamilyUnreadCountersService 
+  getFamilyUnreadCounters as getFamilyUnreadCountersService,
+  updateFamilyCounters
 } from "./services/unread-counters";
 import { 
   getUserMapping as getUserMappingService, 
@@ -78,13 +79,19 @@ export const getFamilyUnreadCounters = functions.https.onRequest(async (req, res
   }
 
   try {
-    const { userId, originalChildId } = req.query;
+    const { userId, originalChildId, siblings } = req.query;
 
     if (!userId || !originalChildId) {
       res.status(400).json({ 
         error: 'Missing required parameters: userId and originalChildId' 
       });
       return;
+    }
+
+    // If siblings are provided, update family counters first
+    if (siblings) {
+      const siblingList = typeof siblings === 'string' ? siblings.split(',') : siblings as string[];
+      await updateFamilyCounters(userId as string, originalChildId as string, siblingList, db);
     }
 
     const result = await getFamilyUnreadCountersService(userId as string, originalChildId as string, db);
@@ -110,7 +117,7 @@ export const markChatAsRead = functions.https.onRequest(async (req, res) => {
   }
 
   try {
-    const { userId, childId, conversationId } = req.body;
+    const { userId, childId, conversationId, originalChildId, siblings } = req.body;
 
     if (!userId || !childId || !conversationId) {
       res.status(400).json({ 
@@ -119,7 +126,13 @@ export const markChatAsRead = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const result = await markChatAsReadForUser(userId, childId, conversationId, db);
+    // Parse family context if provided
+    const familyContext = originalChildId && siblings ? {
+      originalChildId,
+      siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+    } : undefined;
+
+    const result = await markChatAsReadForUser(userId, childId, conversationId, db, familyContext);
     res.json(result);
 
   } catch (error) {
@@ -142,7 +155,7 @@ export const markLogAsRead = functions.https.onRequest(async (req, res) => {
   }
 
   try {
-    const { userId, childId, logId } = req.body;
+    const { userId, childId, logId, originalChildId, siblings } = req.body;
 
     if (!userId || !childId || !logId) {
       res.status(400).json({ 
@@ -151,7 +164,13 @@ export const markLogAsRead = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const result = await markLogAsReadForUser(userId, childId, logId, db);
+    // Parse family context if provided
+    const familyContext = originalChildId && siblings ? {
+      originalChildId,
+      siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+    } : undefined;
+
+    const result = await markLogAsReadForUser(userId, childId, logId, db, familyContext);
     res.json(result);
 
   } catch (error) {
@@ -174,7 +193,7 @@ export const markAllLogsAsRead = functions.https.onRequest(async (req, res) => {
   }
 
   try {
-    const { userId, childId } = req.body;
+    const { userId, childId, originalChildId, siblings } = req.body;
 
     if (!userId || !childId) {
       res.status(400).json({ 
@@ -183,7 +202,13 @@ export const markAllLogsAsRead = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const result = await markAllLogsAsReadForUser(userId, childId, db);
+    // Parse family context if provided
+    const familyContext = originalChildId && siblings ? {
+      originalChildId,
+      siblings: typeof siblings === 'string' ? siblings.split(',') : siblings
+    } : undefined;
+
+    const result = await markAllLogsAsReadForUser(userId, childId, db, familyContext);
     res.json(result);
 
   } catch (error) {
