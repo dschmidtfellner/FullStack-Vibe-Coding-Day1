@@ -154,6 +154,16 @@ navigateBack();
 - **API reference**: See `docs/api-reference.md` for all functions and types
 - **Developer guide**: See `docs/developer-guide.md` for practical patterns
 
+## Component Search Protocol
+
+When searching for component usage, ALWAYS follow this 3-step process:
+
+1. **Broad search first**: Use `grep -r "ComponentName" src/` 
+2. **If no results**: Read the most likely files directly with Read tool
+3. **Human checkpoint**: Ask "Does this match what you see in the UI?"
+
+Never conclude a component is "unused" without completing all 3 steps.
+
 ## Other Guidelines
 
 - When stuck: check official docs first (firebase.google.com/docs, tanstack.com)
