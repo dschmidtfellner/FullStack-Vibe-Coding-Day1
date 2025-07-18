@@ -5,7 +5,9 @@ This directory contains comprehensive documentation for the sleep logging applic
 ## 📚 Available Documentation
 
 ### [Component Map & Architecture Guide](./component-map.md)
+
 **Comprehensive technical reference**
+
 - Complete component structure and relationships
 - Detailed feature breakdown (3,567 lines extracted!)
 - Data flow and state management patterns
@@ -13,7 +15,9 @@ This directory contains comprehensive documentation for the sleep logging applic
 - Future enhancement roadmap
 
 ### [Developer Quick Start Guide](./developer-guide.md)
+
 **Practical guide for daily development**
+
 - Quick component reference
 - Import patterns and best practices
 - Common code patterns and examples
@@ -21,24 +25,18 @@ This directory contains comprehensive documentation for the sleep logging applic
 - Performance optimization techniques
 
 ### [API Reference](./api-reference.md)
+
 **Comprehensive function and type reference**
+
 - All Firebase functions and React hooks
 - Complete TypeScript interfaces and types
 - Navigation functions and state management
 - Component props and styling patterns
 - Common code patterns and error handling
 
-## 🎯 Refactor Results
-
-**Before:** 3,938-line monolithic `index.tsx`  
-**After:** 90-line orchestrator + 5 focused components  
-**Reduction:** 97.7% 🎉
-
-## 🏗️ Architecture Overview
-
 ```
 src/features/
-├── sleep-logging/    # 5 components, 3,567 lines total
+├── logging/    # several components
 ├── messaging/        # Real-time chat
 ├── shared/          # Reusable utilities
 └── index.ts         # Clean barrel exports
@@ -47,7 +45,7 @@ src/features/
 ## 🚀 Key Improvements
 
 - **Maintainability:** Clear separation of concerns
-- **Reusability:** Standalone, focused components  
+- **Reusability:** Standalone, focused components
 - **Developer Experience:** Clean imports with barrel exports
 - **Performance:** Optimized Firebase listeners and state management
 - **Scalability:** Feature-based organization ready for team development
@@ -60,4 +58,4 @@ src/features/
 
 ---
 
-*Documentation last updated: Post-extraction optimization phase*
+_Documentation last updated: Post-extraction optimization phase_

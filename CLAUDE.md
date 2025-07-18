@@ -1,5 +1,74 @@
 - Always follow the guidelines in this file, unless explicitly told otherwise by the user or overided in the CLAUDE.local.md file.
 
+## Project Overview
+
+- Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend)
+- Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
+
+# Project Overview: Rested-Hearth
+
+### What This Is
+
+Rested-Hearth is a React/Firebase rebuild of core features from existing Bubble.io apps (DoulaConnect & Rested). It serves sleep professionals, doulas, agency
+owners, and parents who need to collaborate on child care through messaging and activity logging.
+
+### Current Architecture & Integration
+
+- **Stack**: React + Vite + TanStack Router (frontend), Firebase/Firestore (backend)
+- **Deployment**: Embedded in iframes within existing Bubble.io multi-page app
+- **Authentication**: JWT-based, with user/child IDs provided by Bubble parent
+- **Mobile**: BDK Native wrapper provides native app appearance
+- **Security**: Firebase privacy rules not yet implemented (development phase)
+
+### Core Features
+
+- **Messaging**: Multi-threaded chat system with real-time updates
+- **Logging**: Sleep logs (expanding to feeding, diapers, pumping, general notes)
+- **Analytics**: Statistics calculated across log entries
+- **Multi-timezone**: Robust timezone handling for distributed users
+- **Collaboration**: Multiple professionals can share clients with threaded conversations per log
+
+### Migration Roadmap
+
+1. **Phase 1 (Current)**: Core messaging + logging in React/Firebase
+2. **Phase 2**: Single-page Bubble app + Bubble Native wrapper
+3. **Phase 3**: Migrate additional Bubble features to React
+4. **Phase 4**: Full React Native mobile apps
+
+### Developer Context & Expectations
+
+- **Lead Developer**: David - Expert in existing Bubble version, newer to modern web development
+- **Project Goal**: Build scalable, performant, well-organized codebase that can evolve through migration phases
+- **Code Quality Focus**: LLM-friendly organization, consistent naming, comprehensive documentation
+- **Technical Priorities**:
+  - Component modularity for easier feature migration
+  - Robust Firebase integration patterns
+  - Responsive design for iframe embedding
+  - Clear separation of concerns for maintainability
+
+### What to Expect
+
+- **Frequent refactoring** as we learn best practices and optimize for LLM navigation
+- **Feature expansion** from sleep logging to comprehensive child care tracking
+- **Architecture evolution** as we migrate from iframe embedding to native apps
+- **Collaborative development** with emphasis on documenting decisions and maintaining context
+- **Real user feedback** driving feature priorities and UX improvements
+
+This is a production application serving real families and professionals, so stability and user experience are paramount while we build for future scalability.
+
+- **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
+- Import alias: `@/` maps to `src/` directory
+- Tailwind CSS 4, daisyUI 5: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
+- Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
+- Environment variables: Client vars need `VITE_` prefix
+- Package manager: Always use `pnpm`, not npm
+
+## Deployment
+
+- **Primary deployment**: `dcmsg2` project on Vercel (https://dcmsg2.vercel.app)
+- Deploy with: `npx vercel --prod --yes` (project is already linked to dcmsg2)
+- **DEPRECATED**: `full-stack-vibe-coding-day1` and `dcmsg1` projects are no longer used
+
 ## Push Notification System
 
 - **Only send notificaitons when Claude is truly done and waiting for user input** - this helps with workflow awareness
@@ -29,23 +98,6 @@
   - Use single quotes around the JSON data: `'{"message": "text", "type": "info"}'`
   - If you get "Bad Request" error, it's likely due to line breaks in the command
 - **Test interface**: Use `/test-claude-notifications.html` for debugging notifications
-
-## Project Overview
-
-- Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend)
-- Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
-- **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
-- Import alias: `@/` maps to `src/` directory
-- Tailwind CSS 4, daisyUI 5: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
-- Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
-- Environment variables: Client vars need `VITE_` prefix
-- Package manager: Always use `pnpm`, not npm
-
-## Deployment
-
-- **Primary deployment**: `dcmsg2` project on Vercel (https://dcmsg2.vercel.app)
-- Deploy with: `npx vercel --prod --yes` (project is already linked to dcmsg2)
-- **DEPRECATED**: `full-stack-vibe-coding-day1` and `dcmsg1` projects are no longer used
 
 ## Git Workflow
 
@@ -105,22 +157,25 @@
 ## Component Architecture & Best Practices
 
 ### Feature-Based Organization
+
 - **ALWAYS use feature-based structure**: `src/features/{feature-name}/components/`
 - **Use barrel exports**: Import from `@/features` not individual component files
 - **Follow established patterns**: Check existing components before creating new ones
 
 ### Component Guidelines
+
 - **Extract large components**: Keep components focused and under 1,000 lines
 - **Use navigation context**: All sleep logging components use `useNavigation()` for shared state
 - **Handle real-time updates**: Use Firebase listeners with proper cleanup in `useEffect`
 - **Preserve component relationships**: Maintain parent-child navigation patterns
 
 ### Import Patterns
+
 ```typescript
 // ✅ Preferred - Clean barrel exports
 import { SleepLogModal, LogDetailView } from "@/features";
 
-// ✅ Feature-specific imports  
+// ✅ Feature-specific imports
 import { SleepLogModal } from "@/features/sleep-logging";
 
 // ❌ Avoid - Direct component imports
@@ -128,28 +183,27 @@ import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal
 ```
 
 ### Sleep Logging Component Map
-- **SleepLogModal** (1,164 lines) - New log creation interface
-- **EditLogModal** (883 lines) - Advanced log editing with interjections
-- **LogDetailView** (665 lines) - Detailed view with comments and statistics
-- **LogsListView** (580 lines) - Main list with date navigation and dual views
-- **CommentsModal** (275 lines) - Standalone comments management
+
+- **SleepLogModal** - New log creation interface
+- **EditLogModal** - Advanced log editing with interjections
+- **LogDetailView** - Detailed view with comments and statistics
+- **LogsListView** - Main list with date navigation and dual views
+- **CommentsModal** - Standalone comments management
 
 ### Navigation Context Patterns
+
 ```typescript
-const { 
-  state, 
-  navigateToLogDetail, 
-  navigateToEditLog, 
-  navigateBack 
-} = useNavigation();
+const { state, navigateToLogDetail, navigateToEditLog, navigateBack } =
+  useNavigation();
 
 // Navigate to specific views
 navigateToLogDetail(logId);
-navigateToEditLog(logId);  
+navigateToEditLog(logId);
 navigateBack();
 ```
 
 ### Documentation
+
 - **Component documentation**: See `docs/component-map.md` for complete architecture
 - **API reference**: See `docs/api-reference.md` for all functions and types
 - **Developer guide**: See `docs/developer-guide.md` for practical patterns
@@ -158,7 +212,7 @@ navigateBack();
 
 When searching for component usage, ALWAYS follow this 3-step process:
 
-1. **Broad search first**: Use `grep -r "ComponentName" src/` 
+1. **Broad search first**: Use `grep -r "ComponentName" src/`
 2. **If no results**: Read the most likely files directly with Read tool
 3. **Human checkpoint**: Ask "Does this match what you see in the UI?"
 
@@ -169,26 +223,32 @@ Never conclude a component is "unused" without completing all 3 steps.
 **CRITICAL**: Follow these naming conventions consistently for optimal LLM readability and searchability:
 
 ### File Names: `kebab-case.tsx`
+
 - Components: `log-modal.tsx`, `user-profile.tsx`, `sleep-log-tile.tsx`
 - Hooks: `use-sleep-log-modal.ts`, `use-bubble-auth.ts`
 - Utils: `logo-utils.ts`, `sleep-statistics.ts`
 
 ### Components: `PascalCase`
+
 - `LogModal`, `UserProfile`, `SleepLogTile`
 - Matches React conventions and TypeScript interfaces
 
 ### Functions/Variables: `camelCase`
+
 - `handleSave`, `getCurrentUser`, `isLogComplete`
 - Includes React hooks: `useState`, `useEffect`, `useNavigation`
 
 ### Constants: `SCREAMING_SNAKE_CASE`
+
 - `API_BASE_URL`, `MAX_RETRY_ATTEMPTS`, `DEFAULT_TIMEZONE`
 
 ### Types/Interfaces: `PascalCase`
+
 - `LogModalProps`, `UserData`, `SleepEvent`
 - End interfaces with `Props` for component props
 
 ### **Consistency Enforcement**
+
 - **BEFORE starting any task**: Check if files/components being worked on follow these conventions
 - **If inconsistencies found**: Ask user "I notice [specific inconsistencies]. Should we take a moment to rename these for consistency before proceeding?"
 - **When creating new files**: Always use these conventions from the start
