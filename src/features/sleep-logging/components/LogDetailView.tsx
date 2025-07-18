@@ -18,7 +18,7 @@ import { MessageInputBar } from '@/components/shared/MessageInputBar';
 import {
   ImageMessage,
   AudioMessage,
-} from '@/features/shared/components/media-messages';
+} from '@/features/shared';
 
 export function LogDetailView() {
   const { user } = useBubbleAuth();

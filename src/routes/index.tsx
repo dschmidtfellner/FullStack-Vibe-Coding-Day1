@@ -4,12 +4,14 @@ import {
   NavigationProvider,
   useNavigation,
 } from "@/contexts/NavigationContext";
-import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal";
-import { EditLogModal } from "@/features/sleep-logging/components/EditLogModal";
-import { LogDetailView } from "@/features/sleep-logging/components/LogDetailView";
-import { LogsListView } from "@/features/sleep-logging/components/LogsListView";
+import {
+  SleepLogModal,
+  EditLogModal,
+  LogDetailView,
+  LogsListView,
+  MessagingView,
+} from "@/features";
 import { UniversalSkeleton } from "@/components/shared/UniversalSkeleton";
-import { MessagingView } from "@/features/messaging/components/messaging-view";
 
 // Navigation Context for client-side routing
 

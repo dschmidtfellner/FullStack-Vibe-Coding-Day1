@@ -102,6 +102,58 @@
 - Disable during submit: `<button disabled={!form.state.canSubmit || form.state.isSubmitting}>`
 - Async validation: use `onChangeAsync` for server-side checks
 
+## Component Architecture & Best Practices
+
+### Feature-Based Organization
+- **ALWAYS use feature-based structure**: `src/features/{feature-name}/components/`
+- **Use barrel exports**: Import from `@/features` not individual component files
+- **Follow established patterns**: Check existing components before creating new ones
+
+### Component Guidelines
+- **Extract large components**: Keep components focused and under 1,000 lines
+- **Use navigation context**: All sleep logging components use `useNavigation()` for shared state
+- **Handle real-time updates**: Use Firebase listeners with proper cleanup in `useEffect`
+- **Preserve component relationships**: Maintain parent-child navigation patterns
+
+### Import Patterns
+```typescript
+// ✅ Preferred - Clean barrel exports
+import { SleepLogModal, LogDetailView } from "@/features";
+
+// ✅ Feature-specific imports  
+import { SleepLogModal } from "@/features/sleep-logging";
+
+// ❌ Avoid - Direct component imports
+import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal";
+```
+
+### Sleep Logging Component Map
+- **SleepLogModal** (1,164 lines) - New log creation interface
+- **EditLogModal** (883 lines) - Advanced log editing with interjections
+- **LogDetailView** (665 lines) - Detailed view with comments and statistics
+- **LogsListView** (580 lines) - Main list with date navigation and dual views
+- **CommentsModal** (275 lines) - Standalone comments management
+
+### Navigation Context Patterns
+```typescript
+const { 
+  state, 
+  navigateToLogDetail, 
+  navigateToEditLog, 
+  navigateBack 
+} = useNavigation();
+
+// Navigate to specific views
+navigateToLogDetail(logId);
+navigateToEditLog(logId);  
+navigateBack();
+```
+
+### Documentation
+- **Component documentation**: See `docs/component-map.md` for complete architecture
+- **API reference**: See `docs/api-reference.md` for all functions and types
+- **Developer guide**: See `docs/developer-guide.md` for practical patterns
+
 ## Other Guidelines
 
 - When stuck: check official docs first (firebase.google.com/docs, tanstack.com)
