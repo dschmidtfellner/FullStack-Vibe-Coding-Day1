@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import { getAppLogo } from "@/utils/logoUtils";
+import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { SleepLogTile } from "@/components/SleepLogTile";
 import { MessageInputBar } from "@/components/MessageInputBar";
 import { MessagingView } from "@/features/messaging/components/messaging-view";
@@ -29,7 +30,6 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { FirebaseMessage } from "@/types/firebase";
-import { calculateSleepStatistics } from "@/utils/sleepStatistics";
 import { db } from "@/lib/firebase";
 import {
   getOrCreateConversation,
@@ -1318,7 +1318,7 @@ function LogDetailView() {
                 style={{ borderColor: "#F0DDEF" }}
               >
                 {(() => {
-                  const stats = calculateSleepStatistics([log]);
+                  const stats = calculateSleepStatistics(log);
                   return (
                     <>
                       <div className="flex justify-between items-center">

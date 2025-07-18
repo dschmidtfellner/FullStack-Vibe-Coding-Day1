@@ -2,10 +2,12 @@
 
 ## Push Notification System
 
-- **Always send notifications after completing user requests** - this helps with workflow awareness
-- **Send notifications when asking for permission** - especially for tool use approvals, file operations, or any user decision
+- **Only send notificaitons when Claude is truly done and waiting for user input** - this helps with workflow awareness
+- **Send notifications when asking for permission** - especially for commands, tool use approvals, file operations, or any user decision
 - **CRITICAL**: Use the exact curl format below with NO LINE BREAKS in the command
-- **When completing tasks**: Send completion notifications via:
+- **When completing tasks**: Only send completion notifications when the ENTIRE
+  user request is finished and Claude is waiting for the next instruction.
+  Send completion notifications via:
   ```bash
   curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Task completed: [brief description]", "type": "completed"}'
   ```
@@ -30,16 +32,11 @@
 
 ## Project Overview
 
-- Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend), Clerk (auth)
+- Full-stack TypeScript app: React + Vite + TanStack Router (frontend), Firebase (backend)
 - Development: Use `mcp__shell-commands__launch-dev-all` to start servers, then monitor output streams for validation
-- **DEV SERVER TROUBLESHOOTING**: 
-  - The `--open` flag in `pnpm run dev` causes hanging in headless environments but server starts normally
-  - Use timeout of 10-15 seconds max when running `pnpm run dev` - server is ready when you see "VITE ready"
-  - If command times out but shows "VITE ready", the server is running successfully
-  - Test with `curl http://localhost:5174` to verify server is accessible
-  - Alternative: Run `node_modules/.bin/vite --port 5174` directly to avoid --open flag
+- **DEV SERVER TROUBLESHOOTING**: If `pnpm run dev` hangs but shows "VITE ready", run `node_modules/.bin/vite &` directly. The `--open` flag causes hanging in headless environments. Test with `curl http://localhost:5173` to verify server is running even if command appears hung.
 - Import alias: `@/` maps to `src/` directory
-- Tailwind CSS 4: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
+- Tailwind CSS 4, daisyUI 5: All config in `src/index.css` via CSS syntax, NOT tailwind.config.js
 - Typography: Uses `@tailwindcss/typography` with `prose prose-invert` at root level, use `not-prose` to escape (e.g., for buttons/tables)
 - Environment variables: Client vars need `VITE_` prefix
 - Package manager: Always use `pnpm`, not npm
@@ -71,14 +68,12 @@
 - Validation: Monitor MCP output streams for TypeScript/compilation errors
 - Test UI with Playwright MCP: full browser automation with element interaction and console access
 - Responsive testing: Use `mcp__playwright__browser_resize` to test mobile (375x667), tablet (768x1024), desktop (1200x800)
-- Clerk verification: sign in with your_email+clerk_test@example.com and 424242 as the verification code. Type all 6 digits at once in first field - UI auto-distributes to separate inputs
 - Debug with `mcp__playwright__browser_console_messages` to view all browser console output
 - If you run into an issue you don't know how to fix, look for relevant documentation or a reference implementation
 
 ## Firebase
 
 - Use Firebase SDK v11 for all operations
-- Authentication handled by Clerk integration
 - Firestore for database operations
 - Storage for file uploads
 - Cloud Functions for server-side logic
@@ -107,17 +102,9 @@
 - Disable during submit: `<button disabled={!form.state.canSubmit || form.state.isSubmitting}>`
 - Async validation: use `onChangeAsync` for server-side checks
 
-## Styling Guidelines
-
-- Use custom color variables defined in `src/index.css`: `--brand-pink`, `--brand-purple`, `--brand-purple-light`
-- Match existing app design patterns from Rested and DoulaConnect screenshots
-- Use Tailwind utility classes for styling, not component libraries
-- Typography plugin adds default margins to headings (h1, h2, h3, etc.) - use `mt-0` to override when precise spacing is needed
-- Custom fonts: Poppins (default), Domine (`.font-domine`), Karla (`.font-karla`)
-
 ## Other Guidelines
 
-- When stuck: check official docs first (firebase.google.com/docs, tanstack.com, tailwindcss.com)
+- When stuck: check official docs first (firebase.google.com/docs, tanstack.com)
 - Ask before installing new dependencies
 - Verify responsive design at multiple breakpoints
 - Document non-obvious implementation choices in this file
