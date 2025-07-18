@@ -11,11 +11,14 @@ import {
 } from "lucide-react";
 import { getAppLogo } from "@/utils/logoUtils";
 import { calculateSleepStatistics } from "@/utils/sleepStatistics";
-import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
-import { SleepLogModal } from "@features/sleep-logging/components/SleepLogModal";
+import {
+  NavigationProvider,
+  useNavigation,
+} from "@/contexts/NavigationContext";
+import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal";
 import { UniversalSkeleton } from "@/components/shared/UniversalSkeleton";
 import { SleepLogTile } from "@/components/SleepLogTile";
-import { MessageInputBar } from "@/components/MessageInputBar";
+import { MessageInputBar } from "@/components/shared/MessageInputBar";
 import { MessagingView } from "@/features/messaging/components/messaging-view";
 import {
   ImageMessage,
@@ -131,7 +134,6 @@ function AppRouter() {
     </>
   );
 }
-
 
 // Log List View Component - now uses navigation context
 function LogsListView() {
@@ -2539,4 +2541,3 @@ function CommentsModal({
     </>
   );
 }
-

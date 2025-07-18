@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { useBubbleAuth } from "@/hooks/useBubbleAuth";
 import { useChildAccess } from "@/hooks/useBubbleAuth";
-import { MessageInputBar } from "@/components/MessageInputBar";
+import { MessageInputBar } from "@/components/shared/MessageInputBar";
 import { FirebaseMessage } from "@/types/firebase";
-import { ImageMessage, AudioMessage } from "@/features/shared/components/media-messages";
+import {
+  ImageMessage,
+  AudioMessage,
+} from "@/features/shared/components/media-messages";
 import {
   listenToMessages,
   listenToTypingIndicators,
