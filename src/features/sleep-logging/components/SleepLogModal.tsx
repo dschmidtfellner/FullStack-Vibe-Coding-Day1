@@ -3,6 +3,8 @@ import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { X, Sun, Moon } from 'lucide-react';
 import TimePicker from 'react-time-picker';
+import 'react-time-picker/dist/TimePicker.css';
+import 'react-clock/dist/Clock.css';
 import { Timestamp } from 'firebase/firestore';
 import {
   SleepEvent,
