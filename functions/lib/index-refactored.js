@@ -62,7 +62,7 @@ exports.getFamilyUnreadCounters = functions.https.onRequest(async (req, res) => 
             });
             return;
         }
-        const result = await (0, unread_counters_1.getFamilyUnreadCounters)(userId, originalChildId, db);
+        const result = await (0, exports.getFamilyUnreadCounters)(userId, originalChildId, db);
         res.json(result);
     }
     catch (error) {
@@ -163,7 +163,7 @@ exports.testPushNotification = functions.https.onRequest(async (req, res) => {
         return;
     }
     try {
-        const result = await (0, test_endpoints_1.testPushNotification)(req.body, db);
+        const result = await (0, exports.testPushNotification)(req.body, db);
         res.json(result);
     }
     catch (error) {
@@ -210,7 +210,7 @@ exports.getUserMapping = functions.https.onRequest(async (req, res) => {
     }
     try {
         const { oldUserId, newUserId, email } = req.method === 'GET' ? req.query : req.body;
-        const result = await (0, user_management_1.getUserMapping)({ oldUserId, newUserId, email }, db);
+        const result = await (0, exports.getUserMapping)({ oldUserId, newUserId, email }, db);
         res.json(result);
     }
     catch (error) {
@@ -231,7 +231,7 @@ exports.createUserMapping = functions.https.onRequest(async (req, res) => {
         return;
     }
     try {
-        const result = await (0, user_management_1.createUserMapping)(req.body, db);
+        const result = await (0, exports.createUserMapping)(req.body, db);
         res.json(result);
     }
     catch (error) {
@@ -255,7 +255,7 @@ exports.exploreFCMTokenStorage = functions.https.onRequest(async (req, res) => {
     }
     try {
         const { project } = req.query;
-        const result = await (0, test_endpoints_1.exploreFCMTokenStorage)(project);
+        const result = await (0, exports.exploreFCMTokenStorage)(project);
         res.json(result);
     }
     catch (error) {
@@ -278,7 +278,7 @@ exports.sendClaudeNotification = functions.https.onRequest(async (req, res) => {
     try {
         console.log('Claude notification request received:', req.body);
         const { message, type } = req.body;
-        const result = await (0, test_endpoints_1.sendClaudeNotification)(message, type);
+        const result = await (0, exports.sendClaudeNotification)(message, type);
         res.json(result);
     }
     catch (error) {
@@ -289,4 +289,4 @@ exports.sendClaudeNotification = functions.https.onRequest(async (req, res) => {
         });
     }
 });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index-refactored.js.map
