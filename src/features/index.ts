@@ -1,4 +1,4 @@
 // Features - Main Export
-export * from './sleep-logging';
+export * from './logging';
 export * from './messaging';
 export * from './shared';

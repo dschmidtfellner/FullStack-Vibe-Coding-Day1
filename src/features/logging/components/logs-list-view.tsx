@@ -13,7 +13,7 @@ import { getAppLogo } from '@/utils/logoUtils';
 import { useUnreadCounters } from '@/hooks/useUnreadCounters';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 import { SleepLogTile } from './sleep-log-tile';
-import { CommentsModal } from '@/features/sleep-logging/components/comments-modal';
+import { CommentsModal } from '@/features/logging/components/comments-modal';
 
 export function LogsListView() {
   const { user } = useBubbleAuth();
