@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { X, Sun, Moon } from 'lucide-react';
@@ -20,7 +20,7 @@ import {
 } from '@/lib/firebase-messaging';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 
-export function SleepLogModal() {
+export function LogModal() {
   const { user } = useBubbleAuth();
   const { state, navigateBack, updateLog } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
@@ -665,7 +665,7 @@ export function SleepLogModal() {
           <div className="overflow-y-auto px-8 py-8 flex-1 pb-[92px]">
             {/* First Screen: Date, Time, Type Selection */}
             {events.length === 0 && (
-              <SleepLogFirstScreen
+              <LogFirstScreen
                 user={user}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
@@ -683,7 +683,7 @@ export function SleepLogModal() {
 
             {/* Subsequent Screens: Time Input with Event Type Selection */}
             {events.length > 0 && (
-              <SleepLogSubsequentScreen
+              <LogSubsequentScreen
                 user={user}
                 events={events}
                 currentTime={currentTime}
@@ -694,14 +694,14 @@ export function SleepLogModal() {
                 getEventTypeText={getEventTypeText}
                 getEventTypeOptions={getEventTypeOptions}
                 getCurrentEventType={getCurrentEventType}
-                selectedEventType={selectedEventType}
+                _selectedEventType={selectedEventType}
                 setSelectedEventType={setSelectedEventType}
               />
             )}
           </div>
 
           {/* Bottom actions - now inside modal */}
-          <SleepLogModalActions
+          <LogModalActions
             user={user}
             validationWarning={validationWarning}
             setValidationWarning={setValidationWarning}
@@ -717,7 +717,7 @@ export function SleepLogModal() {
 }
 
 // First Screen Component: Date, Time, Type Selection
-interface SleepLogFirstScreenProps {
+interface LogFirstScreenProps {
   user: any;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -732,7 +732,7 @@ interface SleepLogFirstScreenProps {
   events: Array<{ type: SleepEvent["type"]; timestamp: Date }>;
 }
 
-function SleepLogFirstScreen({
+function LogFirstScreen({
   user,
   currentDate,
   setCurrentDate,
@@ -745,7 +745,7 @@ function SleepLogFirstScreen({
   validateTimeInput,
   setValidationWarning,
   events,
-}: SleepLogFirstScreenProps) {
+}: LogFirstScreenProps) {
   return (
     <div className="space-y-8">
       {/* Title */}
@@ -936,7 +936,7 @@ function SleepLogFirstScreen({
 }
 
 // Subsequent Screen Component: Time Input with Event Type Selection
-interface SleepLogSubsequentScreenProps {
+interface LogSubsequentScreenProps {
   user: any;
   events: Array<{ type: SleepEvent["type"]; timestamp: Date }>;
   currentTime: Date;
@@ -947,11 +947,11 @@ interface SleepLogSubsequentScreenProps {
   getEventTypeText: (type: SleepEvent["type"]) => string;
   getEventTypeOptions: () => { primary: SleepEvent["type"]; secondary: SleepEvent["type"] };
   getCurrentEventType: () => SleepEvent["type"];
-  selectedEventType: SleepEvent["type"] | null;
+  _selectedEventType: SleepEvent["type"] | null;
   setSelectedEventType: (type: SleepEvent["type"]) => void;
 }
 
-function SleepLogSubsequentScreen({
+function LogSubsequentScreen({
   user,
   events,
   currentTime,
@@ -962,9 +962,9 @@ function SleepLogSubsequentScreen({
   getEventTypeText,
   getEventTypeOptions,
   getCurrentEventType,
-  selectedEventType,
+  _selectedEventType,
   setSelectedEventType,
-}: SleepLogSubsequentScreenProps) {
+}: LogSubsequentScreenProps) {
   return (
     <div className="space-y-8">
       {/* Title */}
@@ -1163,7 +1163,7 @@ function SleepLogSubsequentScreen({
 }
 
 // Modal Actions Component: Bottom button area with validation warnings
-interface SleepLogModalActionsProps {
+interface LogModalActionsProps {
   user: any;
   validationWarning: {
     type: "future" | "long-gap" | "too-long-gap";
@@ -1177,7 +1177,7 @@ interface SleepLogModalActionsProps {
   isButtonDisabled: boolean;
 }
 
-function SleepLogModalActions({
+function LogModalActions({
   user,
   validationWarning,
   setValidationWarning,
@@ -1185,7 +1185,7 @@ function SleepLogModalActions({
   canSave,
   isLoading,
   isButtonDisabled,
-}: SleepLogModalActionsProps) {
+}: LogModalActionsProps) {
   return (
     <div
       className={`absolute bottom-[92px] left-0 right-0 border-t p-4 ${

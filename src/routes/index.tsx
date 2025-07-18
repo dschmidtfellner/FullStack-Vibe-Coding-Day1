@@ -5,7 +5,7 @@ import {
   useNavigation,
 } from "@/contexts/NavigationContext";
 import {
-  SleepLogModal,
+  LogModal,
   EditLogModal,
   LogDetailView,
   LogsListView,
@@ -85,7 +85,7 @@ function AppRouter() {
   return (
     <>
       {renderMainView()}
-      {state.view === "LoggingModal" && <SleepLogModal />}
+      {state.view === "LoggingModal" && <LogModal />}
       {state.view === "edit-log" && <EditLogModal />}
     </>
   );

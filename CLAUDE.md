@@ -164,6 +164,36 @@ When searching for component usage, ALWAYS follow this 3-step process:
 
 Never conclude a component is "unused" without completing all 3 steps.
 
+## Naming Conventions (LLM-Friendly)
+
+**CRITICAL**: Follow these naming conventions consistently for optimal LLM readability and searchability:
+
+### File Names: `kebab-case.tsx`
+- Components: `log-modal.tsx`, `user-profile.tsx`, `sleep-log-tile.tsx`
+- Hooks: `use-sleep-log-modal.ts`, `use-bubble-auth.ts`
+- Utils: `logo-utils.ts`, `sleep-statistics.ts`
+
+### Components: `PascalCase`
+- `LogModal`, `UserProfile`, `SleepLogTile`
+- Matches React conventions and TypeScript interfaces
+
+### Functions/Variables: `camelCase`
+- `handleSave`, `getCurrentUser`, `isLogComplete`
+- Includes React hooks: `useState`, `useEffect`, `useNavigation`
+
+### Constants: `SCREAMING_SNAKE_CASE`
+- `API_BASE_URL`, `MAX_RETRY_ATTEMPTS`, `DEFAULT_TIMEZONE`
+
+### Types/Interfaces: `PascalCase`
+- `LogModalProps`, `UserData`, `SleepEvent`
+- End interfaces with `Props` for component props
+
+### **Consistency Enforcement**
+- **BEFORE starting any task**: Check if files/components being worked on follow these conventions
+- **If inconsistencies found**: Ask user "I notice [specific inconsistencies]. Should we take a moment to rename these for consistency before proceeding?"
+- **When creating new files**: Always use these conventions from the start
+- **When refactoring**: Use this as an opportunity to fix naming inconsistencies
+
 ## Other Guidelines
 
 - When stuck: check official docs first (firebase.google.com/docs, tanstack.com)

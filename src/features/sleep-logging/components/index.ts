@@ -1,5 +1,5 @@
 // Sleep Logging Components
-export { SleepLogModal } from './SleepLogModal';
+export { LogModal } from './log-modal';
 export { EditLogModal } from './EditLogModal';
 export { LogDetailView } from './LogDetailView';
 export { LogsListView } from './LogsListView';
