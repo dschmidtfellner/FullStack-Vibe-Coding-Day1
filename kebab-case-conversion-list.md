@@ -177,3 +177,113 @@ Convert TypeScript logic files (.ts):
 *Total files to convert: **15***  
 *Total imports/exports to update: **~50+***  
 *Documentation files to update: **4***
+
+---
+
+## ⚠️ **CRITICAL LESSONS FROM FAILED CONVERSION ATTEMPT**
+
+### **What Went Wrong (Commit Range: 70eb68b → 284abfd)**
+
+The initial kebab-case conversion appeared successful but resulted in multiple runtime failures due to **incomplete import reference updates**. Here's what a fresh Claude implementation MUST avoid:
+
+### **1. Systematic Import Search Failures**
+**Problem:** Manual grep searches missed critical import statements across different components.
+
+**Missed Imports:**
+- `src/features/sleep-logging/components/sleep-log-modal.tsx:2` - `useBubbleAuth` import
+- `src/features/sleep-logging/components/sleep-log-modal.tsx:21` - `UniversalSkeleton` import  
+- `src/features/messaging/components/messaging-view.tsx:3,4,5` - Multiple hook/component imports
+- `src/main.tsx:7` - Route tree import reference
+
+**SOLUTION:** Use **exhaustive automated search** before AND after file renames:
+```bash
+# Before renaming - catalog ALL import references
+rg "from ['\"]@/hooks/useBubbleAuth" --type tsx --type ts
+rg "from ['\"]@/contexts/NavigationContext" --type tsx --type ts
+rg "from ['\"]@/components/shared/(MessageInputBar|UniversalSkeleton)" --type tsx --type ts
+
+# After renaming - verify NO old references remain
+rg "useBubbleAuth\"|NavigationContext\"|MessageInputBar\"|UniversalSkeleton\"" --type tsx --type ts
+```
+
+### **2. Route Tree Import Confusion**
+**Problem:** Both `routeTree.gen.ts` and `route-tree.gen.ts` existed simultaneously, causing dynamic import failures.
+
+**SOLUTION:** 
+1. **Before renaming any generated files**, check what imports them
+2. **Update imports BEFORE renaming the files**
+3. **Verify only one version exists** after rename
+
+### **3. TanStack Router Compatibility Issues**
+**Problem:** `autoCodeSplitting: true` + incomplete imports = dynamic module fetch failures
+
+**SOLUTION:**
+1. **Test with `autoCodeSplitting: false` first** to isolate import issues
+2. **Only re-enable code splitting after ALL imports are verified working**
+3. **Regenerate route tree after any route-related file renames**
+
+### **4. Incomplete Phase Execution**
+**Problem:** Phase 3 (Update References) was marked complete while critical imports remained broken.
+
+**SOLUTION - Enhanced Phase 3 Protocol:**
+```bash
+# Phase 3a: Pre-verification
+echo "=== SEARCHING FOR ALL OLD REFERENCES ==="
+rg "(useBubbleAuth|useUnreadCounters|NavigationContext|logoUtils|sleepStatistics)" --type tsx --type ts
+
+# Phase 3b: Update imports systematically
+# Phase 3c: Post-verification  
+echo "=== VERIFYING NO OLD REFERENCES REMAIN ==="
+rg "(useBubbleAuth|useUnreadCounters|NavigationContext|logoUtils|sleepStatistics)" --type tsx --type ts
+# Should return: No matches found
+
+# Phase 3d: Test compilation
+pnpm run dev --no-open
+# Should start without import errors
+```
+
+### **5. Server Testing Protocol**
+**SOLUTION:** After Phase 3, ALWAYS verify:
+```bash
+# Start server and verify it stays running
+pnpm run dev --no-open &
+sleep 5
+curl -I http://localhost:5174
+# Should return 200 OK, not Connection refused
+```
+
+### **🔧 MANDATORY PRE-CONVERSION CHECKLIST**
+
+**Before starting Phase 1:**
+- [ ] Create comprehensive list of ALL files importing renamed components
+- [ ] Test current dev server works: `pnpm run dev`
+- [ ] Backup current route tree generation setup
+- [ ] Verify all TypeScript compilation passes: `pnpm run build`
+
+**After each Phase:**
+- [ ] Run exhaustive import search to verify no old references remain
+- [ ] Test dev server starts and stays running
+- [ ] Test at least one page loads in browser
+- [ ] Only mark phase complete after ALL verifications pass
+
+**If ANY verification fails:**
+- [ ] Do NOT proceed to next phase
+- [ ] Fix all issues before continuing
+- [ ] Re-run all verifications for current phase
+
+### **🎯 Success Criteria**
+Conversion is only successful when:
+1. ✅ All 15 files renamed to kebab-case
+2. ✅ Zero old import references remain (verified by exhaustive search)
+3. ✅ Dev server starts and stays running
+4. ✅ Application loads in browser without import errors
+5. ✅ TypeScript compilation passes
+6. ✅ All documentation updated
+
+**Total estimated time with proper verification: 45-60 minutes**  
+**Previous failed attempt time: 30 minutes (insufficient verification)**
+
+---
+
+*This analysis based on commit range 70eb68b → 284abfd*  
+*Reverted to 39e256b for clean slate attempt*
