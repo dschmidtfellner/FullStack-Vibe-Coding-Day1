@@ -47,6 +47,10 @@ Implement Phase 1 of the family unread counter plan - URL-based family aggregati
 
 ### Commits Made During Session
 1. "feat: Implement family unread counter support in Cloud Functions"
+2. "feat: UNTESTED implementation of family unread counters" (includes test page)
+
+### ⚠️ Important Note
+This implementation is UNTESTED with real data. While the code has been deployed and the test infrastructure is in place, it needs validation with actual sibling data and Bubble integration before being used in production.
 
 ## Previous Feature: Component Refactoring & Naming Convention Migration (2025-01-18)
 
