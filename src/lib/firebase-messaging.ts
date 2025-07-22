@@ -15,12 +15,6 @@ import {
   startAfter,
   Timestamp,
 } from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL, 
-  getStorage 
-} from 'firebase/storage';
 import { db } from './firebase';
 import { FirebaseMessage, UnreadCounters } from '@/types/firebase';
 import { 
@@ -32,6 +26,7 @@ import {
   formatLocalDate,
   formatLocalTime
 } from './firebase/timezone-utils';
+import { uploadFile } from './firebase/storage';
 
 // Re-export timezone utilities for backward compatibility during migration
 export { 
@@ -39,10 +34,9 @@ export {
   fromChildLocalTime, 
   getChildNow, 
   getChildStartOfDay, 
-  getChildEndOfDay
+  getChildEndOfDay,
+  uploadFile // Re-export for backward compatibility
 };
-
-const storage = getStorage();
 
 /**
  * Get app version from URL parameters for push notification deep links
@@ -177,29 +171,6 @@ export async function sendMessage(
   }
 }
 
-/**
- * Upload file to Firebase Storage
- */
-export async function uploadFile(file: File, path: string): Promise<string> {
-  try {
-    if (import.meta.env.DEV) {
-      console.log('Uploading file:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-    }
-    
-    const fileRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-    const snapshot = await uploadBytes(fileRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    
-    if (import.meta.env.DEV) {
-      console.log('File uploaded successfully');
-    }
-    
-    return downloadURL;
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error instanceof Error ? error : new Error('Unknown error occurred');
-  }
-}
 
 /**
  * Send an image message
