@@ -2,7 +2,47 @@
 
 This file tracks ongoing work and important context for Claude Code sessions. It should be included in every commit to preserve context for future sessions.
 
-## Current Feature: Family Unread Counter Implementation (2025-01-18)
+## Current Feature: Firebase Module Reorganization (2025-01-22)
+
+### Objective
+Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused modules to improve maintainability and AI navigation.
+
+### Progress Status
+
+#### Completed Phases
+1. ✅ **Phase 0**: Setup and baseline testing (completed in previous session)
+2. ✅ **Phase 1**: Foundation with types and core utilities (completed in previous session)
+3. ✅ **Phase 2**: Timezone utilities - 7 functions (completed in previous session)
+4. ✅ **Phase 3**: Storage module - 1 function (completed in previous session)
+5. ✅ **Phase 4**: Auth & Users - 3 functions (completed in previous session)
+6. ✅ **Phase 5**: Sleep Logging - 6 functions (just completed)
+   - Extracted: createSleepLog, addSleepEvent, updateSleepLog, getLog, listenToLogs, calculateSleepDuration
+   - Created `/src/lib/firebase/sleep-logging.ts`
+   - Maintained backward compatibility with re-exports
+
+### Pre-existing Timezone Bug
+- **Issue Discovered**: Even before reorganization, there's a timezone display bug when using "Continue" on logs
+- **Decision**: Continue with reorganization, fix timezone bug after completion
+- **Tracking**: Added to todo list as high priority post-reorganization task
+
+### Remaining Migration Phases
+- Phase 6: Log Comments - 7 functions (sendLogComment, sendLogImageComment, sendLogAudioComment, etc.)
+- Phase 7: Messaging - 15 functions (sendMessage, sendImageMessage, listenToMessages, etc.)
+- Phase 8: Unread Counters - 7 functions (listenToUnreadCounters, markChatMessagesAsRead, etc.)
+- Phase 9: Final Integration & Cleanup
+
+### Files Modified in This Session
+- Fixed console flooding by commenting out logs in `listenToLogs`
+- Reverted to commit 1904380 after timezone fix attempts failed
+- Created `/src/lib/firebase/sleep-logging.ts`
+- Updated `/src/lib/firebase/index.ts` to export sleep-logging module
+- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 776 lines)
+
+### Next Steps
+- Continue with Phase 6: Log Comments migration
+- After all phases complete, tackle the pre-existing timezone bug
+
+## Previous Feature: Family Unread Counter Implementation (2025-01-18)
 
 ### Objective
 Implement Phase 1 of the family unread counter plan - URL-based family aggregation for Bubble client selector while maintaining individual child counters.
