@@ -23,10 +23,14 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
    - Extracted: sendLogComment, sendLogImageComment, sendLogAudioComment, updateLogCommentCount, listenToLogComments
    - Created `/src/lib/firebase/log-comments.ts`
    - Note: updateConversationLastMessage kept in main file as it's shared with messaging
-8. ✅ **Phase 7**: Messaging - 7 functions (just completed)
+8. ✅ **Phase 7**: Messaging - 7 functions
    - Extracted: sendMessage, sendImageMessage, sendAudioMessage, listenToMessages, setTypingStatus, listenToTypingIndicators, toggleMessageReaction
    - Created `/src/lib/firebase/messaging.ts`
    - Moved updateConversationLastMessage to messaging module where it belongs
+9. ✅ **Phase 8**: Unread Counters - 4 functions (just completed)
+   - Extracted: listenToUnreadCounters, markChatMessagesAsRead, markLogCommentsAsRead, markAllLogCommentsAsRead
+   - Created `/src/lib/firebase/unread-counters.ts`
+   - All 33 functions now migrated!
 
 ### Pre-existing Timezone Bug
 - **Issue Discovered**: Even before reorganization, there's a timezone display bug when using "Continue" on logs
@@ -34,8 +38,7 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 - **Tracking**: Added to todo list as high priority post-reorganization task
 
 ### Remaining Migration Phases
-- Phase 8: Unread Counters - 4 functions (listenToUnreadCounters, markChatMessagesAsRead, markLogCommentsAsRead, markAllLogCommentsAsRead)
-- Phase 9: Final Integration & Cleanup
+- Phase 9: Final Integration & Cleanup (remove old firebase-messaging.ts file)
 
 ### Files Modified in This Session
 - Fixed console flooding by commenting out logs in `listenToLogs`
@@ -44,10 +47,10 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 - Created `/src/lib/firebase/log-comments.ts`
 - Created `/src/lib/firebase/messaging.ts`
 - Updated `/src/lib/firebase/index.ts` to export all completed modules
-- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 269 lines - 74% reduction)
+- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 74 lines - 93% reduction)
 
 ### Next Steps
-- Continue with Phase 6: Log Comments migration
+- Phase 9: Final cleanup - remove old firebase-messaging.ts file and update all imports
 - After all phases complete, tackle the pre-existing timezone bug
 
 ## Previous Feature: Family Unread Counter Implementation (2025-01-18)

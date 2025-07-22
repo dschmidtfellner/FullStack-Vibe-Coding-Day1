@@ -14,4 +14,4 @@ export * from './auth';
 export * from './sleep-logging';
 export * from './log-comments';
 export * from './messaging';
-// export * from './unread-counters';
+export * from './unread-counters';

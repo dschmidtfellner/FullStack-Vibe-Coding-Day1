@@ -159,17 +159,17 @@
 
 ---
 
-### Phase 8: Unread Counters (30 min) ✅ Low Risk
+### Phase 8: Unread Counters (30 min) ✅ COMPLETED
 **What we're doing**: Notification system
 
 1. Create `unread-counters.ts` with all counter functions
 
 **Testing Checkpoint 8**:
-- [ ] Send message from another user
-- [ ] Verify unread count appears
-- [ ] Open chat - count clears
-- [ ] Add log comment - log count updates
-- [ ] Mark all as read works
+- [x] Send message from another user
+- [x] Verify unread count appears
+- [x] Open chat - count clears
+- [x] Add log comment - log count updates
+- [x] Mark all as read works
 
 ---
 
