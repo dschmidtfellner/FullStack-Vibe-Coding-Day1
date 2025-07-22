@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
@@ -9,7 +9,7 @@ import { Timestamp } from 'firebase/firestore';
 import { SleepEvent, SleepLog } from '@/lib/firebase/types';
 import { updateSleepLog, getLog } from '@/lib/firebase/index';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
-import { SleepLogTile } from './sleep-log-tile';
+import { BasicInfoSection, DateSelectorSection, InterjectionSection } from './edit-log-form-sections';
 
 export function EditLog() {
   const { user } = useBubbleAuth();
@@ -273,28 +273,14 @@ export function EditLog() {
   };
 
   // Handle interjection modal save
-  const handleSaveInterjection = () => {
+  const handleSaveInterjection = (type: SleepEvent["type"], time: Date) => {
     if (interjectionIndex === null) return;
-
-    const beforeEvent = events[interjectionIndex];
-    const afterEvent = events[interjectionIndex + 1];
-
-    // Validate the time
-    const validation = validateInterjectionTime(
-      interjectionTime,
-      beforeEvent.timestamp,
-      afterEvent.timestamp,
-    );
-    if (!validation.isValid) {
-      setInterjectionValidationWarning(validation.warning);
-      return;
-    }
 
     // Add the interjection
     const updatedEvents = [...events];
     const newEvent = {
-      type: interjectionType,
-      timestamp: interjectionTime,
+      type: type,
+      timestamp: time,
     };
 
     updatedEvents.splice(interjectionIndex + 1, 0, newEvent);
@@ -412,98 +398,22 @@ export function EditLog() {
         </button>
       </div>
 
-      {/* Log Tile - Preserved from detail view with delete icon */}
-      <div className="px-4 py-4">
-        <div className="relative">
-          <SleepLogTile
-            log={log}
-            user={user}
-            napNumber={1}
-            formatTimeInTimezone={formatTimeForDisplay}
-            showClickable={false}
-          />
-          {/* Delete icon in top right of tile */}
-          <button
-            onClick={() =>
-              void (async () => {
-                if (
-                  confirm(
-                    "Are you sure you want to delete this log? This action cannot be undone.",
-                  )
-                ) {
-                  try {
-                    const { deleteDoc, doc } = await import(
-                      "firebase/firestore"
-                    );
-                    const { db } = await import("@/lib/firebase/core");
-
-                    if (state.logId) {
-                      await deleteDoc(doc(db, "logs", state.logId));
-                      navigateBack();
-                    }
-                  } catch (error) {
-                    console.error("Error deleting log:", error);
-                    alert("Failed to delete log. Please try again.");
-                  }
-                }
-              })()
-            }
-            className="absolute top-4 right-4 p-2 transition-colors"
-            style={{
-              color: "#DC2626",
-            }}
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+      {/* Basic Info Section */}
+      <BasicInfoSection
+        log={log}
+        user={user}
+        formatTimeInTimezone={formatTimeForDisplay}
+        onDelete={navigateBack}
+        logId={state.logId}
+      />
 
       {/* Date Selector */}
-      <div className="px-4 py-4">
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => handleDateChange("prev")}
-            className={`p-2 rounded-lg transition-colors ${
-              user?.darkMode
-                ? "text-gray-300 hover:bg-gray-800"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <div
-            className={`text-lg font-medium ${
-              user?.darkMode ? "text-white" : "text-gray-800"
-            }`}
-          >
-            {formatDateForSelector(currentDate)}
-          </div>
-
-          <button
-            onClick={() => handleDateChange("next")}
-            className={`p-2 rounded-lg transition-colors ${
-              user?.darkMode
-                ? "text-gray-300 hover:bg-gray-800"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      <DateSelectorSection
+        currentDate={currentDate}
+        user={user}
+        onDateChange={handleDateChange}
+        formatDateForSelector={formatDateForSelector}
+      />
 
       {/* Events List */}
       <div className="px-4 pb-20 overflow-y-auto">
@@ -682,173 +592,22 @@ export function EditLog() {
       ></div>
 
       {/* Interjection Modal */}
-      {showInterjectionModal && interjectionIndex !== null && (
-        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-end z-[120]">
-          <div
-            className={`w-full max-w-[800px] mx-auto rounded-t-2xl shadow-xl transform transition-transform duration-300 ease-out ${
-              user?.darkMode ? "bg-[#15111B]" : "bg-white"
-            }`}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-6 text-center">
-              <h2
-                className={`text-2xl font-medium mb-2 ${
-                  user?.darkMode ? "text-white" : "text-gray-800"
-                }`}
-              >
-                Add a Log
-              </h2>
-              <p
-                className={`text-base ${
-                  user?.darkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                between{" "}
-                {formatTimeForDisplay(events[interjectionIndex].timestamp)} and{" "}
-                {formatTimeForDisplay(events[interjectionIndex + 1].timestamp)}
-              </p>
-            </div>
-
-            {/* Context Events */}
-            <div className="px-6 mb-8">
-              <div className="space-y-4">
-                {/* Before Event */}
-                <div className="flex justify-between items-center">
-                  <span
-                    className={`text-base ${
-                      user?.darkMode ? "text-white" : "text-gray-800"
-                    }`}
-                  >
-                    {getEventTypeText(events[interjectionIndex].type)}
-                  </span>
-                  <span
-                    className={`text-base ${
-                      user?.darkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    {formatTimeForDisplay(events[interjectionIndex].timestamp)}
-                  </span>
-                </div>
-
-                {/* Input Row */}
-                <div className="flex justify-between items-center gap-4">
-                  {/* Event Type Dropdown */}
-                  <div style={{ width: "120px" }}>
-                    <select
-                      value={interjectionType}
-                      onChange={(e) =>
-                        setInterjectionType(
-                          e.target.value as SleepEvent["type"],
-                        )
-                      }
-                      className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-colors ${
-                        user?.darkMode
-                          ? "bg-[#2a223a] border-gray-600 text-white"
-                          : "bg-white border-gray-300 text-gray-800"
-                      }`}
-                    >
-                      <option value="fell_asleep">Asleep</option>
-                      <option value="woke_up">Awake</option>
-                    </select>
-                  </div>
-
-                  {/* Time Picker */}
-                  <div style={{ width: "120px" }}>
-                    <TimePicker
-                      value={`${interjectionTime.getHours().toString().padStart(2, "0")}:${interjectionTime.getMinutes().toString().padStart(2, "0")}`}
-                      onChange={(value) => {
-                        if (value) {
-                          const [hours, minutes] = value.split(":").map(Number);
-                          const newTime = new Date(interjectionTime);
-                          newTime.setHours(hours, minutes, 0, 0);
-                          setInterjectionTime(newTime);
-
-                          // Clear validation warning when time changes
-                          setInterjectionValidationWarning(null);
-                        }
-                      }}
-                      disableClock={true}
-                      clearIcon={null}
-                      format="h:mm a"
-                      className={`w-32 ${user?.darkMode ? "dark-time-picker" : ""}`}
-                    />
-                  </div>
-                </div>
-
-                {/* After Event */}
-                <div className="flex justify-between items-center">
-                  <span
-                    className={`text-base ${
-                      user?.darkMode ? "text-white" : "text-gray-800"
-                    }`}
-                  >
-                    {getEventTypeText(events[interjectionIndex + 1].type)}
-                  </span>
-                  <span
-                    className={`text-base ${
-                      user?.darkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    {formatTimeForDisplay(
-                      events[interjectionIndex + 1].timestamp,
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Validation Warning */}
-            {interjectionValidationWarning && (
-              <div className="px-6 mb-6">
-                <div
-                  className={`p-4 rounded-lg border-2 ${
-                    user?.darkMode
-                      ? "bg-red-900/20 border-red-600 text-red-400"
-                      : "bg-red-50 border-red-300 text-red-700"
-                  }`}
-                >
-                  <p className="text-base font-medium">
-                    {interjectionValidationWarning.message}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="px-6 pb-8 flex justify-center gap-4">
-              <button
-                onClick={() => {
-                  setShowInterjectionModal(false);
-                  setInterjectionIndex(null);
-                  setInterjectionValidationWarning(null);
-                }}
-                className={`px-6 py-3 rounded-full text-base transition-colors ${
-                  user?.darkMode
-                    ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleSaveInterjection}
-                disabled={!!interjectionValidationWarning}
-                className={`px-8 py-3 rounded-full text-base text-white transition-colors ${
-                  interjectionValidationWarning
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:opacity-90"
-                }`}
-                style={{
-                  backgroundColor: user?.darkMode ? "#9B7EBD" : "#503460",
-                }}
-              >
-                Add Log
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InterjectionSection
+        show={showInterjectionModal}
+        interjectionIndex={interjectionIndex}
+        events={events}
+        user={user}
+        formatTimeForDisplay={formatTimeForDisplay}
+        getEventTypeText={getEventTypeText}
+        onSave={handleSaveInterjection}
+        onCancel={() => {
+          setShowInterjectionModal(false);
+          setInterjectionIndex(null);
+          setInterjectionValidationWarning(null);
+        }}
+        defaultType={interjectionType}
+        defaultTime={interjectionTime}
+      />
 
       {/* Validation Dialog */}
       {showValidationDialog && (
