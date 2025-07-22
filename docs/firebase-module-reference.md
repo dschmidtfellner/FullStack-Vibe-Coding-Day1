@@ -10,7 +10,7 @@ src/lib/firebase/
 ├── messaging.ts       # ❌ Chat and real-time messaging (TODO)
 ├── storage.ts         # ✅ File uploads (images, audio)
 ├── sleep-logging.ts   # ✅ Sleep log CRUD operations
-├── log-comments.ts    # ❌ Comments on sleep logs (TODO)
+├── log-comments.ts    # ✅ Comments on sleep logs
 ├── timezone-utils.ts  # ✅ Child timezone conversions
 ├── unread-counters.ts # ❌ Notification counters (TODO)
 └── index.ts          # ✅ Barrel exports (partial)
@@ -106,21 +106,21 @@ import {
 
 ## 📊 Migration Status
 
-**Completed Modules** (6/9):
+**Completed Modules** (7/9):
 - ✅ types.ts - All interfaces and types
 - ✅ core.ts - Firebase initialization
 - ✅ timezone-utils.ts - 7 timezone functions
 - ✅ storage.ts - 1 upload function
 - ✅ auth.ts - 3 user/conversation functions
 - ✅ sleep-logging.ts - 6 core logging functions
+- ✅ log-comments.ts - 5 comment functions
 
-**Remaining Modules** (3):
-- ❌ log-comments.ts - 5 comment functions
+**Remaining Modules** (2):
 - ❌ messaging.ts - 7 chat functions
 - ❌ unread-counters.ts - 4 counter functions
 
-**Progress**: 17 of 33 functions migrated (52%)
-**Lines Reduced**: firebase-messaging.ts from 1,034 → 776 lines (25% reduction)
+**Progress**: 22 of 33 functions migrated (67%)
+**Lines Reduced**: firebase-messaging.ts from 1,034 → 569 lines (45% reduction)
 
 ## 🏗️ Architecture Benefits
 

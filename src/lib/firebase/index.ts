@@ -12,6 +12,6 @@ export * from './timezone-utils';
 export * from './storage';
 export * from './auth';
 export * from './sleep-logging';
-// export * from './log-comments';
+export * from './log-comments';
 // export * from './messaging';
 // export * from './unread-counters';

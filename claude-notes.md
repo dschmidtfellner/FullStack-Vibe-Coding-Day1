@@ -15,10 +15,14 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 3. ✅ **Phase 2**: Timezone utilities - 7 functions (completed in previous session)
 4. ✅ **Phase 3**: Storage module - 1 function (completed in previous session)
 5. ✅ **Phase 4**: Auth & Users - 3 functions (completed in previous session)
-6. ✅ **Phase 5**: Sleep Logging - 6 functions (just completed)
+6. ✅ **Phase 5**: Sleep Logging - 6 functions
    - Extracted: createSleepLog, addSleepEvent, updateSleepLog, getLog, listenToLogs, calculateSleepDuration
    - Created `/src/lib/firebase/sleep-logging.ts`
    - Maintained backward compatibility with re-exports
+7. ✅ **Phase 6**: Log Comments - 5 functions (just completed)
+   - Extracted: sendLogComment, sendLogImageComment, sendLogAudioComment, updateLogCommentCount, listenToLogComments
+   - Created `/src/lib/firebase/log-comments.ts`
+   - Note: updateConversationLastMessage kept in main file as it's shared with messaging
 
 ### Pre-existing Timezone Bug
 - **Issue Discovered**: Even before reorganization, there's a timezone display bug when using "Continue" on logs
@@ -26,17 +30,17 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 - **Tracking**: Added to todo list as high priority post-reorganization task
 
 ### Remaining Migration Phases
-- Phase 6: Log Comments - 7 functions (sendLogComment, sendLogImageComment, sendLogAudioComment, etc.)
-- Phase 7: Messaging - 15 functions (sendMessage, sendImageMessage, listenToMessages, etc.)
-- Phase 8: Unread Counters - 7 functions (listenToUnreadCounters, markChatMessagesAsRead, etc.)
+- Phase 7: Messaging - 7 functions (sendMessage, sendImageMessage, sendAudioMessage, listenToMessages, setTypingStatus, listenToTypingIndicators, toggleMessageReaction)
+- Phase 8: Unread Counters - 4 functions (listenToUnreadCounters, markChatMessagesAsRead, markLogCommentsAsRead, markAllLogCommentsAsRead)
 - Phase 9: Final Integration & Cleanup
 
 ### Files Modified in This Session
 - Fixed console flooding by commenting out logs in `listenToLogs`
 - Reverted to commit 1904380 after timezone fix attempts failed
 - Created `/src/lib/firebase/sleep-logging.ts`
-- Updated `/src/lib/firebase/index.ts` to export sleep-logging module
-- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 776 lines)
+- Created `/src/lib/firebase/log-comments.ts`
+- Updated `/src/lib/firebase/index.ts` to export sleep-logging and log-comments modules
+- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 569 lines - 45% reduction)
 
 ### Next Steps
 - Continue with Phase 6: Log Comments migration
