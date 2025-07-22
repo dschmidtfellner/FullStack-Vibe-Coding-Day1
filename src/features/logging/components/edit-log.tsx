@@ -256,7 +256,6 @@ export function EditLog() {
     // Close modal
     setShowInterjectionModal(false);
     setInterjectionIndex(null);
-    setInterjectionValidationWarning(null);
   };
 
   // Save all changes
@@ -371,7 +370,7 @@ export function EditLog() {
         user={user}
         formatTimeInTimezone={formatTimeForDisplay}
         onDelete={navigateBack}
-        logId={state.logId}
+        logId={state.logId || null}
       />
 
       {/* Date Selector */}
