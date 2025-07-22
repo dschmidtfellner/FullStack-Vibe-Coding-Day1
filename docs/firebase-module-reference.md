@@ -7,7 +7,7 @@ src/lib/firebase/
 ├── types.ts           # ✅ All TypeScript interfaces and types
 ├── core.ts            # ✅ Firebase initialization and shared utilities
 ├── auth.ts            # ✅ User authentication and management
-├── messaging.ts       # ❌ Chat and real-time messaging (TODO)
+├── messaging.ts       # ✅ Chat and real-time messaging
 ├── storage.ts         # ✅ File uploads (images, audio)
 ├── sleep-logging.ts   # ✅ Sleep log CRUD operations
 ├── log-comments.ts    # ✅ Comments on sleep logs
@@ -106,7 +106,7 @@ import {
 
 ## 📊 Migration Status
 
-**Completed Modules** (7/9):
+**Completed Modules** (8/9):
 - ✅ types.ts - All interfaces and types
 - ✅ core.ts - Firebase initialization
 - ✅ timezone-utils.ts - 7 timezone functions
@@ -114,13 +114,13 @@ import {
 - ✅ auth.ts - 3 user/conversation functions
 - ✅ sleep-logging.ts - 6 core logging functions
 - ✅ log-comments.ts - 5 comment functions
+- ✅ messaging.ts - 7 chat functions
 
-**Remaining Modules** (2):
-- ❌ messaging.ts - 7 chat functions
+**Remaining Modules** (1):
 - ❌ unread-counters.ts - 4 counter functions
 
-**Progress**: 22 of 33 functions migrated (67%)
-**Lines Reduced**: firebase-messaging.ts from 1,034 → 569 lines (45% reduction)
+**Progress**: 29 of 33 functions migrated (88%)
+**Lines Reduced**: firebase-messaging.ts from 1,034 → 269 lines (74% reduction)
 
 ## 🏗️ Architecture Benefits
 

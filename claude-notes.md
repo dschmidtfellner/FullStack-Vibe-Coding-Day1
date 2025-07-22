@@ -19,10 +19,14 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
    - Extracted: createSleepLog, addSleepEvent, updateSleepLog, getLog, listenToLogs, calculateSleepDuration
    - Created `/src/lib/firebase/sleep-logging.ts`
    - Maintained backward compatibility with re-exports
-7. ✅ **Phase 6**: Log Comments - 5 functions (just completed)
+7. ✅ **Phase 6**: Log Comments - 5 functions
    - Extracted: sendLogComment, sendLogImageComment, sendLogAudioComment, updateLogCommentCount, listenToLogComments
    - Created `/src/lib/firebase/log-comments.ts`
    - Note: updateConversationLastMessage kept in main file as it's shared with messaging
+8. ✅ **Phase 7**: Messaging - 7 functions (just completed)
+   - Extracted: sendMessage, sendImageMessage, sendAudioMessage, listenToMessages, setTypingStatus, listenToTypingIndicators, toggleMessageReaction
+   - Created `/src/lib/firebase/messaging.ts`
+   - Moved updateConversationLastMessage to messaging module where it belongs
 
 ### Pre-existing Timezone Bug
 - **Issue Discovered**: Even before reorganization, there's a timezone display bug when using "Continue" on logs
@@ -30,7 +34,6 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 - **Tracking**: Added to todo list as high priority post-reorganization task
 
 ### Remaining Migration Phases
-- Phase 7: Messaging - 7 functions (sendMessage, sendImageMessage, sendAudioMessage, listenToMessages, setTypingStatus, listenToTypingIndicators, toggleMessageReaction)
 - Phase 8: Unread Counters - 4 functions (listenToUnreadCounters, markChatMessagesAsRead, markLogCommentsAsRead, markAllLogCommentsAsRead)
 - Phase 9: Final Integration & Cleanup
 
@@ -39,8 +42,9 @@ Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused mod
 - Reverted to commit 1904380 after timezone fix attempts failed
 - Created `/src/lib/firebase/sleep-logging.ts`
 - Created `/src/lib/firebase/log-comments.ts`
-- Updated `/src/lib/firebase/index.ts` to export sleep-logging and log-comments modules
-- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 569 lines - 45% reduction)
+- Created `/src/lib/firebase/messaging.ts`
+- Updated `/src/lib/firebase/index.ts` to export all completed modules
+- Cleaned up `/src/lib/firebase-messaging.ts` (reduced from 1,034 to 269 lines - 74% reduction)
 
 ### Next Steps
 - Continue with Phase 6: Log Comments migration
