@@ -9,21 +9,28 @@ Working on restructuring the edit-log-modal component to be more modular and ren
 
 ### Commits Made
 1. `chore: Check file line counts and discuss restructuring needs` - Analyzed longest files in repo
+2. `feat: Create EditLog restructuring plan for component modularization` - Created restructuring plan
+3. `refactor: Extract BasicInfoSection, DateSelectorSection, and InterjectionSection from EditLog` - Extracted form sections
+4. `refactor: Replace inline form sections with extracted components in EditLog` - Replaced inline sections
 
 ### Progress Status
-- Created restructuring plan for edit-log-modal → edit-log
-- Plan includes breaking down 895-line component into smaller, focused modules
-- Next step: Begin implementation of restructuring plan
+- ✅ Created restructuring plan for edit-log-modal → edit-log
+- ✅ Renamed component and updated all references
+- ✅ Extracted BasicInfoSection, DateSelectorSection, and InterjectionSection
+- ✅ Extracted EventsList component for event management
+- Next: Extract validation components and custom hooks
 
 ### Important Context
 - User wants to rename edit-log-modal to edit-log (remove "modal" references)
 - Need to update all documentation references
 - Focus on LLM-friendly file sizes and maintainability
+- EditLog reduced from 895 lines to ~564 lines so far
 
 ### Relevant File Locations
-- Current component: `src/features/logging/components/edit-log-modal.tsx`
+- Main component: `src/features/logging/components/edit-log.tsx`
+- Form sections: `src/features/logging/components/edit-log-form-sections/`
+- Event components: `src/features/logging/components/edit-log-events/`
 - Restructuring plan: `docs/plans/edit-log-restructuring-plan.md`
-- Will affect: component-map.md, api-reference.md, developer-guide.md
 
 ## Previous Feature: Firebase Module Reorganization (2025-01-22)
 
