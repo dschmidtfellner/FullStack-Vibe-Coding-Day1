@@ -1,5 +1,5 @@
 import { getStorage } from 'firebase/storage';
-import { db } from '../firebase';
+import { db } from './app-init';
 
 // Re-export the database instance
 export { db };

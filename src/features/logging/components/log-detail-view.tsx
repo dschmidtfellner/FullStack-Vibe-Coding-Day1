@@ -10,7 +10,7 @@ import {
   listenToLogComments,
   markLogCommentsAsRead,
 } from '@/lib/firebase/index';
-import { FirebaseMessage } from '@/types/firebase';
+import { FirebaseMessage } from '@/lib/firebase/types';
 import { calculateSleepStatistics } from '@/utils/sleepStatistics';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 import { SleepLogTile } from './sleep-log-tile';

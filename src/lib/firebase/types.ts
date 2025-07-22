@@ -1,6 +1,52 @@
 import { Timestamp } from 'firebase/firestore';
 
 // =============================================================================
+// MESSAGING & CONVERSATION TYPES
+// =============================================================================
+
+export interface MessageReaction {
+  emoji: string;
+  users: string[];  // Array of user IDs who reacted with this emoji
+  userNames: string[];  // Array of user names for easy display
+}
+
+export interface FirebaseMessage {
+  id: string;
+  text?: string;
+  senderId: string;
+  senderName: string;
+  conversationId: string;  // Required - every message belongs to a conversation
+  childId: string;  // Required - the child this conversation is about
+  type: 'text' | 'image' | 'audio';
+  imageId?: string;
+  audioId?: string;
+  timestamp: Timestamp;
+  read: boolean;
+  readBy?: { [userId: string]: boolean };  // Object mapping user IDs to read status
+  logId?: string;  // Optional - if this message is a comment on a log
+  reactions?: { [emoji: string]: MessageReaction };  // reactions organized by emoji
+  appVersion?: string;  // App version for push notification deep links (dev, test, live)
+}
+
+export interface Conversation {
+  id: string;
+  childId: string;  // The child this conversation is about
+  childName: string;  // Display name for the child
+  participants: string[];  // User IDs who can access this conversation
+  participantNames: { [userId: string]: string };
+  lastMessage?: string;
+  lastMessageTimestamp?: Timestamp;
+  createdAt: Timestamp;
+}
+
+export interface TypingIndicator {
+  userId: string;
+  userName: string;
+  isTyping: boolean;
+  lastTyped: Timestamp;
+}
+
+// =============================================================================
 // SLEEP LOG TYPES
 // =============================================================================
 
@@ -42,66 +88,6 @@ export interface SleepLog {
 }
 
 // =============================================================================
-// MESSAGING TYPES
-// =============================================================================
-
-export interface FirebaseMessage {
-  id: string;
-  text?: string;
-  senderId: string;
-  senderName: string;
-  conversationId: string;
-  childId: string;
-  type: 'text' | 'image' | 'audio';
-  imageId?: string;
-  audioId?: string;
-  timestamp: Timestamp;
-  read: boolean;
-  appVersion?: string;
-  logId?: string; // For log comments
-  reactions?: {
-    [emoji: string]: {
-      emoji: string;
-      users: string[];
-      userNames: string[];
-    };
-  };
-}
-
-export interface Conversation {
-  id: string;
-  childId: string;
-  childName: string;
-  participants: string[];
-  participantNames: { [userId: string]: string };
-  createdAt: Timestamp;
-  lastMessage?: string;
-  lastMessageTimestamp?: Timestamp;
-}
-
-export interface TypingIndicator {
-  userId: string;
-  userName: string;
-  isTyping: boolean;
-  lastTyped: Timestamp;
-}
-
-// =============================================================================
-// UNREAD COUNTER TYPES
-// =============================================================================
-
-export interface UnreadCounters {
-  id: string;
-  userId: string;
-  childId: string;
-  chatUnreadCount: number;
-  logUnreadCount: number;
-  logUnreadByLogId: { [logId: string]: number };
-  totalUnreadCount: number;
-  lastUpdated: Timestamp;
-}
-
-// =============================================================================
 // USER TYPES
 // =============================================================================
 
@@ -109,6 +95,30 @@ export interface FirebaseUser {
   id: string;
   clerkId: string;
   name: string;
-  email: string;
+  email?: string;
+  avatarUrl?: string;
   createdAt: Timestamp;
+}
+
+// =============================================================================
+// UNREAD COUNTER TYPES
+// =============================================================================
+
+export interface UnreadCounters {
+  id: string; // Format: "user_{userId}_child_{childId}"
+  userId: string;
+  childId: string;
+  
+  // Chat counters
+  chatUnreadCount: number;
+  
+  // Log counters  
+  logUnreadCount: number; // Total across all logs
+  logUnreadByLogId: { [logId: string]: number }; // Per-log counts
+  
+  // Combined counters
+  totalUnreadCount: number; // Chat + Logs combined
+  
+  // Metadata
+  lastUpdated: Timestamp;
 }

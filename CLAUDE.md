@@ -91,7 +91,9 @@ This is a production application serving real families and professionals, so sta
   import { db, storage } from "@/lib/firebase/core";
   ```
 - **Module Structure**:
-  - `firebase/types.ts` - All TypeScript interfaces
+  - `firebase/app-init.ts` - Firebase app initialization and config
+  - `firebase/core.ts` - Core exports (db, storage instances)
+  - `firebase/types.ts` - All TypeScript interfaces (messages, logs, users, etc.)
   - `firebase/auth.ts` - User management
   - `firebase/messaging.ts` - Chat functions
   - `firebase/sleep-logging.ts` - Log operations
@@ -99,6 +101,7 @@ This is a production application serving real families and professionals, so sta
   - `firebase/storage.ts` - File uploads
   - `firebase/timezone-utils.ts` - Time handling
   - `firebase/unread-counters.ts` - Notification counts
+  - `firebase/index.ts` - Barrel exports for functions
 
 ## Git Workflow
 

@@ -5,14 +5,15 @@ This document provides a comprehensive reference for all functions, types, and p
 ## Navigation Functions
 
 ### Core Navigation
+
 ```typescript
 // From NavigationContext
-const { 
+const {
   navigateToLogDetail,
-  navigateToNewLog, 
+  navigateToNewLog,
   navigateToEditLog,
   navigateToMessaging,
-  navigateBack 
+  navigateBack
 } = useNavigation();
 
 // Navigate to specific log detail view
@@ -32,9 +33,10 @@ navigateBack()
 ```
 
 ### Navigation State
+
 ```typescript
 interface NavigationState {
-  view: 'messaging' | 'LogList' | 'log-detail' | 'LoggingModal' | 'edit-log';
+  view: "messaging" | "LogList" | "log-detail" | "LoggingModal" | "edit-log";
   logId: string | null;
   childId: string | null;
   timezone: string;
@@ -46,11 +48,12 @@ interface NavigationState {
 ## Data Types & Interfaces
 
 ### Sleep Log Types
+
 ```typescript
 interface SleepLog {
   id: string;
   childId: string;
-  sleepType: 'bedtime' | 'nap';
+  sleepType: "bedtime" | "nap";
   events: SleepEvent[];
   isComplete: boolean;
   localDate: string; // YYYY-MM-DD format
@@ -60,7 +63,7 @@ interface SleepLog {
 }
 
 interface SleepEvent {
-  type: 'put_in_bed' | 'fell_asleep' | 'woke_up' | 'out_of_bed';
+  type: "put_in_bed" | "fell_asleep" | "woke_up" | "out_of_bed";
   childLocalTimestamp: Timestamp;
   originalTimezone: string;
   localTime: string; // Formatted display time
@@ -68,11 +71,12 @@ interface SleepEvent {
 ```
 
 ### Message Types
+
 ```typescript
 interface FirebaseMessage {
   id: string;
   text?: string;
-  type: 'text' | 'image' | 'audio';
+  type: "text" | "image" | "audio";
   senderId: string;
   senderName: string;
   conversationId: string;
@@ -102,16 +106,18 @@ interface FirebaseConversation {
 ```
 
 ### Unread Counter Types
+
 ```typescript
 interface UnreadCounters {
-  chatUnreadCount: number;        // Unread chat messages
-  logUnreadCount: number;         // Total unread log comments  
+  chatUnreadCount: number; // Unread chat messages
+  logUnreadCount: number; // Total unread log comments
   logUnreadByLogId: Record<string, number>; // Per-log unread counts
-  totalUnreadCount: number;       // Combined chat + log unread
+  totalUnreadCount: number; // Combined chat + log unread
 }
 ```
 
 ### User Types
+
 ```typescript
 interface BubbleUser {
   id: string;
@@ -124,10 +130,11 @@ interface BubbleUser {
 ## Firebase Collections
 
 ### Collection Structure
+
 ```typescript
 // Collections
 'messages'        // All chat messages and log comments
-'conversations'   // Chat conversations organized by child  
+'conversations'   // Chat conversations organized by child
 'logs'           // Sleep logs with events and metadata
 'users'          // User profiles
 'typing'         // Real-time typing indicators
@@ -135,7 +142,7 @@ interface BubbleUser {
 
 // Document ID Patterns
 conversations: `child_${childId}`
-unread_counters: `user_${userId}_child_${childId}` 
+unread_counters: `user_${userId}_child_${childId}`
 messages: auto-generated Firebase IDs
 logs: auto-generated Firebase IDs
 ```
@@ -143,25 +150,27 @@ logs: auto-generated Firebase IDs
 ## Firebase Functions
 
 ### Authentication Functions
+
 ```typescript
 // Ensure user exists in Firebase
 ensureUser(clerkUserId: string, name: string, email?: string): Promise<void>
 
 // Get or create conversation for child
 getOrCreateConversation(
-  childId: string, 
-  childName?: string, 
-  userId?: string, 
+  childId: string,
+  childName?: string,
+  userId?: string,
   userName?: string
 ): Promise<string>
 ```
 
 ### Message Functions
+
 ```typescript
 // Send text message
 sendMessage(
   userId: string,
-  userName: string, 
+  userName: string,
   text: string,
   conversationId: string,
   childId: string
@@ -172,11 +181,11 @@ sendImageMessage(
   userId: string,
   userName: string,
   file: File,
-  conversationId: string, 
+  conversationId: string,
   childId: string
 ): Promise<void>
 
-// Send audio message  
+// Send audio message
 sendAudioMessage(
   userId: string,
   userName: string,
@@ -188,13 +197,14 @@ sendAudioMessage(
 // Toggle message reaction
 toggleMessageReaction(
   messageId: string,
-  emoji: string, 
+  emoji: string,
   userId: string,
   userName: string
 ): Promise<void>
 ```
 
 ### Log Comment Functions
+
 ```typescript
 // Send log comment
 sendLogComment(
@@ -209,7 +219,7 @@ sendLogComment(
 // Send log image comment
 sendLogImageComment(
   userId: string,
-  userName: string, 
+  userName: string,
   file: File,
   conversationId: string,
   childId: string,
@@ -222,12 +232,13 @@ sendLogAudioComment(
   userName: string,
   audioBlob: Blob,
   conversationId: string,
-  childId: string, 
+  childId: string,
   logId: string
 ): Promise<void>
 ```
 
 ### Real-time Listener Functions
+
 ```typescript
 // Listen to messages (returns unsubscribe function)
 listenToMessages(
@@ -254,6 +265,7 @@ listenToTypingIndicators(
 ```
 
 ### Sleep Log Functions
+
 ```typescript
 // Create new sleep log
 createSleepLog(
@@ -280,14 +292,15 @@ getLog(logId: string): Promise<SleepLog | null>
 ```
 
 ### Unread Counter Functions
+
 ```typescript
 // Mark chat messages as read
 markChatMessagesAsRead(userId: string, childId: string): Promise<void>
 
 // Mark specific log comments as read
 markLogCommentsAsRead(
-  userId: string, 
-  childId: string, 
+  userId: string,
+  childId: string,
   logId: string
 ): Promise<void>
 
@@ -296,12 +309,13 @@ markAllLogCommentsAsRead(userId: string, childId: string): Promise<void>
 
 // Hook for unread counter state
 useUnreadCounters(
-  userId: string | null, 
+  userId: string | null,
   childId: string | null
 ): { counters: UnreadCounters; isLoading: boolean }
 ```
 
 ### Utility Functions
+
 ```typescript
 // Calculate sleep statistics from log
 calculateSleepStatistics(log: SleepLog): {
@@ -325,6 +339,7 @@ fromChildLocalTime(childLocalTimestamp: Timestamp): Date
 ## React Hooks
 
 ### Core Hooks
+
 ```typescript
 // Bubble authentication
 useBubbleAuth(): {
@@ -361,6 +376,7 @@ useUnreadCounters(
 ## Component Props
 
 ### SleepLogTile
+
 ```typescript
 interface SleepLogTileProps {
   log: SleepLog;
@@ -377,6 +393,7 @@ interface SleepLogTileProps {
 ```
 
 ### MessageInputBar
+
 ```typescript
 interface MessageInputBarProps {
   user: BubbleUser;
@@ -392,6 +409,7 @@ interface MessageInputBarProps {
 ```
 
 ### CommentsModal
+
 ```typescript
 interface CommentsModalProps {
   isOpen: boolean;
@@ -404,29 +422,32 @@ interface CommentsModalProps {
 ## Styling Reference
 
 ### Theme System
+
 ```typescript
 // Dark mode detection
-user?.darkMode // boolean that controls theme
+user?.darkMode; // boolean that controls theme
 
 // Color classes based on theme
-const themeClasses = user?.darkMode 
-  ? "bg-[#15111B] text-white" 
+const themeClasses = user?.darkMode
+  ? "bg-[#15111B] text-white"
   : "bg-white text-gray-800";
 ```
 
 ### Key Colors
+
 ```css
 /* Primary Colors */
---brand-purple: #503460;     /* Buttons, primary accents */
---brand-purple-light: #F0DDEF; /* Light backgrounds, borders */
---brand-purple-dark: #4b355e;  /* Text, dark accents */
+--brand-purple: #503460; /* Buttons, primary accents */
+--brand-purple-light: #f0ddef; /* Light backgrounds, borders */
+--brand-purple-dark: #4b355e; /* Text, dark accents */
 
 /* Dark Mode */
---dark-bg: #15111B;          /* Main dark background */
---dark-surface: #2a223a;     /* Cards, modals in dark mode */
+--dark-bg: #15111b; /* Main dark background */
+--dark-surface: #2a223a; /* Cards, modals in dark mode */
 ```
 
 ### Typography Classes
+
 ```css
 font-['Poppins']  /* Default UI font */
 font-domine       /* Headings and titles */
@@ -436,30 +457,33 @@ font-karla        /* Alternative body text */
 ## Common Patterns
 
 ### Error Handling
+
 ```typescript
 try {
   await someFirebaseOperation();
 } catch (error) {
-  console.error('Operation failed:', error);
-  const message = error instanceof Error ? error.message : 'Unknown error';
+  console.error("Operation failed:", error);
+  const message = error instanceof Error ? error.message : "Unknown error";
   // Handle error appropriately
 }
 ```
 
 ### Real-time Listeners
+
 ```typescript
 useEffect(() => {
   if (!childId) return;
-  
+
   const unsubscribe = listenToLogs(childId, (newLogs) => {
     setLogs(newLogs);
   });
-  
+
   return unsubscribe; // Cleanup on unmount
 }, [childId]);
 ```
 
 ### Modal Patterns
+
 ```typescript
 const [showModal, setShowModal] = useState(false);
 
@@ -469,11 +493,11 @@ if (!showModal) return null;
 return (
   <>
     {/* Backdrop */}
-    <div 
+    <div
       className="absolute inset-0 bg-black bg-opacity-50 z-40"
       onClick={onClose}
     />
-    
+
     {/* Modal Content */}
     <div className="absolute inset-0 z-50 flex items-center justify-center">
       {/* Modal UI */}
@@ -483,11 +507,10 @@ return (
 ```
 
 ### Performance Optimization
+
 ```typescript
 // Memoize expensive calculations
-const stats = useMemo(() => 
-  calculateSleepStatistics(log), [log]
-);
+const stats = useMemo(() => calculateSleepStatistics(log), [log]);
 
 // Callback optimization
 const handleClick = useCallback(() => {
@@ -497,4 +520,4 @@ const handleClick = useCallback(() => {
 
 ---
 
-*This API reference covers all functions, types, and patterns in the refactored codebase. For architectural context, see the [Component Map](./component-map.md).*
+_This API reference covers all functions, types, and patterns in the refactored codebase. For architectural context, see the [Component Map](./component-map.md)._

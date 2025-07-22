@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UnreadCounters } from '@/types/firebase';
+import { UnreadCounters } from '@/lib/firebase/types';
 import { listenToUnreadCounters } from '@/lib/firebase/index';
 import { Timestamp } from 'firebase/firestore';
 

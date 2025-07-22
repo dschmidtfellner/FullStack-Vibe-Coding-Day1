@@ -8,7 +8,7 @@ import {
   orderBy,
   onSnapshot,
 } from 'firebase/firestore';
-import { FirebaseMessage } from '@/types/firebase';
+import { FirebaseMessage } from '@/lib/firebase/types';
 import { db } from '@/lib/firebase/core';
 import { markAllLogCommentsAsRead } from '@/lib/firebase/index';
 

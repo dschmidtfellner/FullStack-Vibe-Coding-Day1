@@ -4,7 +4,7 @@ import { useBubbleAuth } from "@/hooks/useBubbleAuth";
 import { useChildAccess } from "@/hooks/useBubbleAuth";
 import { useTopSpacing } from "@/hooks/useTopSpacing";
 import { MessageInputBar } from "@/components/shared/MessageInputBar";
-import { FirebaseMessage } from "@/types/firebase";
+import { FirebaseMessage } from "@/lib/firebase/types";
 import {
   ImageMessage,
   AudioMessage,
