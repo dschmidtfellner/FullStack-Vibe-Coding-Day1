@@ -4,16 +4,16 @@
 
 ```
 src/lib/firebase/
-├── types.ts           # All TypeScript interfaces and types
-├── core.ts            # Firebase initialization and shared utilities
-├── auth.ts            # User authentication and management
-├── messaging.ts       # Chat and real-time messaging
-├── storage.ts         # File uploads (images, audio)
-├── sleep-logging.ts   # Sleep log CRUD operations
-├── log-comments.ts    # Comments on sleep logs
-├── timezone-utils.ts  # Child timezone conversions
-├── unread-counters.ts # Notification counters
-└── index.ts          # Barrel exports
+├── types.ts           # ✅ All TypeScript interfaces and types
+├── core.ts            # ✅ Firebase initialization and shared utilities
+├── auth.ts            # ✅ User authentication and management
+├── messaging.ts       # ❌ Chat and real-time messaging (TODO)
+├── storage.ts         # ✅ File uploads (images, audio)
+├── sleep-logging.ts   # ✅ Sleep log CRUD operations
+├── log-comments.ts    # ❌ Comments on sleep logs (TODO)
+├── timezone-utils.ts  # ✅ Child timezone conversions
+├── unread-counters.ts # ❌ Notification counters (TODO)
+└── index.ts          # ✅ Barrel exports (partial)
 ```
 
 ## 🎯 Module Responsibilities
@@ -103,6 +103,24 @@ import {
 - **File uploads?** → Check `storage.ts`
 - **Time zones?** → Check `timezone-utils.ts`
 - **Unread badges?** → Check `unread-counters.ts`
+
+## 📊 Migration Status
+
+**Completed Modules** (6/9):
+- ✅ types.ts - All interfaces and types
+- ✅ core.ts - Firebase initialization
+- ✅ timezone-utils.ts - 7 timezone functions
+- ✅ storage.ts - 1 upload function
+- ✅ auth.ts - 3 user/conversation functions
+- ✅ sleep-logging.ts - 6 core logging functions
+
+**Remaining Modules** (3):
+- ❌ log-comments.ts - 5 comment functions
+- ❌ messaging.ts - 7 chat functions
+- ❌ unread-counters.ts - 4 counter functions
+
+**Progress**: 17 of 33 functions migrated (52%)
+**Lines Reduced**: firebase-messaging.ts from 1,034 → 776 lines (25% reduction)
 
 ## 🏗️ Architecture Benefits
 
