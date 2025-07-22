@@ -2,7 +2,30 @@
 
 This file tracks ongoing work and important context for Claude Code sessions. It should be included in every commit to preserve context for future sessions.
 
-## Current Feature: Firebase Module Reorganization (2025-01-22)
+## Current Feature: EditLog Component Restructuring
+
+### Session Summary
+Working on restructuring the edit-log-modal component to be more modular and renaming it to EditLog.
+
+### Commits Made
+1. `chore: Check file line counts and discuss restructuring needs` - Analyzed longest files in repo
+
+### Progress Status
+- Created restructuring plan for edit-log-modal → edit-log
+- Plan includes breaking down 895-line component into smaller, focused modules
+- Next step: Begin implementation of restructuring plan
+
+### Important Context
+- User wants to rename edit-log-modal to edit-log (remove "modal" references)
+- Need to update all documentation references
+- Focus on LLM-friendly file sizes and maintainability
+
+### Relevant File Locations
+- Current component: `src/features/logging/components/edit-log-modal.tsx`
+- Restructuring plan: `docs/plans/edit-log-restructuring-plan.md`
+- Will affect: component-map.md, api-reference.md, developer-guide.md
+
+## Previous Feature: Firebase Module Reorganization (2025-01-22)
 
 ### Objective
 Reorganize the bloated firebase-messaging.ts file (1,034 lines) into focused modules to improve maintainability and AI navigation.
