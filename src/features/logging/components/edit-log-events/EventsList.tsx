@@ -2,11 +2,12 @@ import { Plus } from 'lucide-react';
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
-import { SleepEvent, User } from '@/lib/firebase/types';
+import { SleepEvent } from '@/lib/firebase/types';
+import { BubbleUser } from '@/lib/jwt-auth';
 
 interface EventsListProps {
   events: { type: SleepEvent["type"]; timestamp: Date }[];
-  user: User | null;
+  user: BubbleUser | null;
   editingEventIndex: number | null;
   editingTime: string;
   formatTimeForDisplay: (date: Date) => string;

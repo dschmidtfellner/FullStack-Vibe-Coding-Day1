@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { User } from '@/lib/firebase/types';
+import { BubbleUser } from '@/lib/jwt-auth';
 
 interface DateSelectorSectionProps {
   currentDate: Date;
-  user: User | null;
+  user: BubbleUser | null;
   onDateChange: (direction: "prev" | "next") => void;
   formatDateForSelector: (date: Date) => string;
 }

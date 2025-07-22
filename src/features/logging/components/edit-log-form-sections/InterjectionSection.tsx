@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SleepEvent, User } from '@/lib/firebase/types';
+import { SleepEvent } from '@/lib/firebase/types';
+import { BubbleUser } from '@/lib/jwt-auth';
 import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
@@ -8,7 +9,7 @@ interface InterjectionSectionProps {
   show: boolean;
   interjectionIndex: number | null;
   events: { type: SleepEvent["type"]; timestamp: Date }[];
-  user: User | null;
+  user: BubbleUser | null;
   formatTimeForDisplay: (date: Date) => string;
   getEventTypeText: (type: SleepEvent["type"]) => string;
   onSave: (type: SleepEvent["type"], time: Date) => void;

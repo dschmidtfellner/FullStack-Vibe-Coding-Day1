@@ -1,11 +1,12 @@
-import { SleepLog, User } from '@/lib/firebase/types';
+import { SleepLog } from '@/lib/firebase/types';
+import { BubbleUser } from '@/lib/jwt-auth';
 import { SleepLogTile } from '../sleep-log-tile';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/core';
 
 interface BasicInfoSectionProps {
   log: SleepLog;
-  user: User;
+  user: BubbleUser;
   formatTimeInTimezone: (date: Date) => string;
   onDelete: () => void;
   logId: string | null;
