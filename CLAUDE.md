@@ -99,6 +99,32 @@ This is a production application serving real families and professionals, so sta
   - If you get "Bad Request" error, it's likely due to line breaks in the command
 - **Test interface**: Use `/test-claude-notifications.html` for debugging notifications
 
+## Firebase
+
+- Use Firebase SDK v11 for all operations
+- Firestore for database operations
+- Storage for file uploads
+- Cloud Functions for server-side logic
+
+### Import Pattern (Post-Modularization)
+- **NEW (Preferred)**: Import from `@/lib/firebase` barrel export
+  ```typescript
+  import { sendMessage, createSleepLog, uploadFile } from '@/lib/firebase';
+  ```
+- **OLD (Still works)**: Import from `@/lib/firebase-messaging` 
+  ```typescript
+  import { sendMessage, createSleepLog } from '@/lib/firebase-messaging';
+  ```
+- **Module Structure**:
+  - `firebase/types.ts` - All TypeScript interfaces
+  - `firebase/auth.ts` - User management
+  - `firebase/messaging.ts` - Chat functions
+  - `firebase/sleep-logging.ts` - Log operations
+  - `firebase/log-comments.ts` - Comment functions
+  - `firebase/storage.ts` - File uploads
+  - `firebase/timezone-utils.ts` - Time handling
+  - `firebase/unread-counters.ts` - Notification counts
+
 ## Git Workflow
 
 - **Commit after each user request**: When completing what the user asked for, immediately commit: `git add -A && git commit -m "[action]: [what was accomplished]"`
