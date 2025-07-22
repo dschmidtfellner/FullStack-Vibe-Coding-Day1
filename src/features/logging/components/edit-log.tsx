@@ -11,7 +11,7 @@ import { updateSleepLog, getLog } from '@/lib/firebase/index';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 import { SleepLogTile } from './sleep-log-tile';
 
-export function EditLogModal() {
+export function EditLog() {
   const { user } = useBubbleAuth();
   const { state, navigateBack, updateLog } = useNavigation();
   const [log, setLog] = useState<SleepLog | null>(null);

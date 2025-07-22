@@ -6,7 +6,7 @@ import {
 } from "@/contexts/NavigationContext";
 import {
   LogModal,
-  EditLogModal,
+  EditLog,
   LogDetailView,
   LogsListView,
   MessagingView,
@@ -76,7 +76,7 @@ function AppRouter() {
           return <LogsListView />;
         }
       case "edit-log":
-        return null; // Don't render background view when EditLogModal is open
+        return null; // Don't render background view when EditLog is open
       default:
         return <LogsListView />;
     }
@@ -86,7 +86,7 @@ function AppRouter() {
     <>
       {renderMainView()}
       {state.view === "LoggingModal" && <LogModal />}
-      {state.view === "edit-log" && <EditLogModal />}
+      {state.view === "edit-log" && <EditLog />}
     </>
   );
 }
