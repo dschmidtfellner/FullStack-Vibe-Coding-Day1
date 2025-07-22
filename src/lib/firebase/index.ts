@@ -5,12 +5,12 @@
 export * from './types';
 
 // Export core utilities
-export { db, storage, getAppVersion } from './core';
+export { db, storage } from './core';
 
 // Module exports will be added here as we create them:
 export * from './timezone-utils';
 export * from './storage';
-// export * from './auth';
+export * from './auth';
 // export * from './sleep-logging';
 // export * from './log-comments';
 // export * from './messaging';
