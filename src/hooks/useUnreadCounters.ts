@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UnreadCounters } from '@/types/firebase';
-import { listenToUnreadCounters } from '@/lib/firebase-messaging';
+import { listenToUnreadCounters } from '@/lib/firebase/index';
 import { Timestamp } from 'firebase/firestore';
 
 const DEFAULT_COUNTERS: UnreadCounters = {

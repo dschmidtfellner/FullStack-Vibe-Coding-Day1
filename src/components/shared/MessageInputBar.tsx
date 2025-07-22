@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Send, Plus, Mic, Square } from 'lucide-react';
-import { sendMessage, sendImageMessage, sendAudioMessage, setTypingStatus, sendLogComment, sendLogImageComment, sendLogAudioComment } from '@/lib/firebase-messaging';
+import { sendMessage, sendImageMessage, sendAudioMessage, setTypingStatus, sendLogComment, sendLogImageComment, sendLogAudioComment } from '@/lib/firebase/index';
 import { BubbleUser } from '@/lib/jwt-auth';
 
 interface MessageInputBarProps {

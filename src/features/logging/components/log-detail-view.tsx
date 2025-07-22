@@ -3,14 +3,13 @@ import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useTopSpacing } from '@/hooks/useTopSpacing';
 import { Plus, Minus, X } from 'lucide-react';
+import { SleepEvent, SleepLog } from '@/lib/firebase/types';
 import {
-  SleepEvent,
-  SleepLog,
   getLog,
   getOrCreateConversation,
   listenToLogComments,
   markLogCommentsAsRead,
-} from '@/lib/firebase-messaging';
+} from '@/lib/firebase/index';
 import { FirebaseMessage } from '@/types/firebase';
 import { calculateSleepStatistics } from '@/utils/sleepStatistics';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
@@ -207,7 +206,7 @@ export function LogDetailView() {
     try {
       // Simple Firebase delete
       const { deleteDoc, doc } = await import("firebase/firestore");
-      const { db } = await import("@/lib/firebase");
+      const { db } = await import("@/lib/firebase/core");
 
       await deleteDoc(doc(db, "logs", state.logId));
 

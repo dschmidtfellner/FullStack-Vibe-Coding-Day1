@@ -6,12 +6,8 @@ import TimePicker from 'react-time-picker';
 import 'react-time-picker/dist/TimePicker.css';
 import 'react-clock/dist/Clock.css';
 import { Timestamp } from 'firebase/firestore';
-import {
-  SleepEvent,
-  SleepLog,
-  updateSleepLog,
-  getLog,
-} from '@/lib/firebase-messaging';
+import { SleepEvent, SleepLog } from '@/lib/firebase/types';
+import { updateSleepLog, getLog } from '@/lib/firebase/index';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 import { SleepLogTile } from './sleep-log-tile';
 
@@ -439,7 +435,7 @@ export function EditLogModal() {
                     const { deleteDoc, doc } = await import(
                       "firebase/firestore"
                     );
-                    const { db } = await import("@/lib/firebase");
+                    const { db } = await import("@/lib/firebase/core");
 
                     if (state.logId) {
                       await deleteDoc(doc(db, "logs", state.logId));

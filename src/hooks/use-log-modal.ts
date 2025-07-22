@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
+import { SleepEvent, SleepLog } from '@/lib/firebase/types';
 import {
-  SleepEvent,
-  SleepLog,
   createSleepLog,
   updateSleepLog,
   getLog,
@@ -13,7 +12,7 @@ import {
   getChildNow,
   getChildStartOfDay,
   getChildEndOfDay,
-} from '@/lib/firebase-messaging';
+} from '@/lib/firebase/index';
 
 export interface ValidationWarning {
   type: "future" | "long-gap" | "too-long-gap";

@@ -3,13 +3,13 @@ import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useTopSpacing } from '@/hooks/useTopSpacing';
 import { Plus, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { SleepEvent } from '@/lib/firebase/types';
 import {
-  SleepEvent,
   listenToLogs,
   fromChildLocalTime,
   getChildNow,
   getChildStartOfDay,
-} from '@/lib/firebase-messaging';
+} from '@/lib/firebase/index';
 import { getAppLogo } from '@/utils/logoUtils';
 import { useUnreadCounters } from '@/hooks/useUnreadCounters';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';

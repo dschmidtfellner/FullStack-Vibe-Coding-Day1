@@ -1,6 +1,6 @@
 import { Sun, Moon } from 'lucide-react';
 import TimePicker from 'react-time-picker';
-import { SleepEvent } from '@/lib/firebase-messaging';
+import { SleepEvent } from '@/lib/firebase/types';
 import { ValidationWarning } from '@/hooks/use-log-modal';
 
 interface LogFirstScreenProps {

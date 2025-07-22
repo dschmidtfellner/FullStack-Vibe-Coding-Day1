@@ -69,36 +69,6 @@ This is a production application serving real families and professionals, so sta
 - Deploy with: `npx vercel --prod --yes` (project is already linked to dcmsg2)
 - **DEPRECATED**: `full-stack-vibe-coding-day1` and `dcmsg1` projects are no longer used
 
-## Push Notification System
-
-- **Only send notificaitons when Claude is truly done and waiting for user input** - this helps with workflow awareness
-- **Send notifications when asking for permission** - especially for commands, tool use approvals, file operations, or any user decision
-- **CRITICAL**: Use the exact curl format below with NO LINE BREAKS in the command
-- **When completing tasks**: Only send completion notifications when the ENTIRE
-  user request is finished and Claude is waiting for the next instruction.
-  Send completion notifications via:
-  ```bash
-  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Task completed: [brief description]", "type": "completed"}'
-  ```
-- **When waiting for input**: Send waiting notifications via:
-  ```bash
-  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Waiting for your input", "type": "waiting"}'
-  ```
-- **When asking for permission**: Send waiting notifications when asking user to approve tool use or make decisions:
-  ```bash
-  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Need your permission to proceed", "type": "waiting"}'
-  ```
-- **When errors occur**: Send error notifications via:
-  ```bash
-  curl -X POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/sendClaudeNotification -H "Content-Type: application/json" -d '{"message": "Error: [brief description]", "type": "error"}'
-  ```
-- **For significant milestones**: Send info notifications for important updates
-- **IMPORTANT FORMATTING RULES**:
-  - Keep the entire curl command on ONE LINE - no line breaks in the URL
-  - Use single quotes around the JSON data: `'{"message": "text", "type": "info"}'`
-  - If you get "Bad Request" error, it's likely due to line breaks in the command
-- **Test interface**: Use `/test-claude-notifications.html` for debugging notifications
-
 ## Firebase
 
 - Use Firebase SDK v11 for all operations
@@ -107,13 +77,18 @@ This is a production application serving real families and professionals, so sta
 - Cloud Functions for server-side logic
 
 ### Import Pattern (Post-Modularization)
-- **NEW (Preferred)**: Import from `@/lib/firebase` barrel export
+
+- **Functions**: Import from barrel export
   ```typescript
-  import { sendMessage, createSleepLog, uploadFile } from '@/lib/firebase';
+  import { sendMessage, createSleepLog, uploadFile } from "@/lib/firebase/index";
   ```
-- **OLD (Still works)**: Import from `@/lib/firebase-messaging` 
+- **Types**: Import from types module
   ```typescript
-  import { sendMessage, createSleepLog } from '@/lib/firebase-messaging';
+  import { SleepLog, SleepEvent } from "@/lib/firebase/types";
+  ```
+- **Core (db, storage)**: Import from core module
+  ```typescript
+  import { db, storage } from "@/lib/firebase/core";
   ```
 - **Module Structure**:
   - `firebase/types.ts` - All TypeScript interfaces

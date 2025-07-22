@@ -1,5 +1,5 @@
 import { MessageSquare } from "lucide-react";
-import { SleepLog } from "@/lib/firebase-messaging";
+import { SleepLog } from "@/lib/firebase/types";
 
 interface SleepLogTileProps {
   log: SleepLog;

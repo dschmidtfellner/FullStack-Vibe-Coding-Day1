@@ -9,8 +9,8 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { FirebaseMessage } from '@/types/firebase';
-import { db } from '@/lib/firebase';
-import { markAllLogCommentsAsRead } from '@/lib/firebase-messaging';
+import { db } from '@/lib/firebase/core';
+import { markAllLogCommentsAsRead } from '@/lib/firebase/index';
 
 interface CommentsModalProps {
   isOpen: boolean;

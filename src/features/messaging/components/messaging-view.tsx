@@ -15,7 +15,7 @@ import {
   toggleMessageReaction,
   getOrCreateConversation,
   markChatMessagesAsRead,
-} from "@/lib/firebase-messaging";
+} from "@/lib/firebase/index";
 
 // Universal skeleton loading component (will be extracted later)
 function UniversalSkeleton() {

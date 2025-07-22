@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { SleepLog } from '@/lib/firebase-messaging';
+import { SleepLog } from '@/lib/firebase/types';
 
 // Navigation state type definition
 export type NavigationState = {

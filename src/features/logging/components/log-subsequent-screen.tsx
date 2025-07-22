@@ -1,5 +1,5 @@
 import TimePicker from 'react-time-picker';
-import { SleepEvent } from '@/lib/firebase-messaging';
+import { SleepEvent } from '@/lib/firebase/types';
 
 interface LogSubsequentScreenProps {
   user: any;
