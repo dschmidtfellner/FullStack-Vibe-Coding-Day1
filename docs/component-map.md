@@ -4,14 +4,6 @@
 
 This document provides a comprehensive map of all components in the sleep logging application, organized by feature and responsibility.
 
-## Architecture Summary
-
-**Before Refactor:** 3,938 lines in a single monolithic file  
-**After Refactor:** 90-line orchestrator + 5 focused feature components + extracted custom hook  
-**Reduction:** 97.7% size reduction with improved maintainability and business logic separation
-
----
-
 ## Feature-Based Component Structure
 
 ```
@@ -52,8 +44,10 @@ src/
 ### 🏠 **Application Orchestrator**
 
 #### `src/routes/index.tsx` (90 lines)
+
 **Purpose:** Main application entry point and view orchestrator  
 **Responsibilities:**
+
 - TanStack Router setup
 - Authentication gateway
 - URL parameter parsing (childId, timezone)
@@ -62,6 +56,7 @@ src/
 - Modal overlay management
 
 **Key Functions:**
+
 - `HomePage()` - Authentication & context setup
 - `AppRouter()` - View routing based on navigation state
 
@@ -70,8 +65,10 @@ src/
 ### 🛌 **Sleep Logging Feature**
 
 #### `log-modal.tsx` (140 lines) - REFACTORED
+
 **Purpose:** Main orchestration component for creating new sleep logs  
 **Key Features:**
+
 - Coordinates between first screen, subsequent screens, and actions
 - Manages modal state and navigation
 - Uses extracted custom hook for business logic
@@ -81,8 +78,10 @@ src/
 **Navigation:** Called when user clicks "+" button
 
 #### `use-log-modal.ts` (564 lines) - NEW CUSTOM HOOK
+
 **Purpose:** Contains all business logic extracted from original SleepLogModal  
 **Key Features:**
+
 - 15 state variables for form management
 - 13 utility functions for validation and logic
 - 4 useEffect hooks for data synchronization
@@ -92,31 +91,39 @@ src/
 - Complete/incomplete log management
 
 #### `log-first-screen.tsx` (224 lines) - NEW COMPONENT
+
 **Purpose:** Initial form screen for date/time/type selection  
 **Key Features:**
+
 - Date picker with timezone awareness
 - Time picker for initial event
 - Sleep type selection (bedtime/nap)
 - Validation and error handling
 
 #### `log-subsequent-screen.tsx` (227 lines) - NEW COMPONENT
+
 **Purpose:** Follow-up screens for event type selection  
 **Key Features:**
+
 - Event history display
 - Next event type selection with time input
 - Recent events tile display
 - Complex UI for event progression
 
 #### `log-modal-actions.tsx` (110 lines) - NEW COMPONENT
+
 **Purpose:** Action buttons and validation warning display  
 **Key Features:**
+
 - Confirm/save buttons with state management
 - Validation warning display
 - Button state management based on form validity
 
 #### `edit-log-modal.tsx` (883 lines)
+
 **Purpose:** Advanced editing interface for existing sleep logs  
 **Key Features:**
+
 - Event time editing with TimePicker
 - Event deletion with validation
 - Interjection insertion between existing events
@@ -128,8 +135,10 @@ src/
 **Navigation:** Opened from LogDetailView "Edit" button
 
 #### `log-detail-view.tsx` (665 lines)
+
 **Purpose:** Comprehensive detailed view of a single sleep log  
 **Key Features:**
+
 - Collapsible sections (Headlines, Log, Comments)
 - Sleep statistics calculation and display
 - Real-time comments with Firebase integration
@@ -141,8 +150,10 @@ src/
 **Navigation:** Opened when user clicks on a log tile
 
 #### `logs-list-view.tsx` (580 lines)
+
 **Purpose:** Main interface showing all logs with navigation  
 **Key Features:**
+
 - Date navigation with timezone awareness
 - Dual view modes: "Events" (tiles) and "Windows" (duration analysis)
 - Previous day bedtime integration
@@ -154,8 +165,10 @@ src/
 **Navigation:** Default view, always accessible
 
 #### `comments-modal.tsx` (275 lines)
+
 **Purpose:** Standalone modal for managing comments across all logs  
 **Key Features:**
+
 - Unread vs All comments view modes
 - Search functionality (text filtering)
 - Mark all as read functionality
@@ -164,6 +177,7 @@ src/
 - Responsive design for mobile/desktop
 
 **Props:**
+
 ```typescript
 interface CommentsModalProps {
   isOpen: boolean;
@@ -178,8 +192,10 @@ interface CommentsModalProps {
 ### 💬 **Messaging Feature**
 
 #### `messaging-view.tsx`
+
 **Purpose:** Real-time messaging interface  
 **Key Features:**
+
 - Live chat functionality
 - Message history
 - Integration with Firebase messaging
@@ -189,8 +205,10 @@ interface CommentsModalProps {
 ### 🔄 **Shared Components**
 
 #### `media-messages.tsx`
+
 **Purpose:** Reusable media message components  
 **Components:**
+
 - `ImageMessage` - Display and interaction for image messages
 - `AudioMessage` - Audio playback and controls
 
@@ -199,18 +217,22 @@ interface CommentsModalProps {
 ## Data Flow & State Management
 
 ### Navigation Context Pattern
+
 All components use the `NavigationContext` for:
+
 - Current view state (`LogList`, `log-detail`, `edit-log`, etc.)
 - Active log ID for detail/edit views
 - Child timezone for date/time calculations
 - Log cache for performance optimization
 
 ### Firebase Integration
+
 - **Real-time listeners:** All components use Firebase `onSnapshot` for live updates
 - **Optimistic updates:** UI updates immediately, Firebase syncs in background
 - **Error handling:** Graceful fallbacks and user notifications
 
 ### Component Communication
+
 - **Parent → Child:** Props and context
 - **Child → Parent:** Navigation functions (`navigateToLogDetail`, `navigateToEditLog`, etc.)
 - **Sibling:** Via shared navigation context state
@@ -220,6 +242,7 @@ All components use the `NavigationContext` for:
 ## Import Patterns
 
 ### Clean Barrel Exports
+
 ```typescript
 // ✅ Clean - Single import for all features
 import {
@@ -241,11 +264,13 @@ import { EditLogModal } from "@/features/logging/components/edit-log-modal";
 ## Performance Optimizations
 
 ### Component-Level
+
 - **Lazy loading:** Components only loaded when needed
 - **Memoization:** Expensive calculations cached
 - **Debounced inputs:** Search and form inputs optimized
 
 ### Firebase-Level
+
 - **Real-time listeners:** Only active when component mounted
 - **Query optimization:** Indexes and filtered queries
 - **Offline support:** Firebase handles offline/online transitions
@@ -255,13 +280,16 @@ import { EditLogModal } from "@/features/logging/components/edit-log-modal";
 ## Testing Strategy
 
 ### Component Testing
+
 Each component should be tested for:
+
 - **Rendering:** Correct UI elements display
 - **Interactions:** User actions trigger expected behavior
 - **State management:** Context and local state updates
 - **Firebase integration:** Mock Firebase for reliable tests
 
 ### Integration Testing
+
 - **Navigation flows:** User journeys between components
 - **Real-time updates:** Firebase listener behavior
 - **Error states:** Network failures and edge cases
@@ -271,6 +299,7 @@ Each component should be tested for:
 ## Development Guidelines
 
 ### Adding New Components
+
 1. Create in appropriate feature directory
 2. Add to feature's `components/index.ts`
 3. Follow existing naming conventions
@@ -279,12 +308,14 @@ Each component should be tested for:
 6. Include proper error handling
 
 ### Modifying Existing Components
+
 1. Maintain backward compatibility
 2. Update props interfaces if needed
 3. Test all user flows
 4. Update this documentation
 
 ### Performance Best Practices
+
 - Use `useCallback` for event handlers
 - Memoize expensive calculations
 - Minimize Firebase listener scope
@@ -295,12 +326,14 @@ Each component should be tested for:
 ## Future Enhancements
 
 ### Potential Optimizations
+
 - **Code splitting:** Dynamic imports for large components
 - **Service worker:** Offline functionality
 - **PWA features:** Install prompts, background sync
 - **Performance monitoring:** Track component render times
 
 ### Architecture Improvements
+
 - **Micro-frontends:** Further feature isolation
 - **Component library:** Extract reusable UI components
 - **State management:** Consider Zustand or Redux for complex state
@@ -308,4 +341,4 @@ Each component should be tested for:
 
 ---
 
-*Last updated: Component extraction and kebab-case migration completion - 97.7% reduction achieved with business logic separation*
+_Last updated: Component extraction and kebab-case migration completion - 97.7% reduction achieved with business logic separation_

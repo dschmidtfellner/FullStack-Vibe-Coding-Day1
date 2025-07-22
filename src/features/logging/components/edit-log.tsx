@@ -31,8 +31,6 @@ export function EditLog() {
   const [interjectionType, setInterjectionType] =
     useState<SleepEvent["type"]>("woke_up");
   const [interjectionTime, setInterjectionTime] = useState<Date>(new Date());
-  const [interjectionValidationWarning, setInterjectionValidationWarning] =
-    useState<any>(null);
 
   // Validation dialog state
   const [showValidationDialog, setShowValidationDialog] = useState(false);
@@ -240,34 +238,6 @@ export function EditLog() {
     return false;
   };
 
-  // Validate interjection time
-  const validateInterjectionTime = (
-    time: Date,
-    beforeEvent: Date,
-    afterEvent: Date,
-  ) => {
-    if (time < beforeEvent) {
-      return {
-        isValid: false,
-        warning: {
-          type: "before-range",
-          message: `Time must be after ${formatTimeForDisplay(beforeEvent)}`,
-        },
-      };
-    }
-
-    if (time > afterEvent) {
-      return {
-        isValid: false,
-        warning: {
-          type: "after-range",
-          message: `Time must be before ${formatTimeForDisplay(afterEvent)}`,
-        },
-      };
-    }
-
-    return { isValid: true, warning: null };
-  };
 
   // Handle interjection modal save
   const handleSaveInterjection = (type: SleepEvent["type"], time: Date) => {
@@ -330,7 +300,7 @@ export function EditLog() {
     }
   };
 
-  if (isLoading || !log) {
+  if (isLoading || !log || !user) {
     return <UniversalSkeleton />;
   }
 
@@ -429,7 +399,6 @@ export function EditLog() {
           setInterjectionIndex(index);
           setInterjectionType(defaultType);
           setInterjectionTime(defaultTime);
-          setInterjectionValidationWarning(null);
           setShowInterjectionModal(true);
         }}
       />
@@ -451,7 +420,6 @@ export function EditLog() {
         onCancel={() => {
           setShowInterjectionModal(false);
           setInterjectionIndex(null);
-          setInterjectionValidationWarning(null);
         }}
         defaultType={interjectionType}
         defaultTime={interjectionTime}

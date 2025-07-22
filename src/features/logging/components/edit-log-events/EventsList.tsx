@@ -1,9 +1,9 @@
-import { Plus } from 'lucide-react';
-import TimePicker from 'react-time-picker';
-import 'react-time-picker/dist/TimePicker.css';
-import 'react-clock/dist/Clock.css';
-import { SleepEvent } from '@/lib/firebase/types';
-import { BubbleUser } from '@/lib/jwt-auth';
+import { Plus } from "lucide-react";
+import TimePicker from "react-time-picker";
+import "react-time-picker/dist/TimePicker.css";
+import "react-clock/dist/Clock.css";
+import { SleepEvent } from "@/lib/firebase/types";
+import { BubbleUser } from "@/lib/jwt-auth";
 
 interface EventsListProps {
   events: { type: SleepEvent["type"]; timestamp: Date }[];
@@ -17,7 +17,11 @@ interface EventsListProps {
   onSaveEventTime: (index: number) => void;
   onDeleteEvent: (index: number) => void;
   onEditingTimeChange: (time: string) => void;
-  onAddInterjection: (index: number, defaultType: SleepEvent["type"], defaultTime: Date) => void;
+  onAddInterjection: (
+    index: number,
+    defaultType: SleepEvent["type"],
+    defaultTime: Date,
+  ) => void;
 }
 
 export function EventsList({
@@ -32,7 +36,7 @@ export function EventsList({
   onSaveEventTime,
   onDeleteEvent,
   onEditingTimeChange,
-  onAddInterjection
+  onAddInterjection,
 }: EventsListProps) {
   return (
     <div className="px-4 pb-20 overflow-y-auto">
