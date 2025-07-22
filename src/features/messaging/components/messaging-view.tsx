@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { useBubbleAuth } from "@/hooks/useBubbleAuth";
 import { useChildAccess } from "@/hooks/useBubbleAuth";
+import { useTopSpacing } from "@/hooks/useTopSpacing";
 import { MessageInputBar } from "@/components/shared/MessageInputBar";
 import { FirebaseMessage } from "@/types/firebase";
 import {
@@ -34,6 +35,7 @@ function UniversalSkeleton() {
 
 export function MessagingView() {
   const { user } = useBubbleAuth();
+  const { topSpacingClass, containerHeightClass } = useTopSpacing();
   const [messages, setMessages] = useState<FirebaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -219,14 +221,12 @@ export function MessagingView() {
         user?.darkMode ? "bg-[#15111B]" : "bg-white"
       }`}
     >
-      {/* Default top spacing (64px) + extra spacer for free trial header (36px) */}
-      <div className={`${user?.needsSpacer ? "h-[100px]" : "h-[64px]"}`}></div>
+      {/* Dynamic top spacing based on Show_CTA URL parameter */}
+      <div className={topSpacingClass}></div>
 
       {/* Messages Container */}
       <div
-        className={`overflow-y-auto px-4 py-6 pb-[116px] space-y-4 ${
-          user?.needsSpacer ? "h-[calc(100%-100px)]" : "h-[calc(100%-64px)]"
-        }`}
+        className={`overflow-y-auto px-4 py-6 pb-[116px] space-y-4 ${containerHeightClass}`}
       >
         {messages.map((message) => {
           const isOwn = isOwnMessage(message.senderId);

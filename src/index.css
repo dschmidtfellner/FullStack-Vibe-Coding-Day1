@@ -155,3 +155,20 @@ body {
 .react-time-picker.right-align .react-time-picker__inputGroup {
   justify-content: flex-end;
 }
+
+/* Dynamic top spacing classes for Show_CTA URL parameter */
+.top-spacing-default {
+  height: 64px;
+}
+
+.top-spacing-with-cta {
+  height: 91px;
+}
+
+.container-height-default {
+  height: calc(100% - 64px);
+}
+
+.container-height-with-cta {
+  height: calc(100% - 91px);
+}

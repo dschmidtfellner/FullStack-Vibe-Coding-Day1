@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useTopSpacing } from '@/hooks/useTopSpacing';
 import { Plus, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import {
   SleepEvent,
@@ -17,6 +18,7 @@ import { CommentsModal } from '@/features/logging/components/comments-modal';
 
 export function LogsListView() {
   const { user } = useBubbleAuth();
+  const { topSpacingClass } = useTopSpacing();
   const {
     state,
     navigateToLogDetail,
@@ -270,8 +272,8 @@ export function LogsListView() {
         user?.darkMode ? "bg-[#15111B]" : "bg-white"
       }`}
     >
-      {/* Top spacing - minimal for iframe embedding */}
-      <div className="h-[20px]"></div>
+      {/* Dynamic top spacing based on Show_CTA URL parameter */}
+      <div className={topSpacingClass}></div>
 
       {/* Date Navigation Header */}
       <div className="px-4 pb-4">

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useTopSpacing } from '@/hooks/useTopSpacing';
 import { Plus, Minus, X } from 'lucide-react';
 import {
   SleepEvent,
@@ -22,6 +23,7 @@ import {
 
 export function LogDetailView() {
   const { user } = useBubbleAuth();
+  const { topSpacingClass } = useTopSpacing();
   const {
     state,
     navigateToEditLog,
@@ -263,8 +265,8 @@ export function LogDetailView() {
         user?.darkMode ? "bg-[#15111B]" : "bg-white"
       }`}
     >
-      {/* Top spacing - minimal for iframe embedding */}
-      <div className="h-[20px]"></div>
+      {/* Dynamic top spacing based on Show_CTA URL parameter */}
+      <div className={topSpacingClass}></div>
 
       {/* Back Button and Delete Button */}
       <div className="px-4 py-2 flex items-center justify-between">
