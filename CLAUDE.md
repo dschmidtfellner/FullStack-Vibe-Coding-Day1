@@ -80,7 +80,11 @@ This is a production application serving real families and professionals, so sta
 
 - **Functions**: Import from barrel export
   ```typescript
-  import { sendMessage, createSleepLog, uploadFile } from "@/lib/firebase/index";
+  import {
+    sendMessage,
+    createSleepLog,
+    uploadFile,
+  } from "@/lib/firebase/index";
   ```
 - **Types**: Import from types module
   ```typescript
@@ -188,7 +192,7 @@ import { SleepLogModal } from "@/features/sleep-logging/components/SleepLogModal
 
 ### Sleep Logging Component Map
 
-- **SleepLogModal** - New log creation interface
+- **LogModal** - New log creation interface
 - **EditLogModal** - Advanced log editing with interjections
 - **LogDetailView** - Detailed view with comments and statistics
 - **LogsListView** - Main list with date navigation and dual views
