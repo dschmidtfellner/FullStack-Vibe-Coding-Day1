@@ -592,6 +592,38 @@ Set up push notifications for Claude Code workflow using existing Firebase/OneSi
 - Successfully tested all notification types on actual device
 - System ready for production use in Claude Code workflow
 
+## Current Feature: Family Unread Counters Implementation
+
+### Session Summary
+Implementing automatic family unread counter creation to match individual unread_counters behavior.
+
+### What We Did:
+1. Modified `onMessageCreated` trigger to automatically create/update `familyUnreadCounters` for ALL recipients
+2. Updated all mark-as-read functions to handle family counters both with and without sibling context
+3. Treats every child as its own family by default (even single-child families)
+
+### Implementation Details:
+- When a message is created, both individual AND family counters are now updated
+- Family counter ID format: `user_{userId}_family_{childId}` (childId acts as originalChildId when no siblings)
+- When marking messages as read:
+  - WITH sibling context (from URL params): Aggregates counts across all siblings
+  - WITHOUT sibling context: Updates family counter to match individual counter
+- This ensures familyUnreadCounters exist for all user-child combinations
+
+### Key Changes:
+- `handleMessageCreated`: Now creates/updates family counters automatically
+- `markChatAsReadForUser`: Updates family counters with or without sibling context
+- `markLogAsReadForUser`: Updates family counters with or without sibling context  
+- `markAllLogsAsReadForUser`: Updates family counters with or without sibling context
+
+### Commits Made:
+1. feat: Implement automatic family unread counter creation to match individual counters
+
+### Next Steps:
+- Test that family counters are being created when messages are sent
+- Verify Bubble can query familyUnreadCounters collection
+- Test aggregation when sibling info is provided via URL params
+
 ## Navigation Context & Routing
 - App uses URL parameters to determine current view and context
 - Key params: `view`, `childId`, `logId`, `conversationId`

@@ -12,7 +12,7 @@ let doulaConnectFirebaseApp = null;
 function initializeOldFirebaseApps() {
     const apps = {
         rested: initializeRestedFirebaseApp(),
-        doulaConnect: initializeDoulaConnectFirebaseApp()
+        doulaConnect: initializeDoulaConnectFirebaseApp(),
     };
     return apps;
 }
@@ -29,20 +29,20 @@ function initializeRestedFirebaseApp() {
         // Get Rested Firebase project service account from environment
         const restedCredentials = (_a = functions.config().rested_firebase) === null || _a === void 0 ? void 0 : _a.service_account;
         if (!restedCredentials) {
-            console.warn('Rested Firebase service account not configured');
+            console.warn("Rested Firebase service account not configured");
             return null;
         }
         // Parse credentials (they should be base64 encoded JSON)
-        const credentials = JSON.parse(Buffer.from(restedCredentials, 'base64').toString('utf8'));
+        const credentials = JSON.parse(Buffer.from(restedCredentials, "base64").toString("utf8"));
         restedFirebaseApp = admin.initializeApp({
             credential: admin.credential.cert(credentials),
-            databaseURL: 'https://rested-bubble-default-rtdb.firebaseio.com/'
-        }, 'restedProject');
-        console.log('Rested Firebase project initialized for push notifications');
+            databaseURL: "https://rested-bubble-default-rtdb.firebaseio.com/",
+        }, "restedProject");
+        console.log("Rested Firebase project initialized for push notifications");
         return restedFirebaseApp;
     }
     catch (error) {
-        console.error('Failed to initialize Rested Firebase project:', error);
+        console.error("Failed to initialize Rested Firebase project:", error);
         return null;
     }
 }
@@ -58,20 +58,20 @@ function initializeDoulaConnectFirebaseApp() {
         // Get DoulaConnect Firebase project service account from environment
         const doulaConnectCredentials = (_a = functions.config().doulaconnect_firebase) === null || _a === void 0 ? void 0 : _a.service_account;
         if (!doulaConnectCredentials) {
-            console.warn('DoulaConnect Firebase service account not configured');
+            console.warn("DoulaConnect Firebase service account not configured");
             return null;
         }
         // Parse credentials (they should be base64 encoded JSON)
-        const credentials = JSON.parse(Buffer.from(doulaConnectCredentials, 'base64').toString('utf8'));
+        const credentials = JSON.parse(Buffer.from(doulaConnectCredentials, "base64").toString("utf8"));
         doulaConnectFirebaseApp = admin.initializeApp({
             credential: admin.credential.cert(credentials),
-            databaseURL: 'https://doulaconnect-119a4-default-rtdb.firebaseio.com/'
-        }, 'doulaConnectProject');
-        console.log('DoulaConnect Firebase project initialized for push notifications');
+            databaseURL: "https://doulaconnect-119a4-default-rtdb.firebaseio.com/",
+        }, "doulaConnectProject");
+        console.log("DoulaConnect Firebase project initialized for push notifications");
         return doulaConnectFirebaseApp;
     }
     catch (error) {
-        console.error('Failed to initialize DoulaConnect Firebase project:', error);
+        console.error("Failed to initialize DoulaConnect Firebase project:", error);
         return null;
     }
 }
@@ -80,7 +80,7 @@ function initializeDoulaConnectFirebaseApp() {
  */
 function getFirebaseApp(project) {
     const apps = initializeOldFirebaseApps();
-    return project === 'rested' ? apps.rested : apps.doulaConnect;
+    return project === "rested" ? apps.rested : apps.doulaConnect;
 }
 exports.getFirebaseApp = getFirebaseApp;
 //# sourceMappingURL=firebase-apps.js.map

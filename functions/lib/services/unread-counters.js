@@ -66,6 +66,35 @@ async function handleMessageCreated(snap, context, db) {
         }
         await batch.commit();
         console.log(`Updated unread counters for message: ${context.params.messageId}`);
+        // Update family counters for each recipient
+        // In Phase 1, we treat each child as its own family until we get sibling info from URL params
+        const familyBatch = db.batch();
+        for (const userId of notificationData.recipients) {
+            // Don't count for sender
+            if (userId === message.senderId)
+                continue;
+            // Create/update family counter treating this child as its own family
+            const familyCounterId = `user_${userId}_family_${message.childId}`;
+            const familyCounterRef = db.doc(`family_unread_counters/${familyCounterId}`);
+            // Get the individual counter we just updated to calculate family totals
+            const individualCounterId = `user_${userId}_child_${message.childId}`;
+            const individualDoc = await db.doc(`unread_counters/${individualCounterId}`).get();
+            if (individualDoc.exists) {
+                const individualData = individualDoc.data();
+                // For now, family counts = individual counts (will be aggregated when we have siblings)
+                familyBatch.set(familyCounterRef, {
+                    id: familyCounterId,
+                    userId,
+                    originalChildId: message.childId,
+                    familyTotalUnreadCount: (individualData === null || individualData === void 0 ? void 0 : individualData.totalUnreadCount) || 0,
+                    familyChatUnreadCount: (individualData === null || individualData === void 0 ? void 0 : individualData.chatUnreadCount) || 0,
+                    familyLogUnreadCount: (individualData === null || individualData === void 0 ? void 0 : individualData.logUnreadCount) || 0,
+                    lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+        }
+        await familyBatch.commit();
+        console.log(`Updated family counters for message: ${context.params.messageId}`);
         // Send push notifications to recipients
         await (0, push_notifications_1.sendPushNotificationsForMessage)(message, notificationData);
     }
@@ -108,9 +137,25 @@ async function markChatAsReadForUser(userId, childId, conversationId, db, family
         });
     });
     await batch.commit();
-    // Update family counters if family context provided
+    // Update family counters
     if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        // We have sibling info from URL params - aggregate across siblings
         await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
+    else {
+        // No sibling info - treat this child as its own family
+        const familyCounterId = `user_${userId}_family_${childId}`;
+        const updatedCounter = await counterRef.get();
+        const updatedData = updatedCounter.data();
+        await db.doc(`family_unread_counters/${familyCounterId}`).set({
+            id: familyCounterId,
+            userId,
+            originalChildId: childId,
+            familyTotalUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.totalUnreadCount) || 0,
+            familyChatUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.chatUnreadCount) || 0,
+            familyLogUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.logUnreadCount) || 0,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     }
     return {
         success: true,
@@ -160,9 +205,25 @@ async function markLogAsReadForUser(userId, childId, logId, db, familyContext) {
         });
     });
     await batch.commit();
-    // Update family counters if family context provided
+    // Update family counters
     if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        // We have sibling info from URL params - aggregate across siblings
         await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
+    else {
+        // No sibling info - treat this child as its own family
+        const familyCounterId = `user_${userId}_family_${childId}`;
+        const updatedCounter = await counterRef.get();
+        const updatedData = updatedCounter.data();
+        await db.doc(`family_unread_counters/${familyCounterId}`).set({
+            id: familyCounterId,
+            userId,
+            originalChildId: childId,
+            familyTotalUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.totalUnreadCount) || 0,
+            familyChatUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.chatUnreadCount) || 0,
+            familyLogUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.logUnreadCount) || 0,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     }
     return {
         success: true,
@@ -199,9 +260,25 @@ async function markAllLogsAsReadForUser(userId, childId, db, familyContext) {
         });
     });
     await batch.commit();
-    // Update family counters if family context provided
+    // Update family counters
     if (familyContext && familyContext.originalChildId && familyContext.siblings.length > 0) {
+        // We have sibling info from URL params - aggregate across siblings
         await updateFamilyCounters(userId, familyContext.originalChildId, familyContext.siblings, db);
+    }
+    else {
+        // No sibling info - treat this child as its own family
+        const familyCounterId = `user_${userId}_family_${childId}`;
+        const updatedCounter = await counterRef.get();
+        const updatedData = updatedCounter.data();
+        await db.doc(`family_unread_counters/${familyCounterId}`).set({
+            id: familyCounterId,
+            userId,
+            originalChildId: childId,
+            familyTotalUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.totalUnreadCount) || 0,
+            familyChatUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.chatUnreadCount) || 0,
+            familyLogUnreadCount: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.logUnreadCount) || 0,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     }
     return {
         success: true,
