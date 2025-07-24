@@ -622,6 +622,28 @@ Implementing automatic family unread counter creation to match individual unread
 3. fix: Correct Bubble API endpoint name to firebase_message_recipients
 4. feat: Add family context support to message sending for sibling aggregation
 
+## Current Feature: Timezone Support for Timestamp Displays
+
+### Session Summary
+Adding timezone support to all timestamp displays throughout the app to ensure times are shown in the child's timezone.
+
+### Commits Made:
+1. fix: Add timezone support to EditLog and LogModal timestamp displays (untested)
+2. fix: Add timezone support to MessagingView and CommentsModal timestamp displays
+
+### Progress Status:
+- ✅ Updated EditLog component to use timezone from NavigationContext
+- ✅ Updated LogModal (log-subsequent-screen) to use timezone from NavigationContext
+- ✅ Updated MessagingView to use timezone for message timestamps
+- ✅ Updated CommentsModal to use timezone for comment timestamps
+- ✅ LogDetailView already had timezone support via formatTimeInTimezone
+
+### Implementation Details:
+- All components now use `state.timezone` from NavigationContext
+- Uses Intl.DateTimeFormat API with timezone parameter
+- Falls back to local timezone if not specified
+- Consistent formatting across all components
+
 ### Implementation Complete:
 - Family counters now created automatically when messages are sent
 - React app passes family context (originalChildId, siblings) from URL params
