@@ -107,6 +107,16 @@ function calculateAggregatedStats(logs, childId, date, timezone) {
             }
         }
     }
+    // Calculate numeric values in minutes for charting
+    const timeAsleepMinutes = Math.round(totalAsleepMs / (1000 * 60));
+    const timeAwakeInBedMinutes = Math.round(totalAwakeInBedMs / (1000 * 60));
+    const longestSleepStretchMinutes = Math.round(longestSleepStretchMs / (1000 * 60));
+    const timeToFallAsleepMinutes = timeToFallAsleepMs !== null
+        ? Math.round(timeToFallAsleepMs / (1000 * 60))
+        : 0;
+    const averageWakeUpLengthMinutes = wakeUpCount > 0
+        ? Math.round(totalWakeUpDurationMs / wakeUpCount / (1000 * 60))
+        : 0;
     // Format results
     const statsId = `child_${childId}_date_${date}`;
     return {
@@ -118,12 +128,14 @@ function calculateAggregatedStats(logs, childId, date, timezone) {
         timeAwakeInBed: formatDuration(totalAwakeInBedMs),
         longestSleepStretch: formatDuration(longestSleepStretchMs),
         numberOfWakeUps: totalWakeUps,
-        timeToFallAsleep: timeToFallAsleepMs !== null
-            ? `${Math.round(timeToFallAsleepMs / (1000 * 60))}m`
-            : '0m',
-        averageWakeUpLength: wakeUpCount > 0
-            ? formatDuration(Math.round(totalWakeUpDurationMs / wakeUpCount))
-            : '0m',
+        timeToFallAsleep: timeToFallAsleepMinutes > 0 ? `${timeToFallAsleepMinutes}m` : '0m',
+        averageWakeUpLength: formatDuration(averageWakeUpLengthMinutes * 60 * 1000),
+        // Numeric versions for charting
+        timeAsleepMin: timeAsleepMinutes,
+        timeAwakeInBedMin: timeAwakeInBedMinutes,
+        longestSleepStretchMin: longestSleepStretchMinutes,
+        timeToFallAsleepMin: timeToFallAsleepMinutes,
+        averageWakeUpLengthMin: averageWakeUpLengthMinutes,
         lastUpdated: admin.firestore.Timestamp.now(),
         sourceLogIds,
         calculationVersion: 1
@@ -287,6 +299,12 @@ function createEmptyStats(childId, date, timezone) {
         numberOfWakeUps: 0,
         timeToFallAsleep: '0m',
         averageWakeUpLength: '0m',
+        // Numeric versions for charting
+        timeAsleepMin: 0,
+        timeAwakeInBedMin: 0,
+        longestSleepStretchMin: 0,
+        timeToFallAsleepMin: 0,
+        averageWakeUpLengthMin: 0,
         lastUpdated: admin.firestore.Timestamp.now(),
         sourceLogIds: [],
         calculationVersion: 1

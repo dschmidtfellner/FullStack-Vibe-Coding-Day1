@@ -145,6 +145,13 @@ export interface DailySleepStats {
   timeToFallAsleep: string; // "Xm" format - from bedtime log (Put in Bed → Fell Asleep)
   averageWakeUpLength: string; // "Xh Ym" format - average across all wake-ups for logs starting this date
   
+  // Numeric versions for charting (in minutes)
+  timeAsleepMin: number; // Total minutes asleep
+  timeAwakeInBedMin: number; // Total minutes awake in bed
+  longestSleepStretchMin: number; // Longest sleep stretch in minutes
+  timeToFallAsleepMin: number; // Minutes to fall asleep
+  averageWakeUpLengthMin: number; // Average wake-up length in minutes
+  
   // Metadata
   lastUpdated: Timestamp;
   sourceLogIds: string[]; // Array of log IDs that contributed to these stats
