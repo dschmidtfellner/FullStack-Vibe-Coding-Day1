@@ -16,6 +16,7 @@ import {
   getOrCreateConversation,
   markChatMessagesAsRead,
 } from "@/lib/firebase/index";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 // Universal skeleton loading component (will be extracted later)
 function UniversalSkeleton() {
@@ -36,6 +37,7 @@ function UniversalSkeleton() {
 export function MessagingView() {
   const { user } = useBubbleAuth();
   const { topSpacingClass, containerHeightClass } = useTopSpacing();
+  const { state } = useNavigation();
   const [messages, setMessages] = useState<FirebaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -170,18 +172,23 @@ export function MessagingView() {
 
     // Handle Firebase Timestamp
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    
+    // Use the timezone from navigation state or fallback to local timezone
+    const timezone = state.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
     return (
-      date.toLocaleDateString("en-US", {
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
         month: "numeric",
         day: "numeric",
-      }) +
+      }).format(date) +
       ", " +
-      date
-        .toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        })
-        .toLowerCase()
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }).format(date).toLowerCase()
     );
   };
 

@@ -116,7 +116,7 @@ export function CommentsModal({
           <div className="px-4 sm:px-6 pt-6 pb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2
-                className="font-domine text-xl sm:text-2xl font-medium"
+                className="font-domine text-2xl sm:text-3xl font-medium"
                 style={{ color: "#745288" }}
               >
                 {viewMode === "unread" ? "Unread comments" : "All comments"}
@@ -128,7 +128,7 @@ export function CommentsModal({
                   onClick={() =>
                     setViewMode(viewMode === "unread" ? "all" : "unread")
                   }
-                  className={`px-3 py-2 rounded-full border transition-colors text-sm ${
+                  className={`px-3 py-2 rounded-full border transition-colors text-base ${
                     user?.darkMode
                       ? "border-gray-600 text-gray-300 hover:bg-gray-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100"
@@ -159,7 +159,7 @@ export function CommentsModal({
                 style={{
                   backgroundColor: "#F0DDEF",
                   color: "#745288",
-                  fontSize: "14px",
+                  fontSize: "16px",
                   fontWeight: "500",
                 }}
               >
@@ -217,21 +217,26 @@ export function CommentsModal({
                     logType.charAt(0).toUpperCase() + logType.slice(1);
                   const logStartTime = log?.events?.[0]?.localTime || "";
 
-                  // Format timestamp
+                  // Format timestamp using the timezone from navigation state
                   const messageDate = comment.timestamp.toDate();
-                  const timeStr = messageDate.toLocaleTimeString("en-US", {
+                  const timezone = state.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  
+                  const timeStr = new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
                     hour: "numeric",
                     minute: "2-digit",
                     hour12: true,
-                  });
-                  const dateStr = messageDate.toLocaleDateString("en-US", {
+                  }).format(messageDate);
+                  
+                  const dateStr = new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
                     month: "short",
                     day: "numeric",
                     year:
                       messageDate.getFullYear() !== new Date().getFullYear()
                         ? "numeric"
                         : undefined,
-                  });
+                  }).format(messageDate);
 
                   return (
                     <div
@@ -248,39 +253,39 @@ export function CommentsModal({
                         }
                       }}
                     >
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0 mb-1">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0 mb-0">
                         <div className="flex flex-col">
                           <p
-                            className="text-sm sm:text-base"
+                            className="text-base sm:text-lg"
                             style={{ color: "#745288", fontWeight: "600" }}
                           >
                             {comment.senderName}
                           </p>
                           <p
-                            className="text-xs sm:text-sm"
+                            className="text-base"
                             style={{ color: "#745288", fontWeight: "400" }}
                           >
                             {logTypeDisplay} at {logStartTime}
                           </p>
                         </div>
 
-                        <div className="flex gap-2 sm:text-right sm:flex-col">
+                        <div className="flex gap-0 sm:text-right sm:flex-col">
                           <p
-                            className={`text-sm ${
+                            className={`text-base ${
                               user?.darkMode ? "text-gray-400" : "text-gray-600"
                             }`}
                           >
                             {dateStr}, {timeStr}
                           </p>
                           <p
-                            className={`text-xs ${
+                            className={`text-base ${
                               user?.darkMode ? "text-gray-500" : "text-gray-500"
                             }`}
                           ></p>
                         </div>
                       </div>
                       <p
-                        className={`${
+                        className={`text-base ${
                           user?.darkMode ? "text-gray-300" : "text-gray-700"
                         }`}
                       >
