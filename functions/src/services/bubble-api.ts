@@ -95,21 +95,32 @@ export async function getChildPushRecipientsAndSenderInfo(childId: string, sende
     }
     
     // Call Bubble API to get recipients list and sender info
-    const response = await fetch(`${apiBaseUrl.replace('/obj', '')}/wf/push_recipients_list_for_firebase`, {
+    const apiUrl = `${apiBaseUrl.replace('/obj', '')}/wf/firebase_message_recipients`;
+    const requestBody = JSON.stringify({ childId, senderId });
+    
+    console.log(`Calling Bubble API: ${apiUrl}`);
+    console.log(`Request body: ${requestBody}`);
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ childId, senderId })
+      body: requestBody
     });
     
+    console.log(`Bubble API response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Bubble API error response body: ${errorText}`);
       console.error(`Bubble API error for push recipients: ${response.status} ${response.statusText}`);
       return { recipients: [], senderName: 'Someone', primaryCaregiverId: '', altOrg: '' };
     }
     
     const data = await response.json();
+    console.log(`Bubble API response data:`, JSON.stringify(data, null, 2));
     const recipients = data.response?.userIds || data.response?.users || [];
     const senderName = data.response?.senderName || 'Someone';
     const primaryCaregiverId = data.response?.primaryCaregiverId || '';

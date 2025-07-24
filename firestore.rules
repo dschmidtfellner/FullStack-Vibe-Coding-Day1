@@ -44,5 +44,11 @@ service cloud.firestore {
       allow read, write: if true; // Allow access to unread counters
       allow create: if true; // Allow counter creation
     }
+    
+    // Family unread counters collection - allow read/write for all authenticated users
+    match /family_unread_counters/{counterId} {
+      allow read, write: if true; // Allow access to family unread counters
+      allow create: if true; // Allow counter creation
+    }
   }
 }

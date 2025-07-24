@@ -618,11 +618,23 @@ Implementing automatic family unread counter creation to match individual unread
 
 ### Commits Made:
 1. feat: Implement automatic family unread counter creation to match individual counters
+2. fix: Add security rules for family_unread_counters collection  
+3. fix: Correct Bubble API endpoint name to firebase_message_recipients
+
+### Issues Fixed:
+- Family counters now created automatically when messages are sent
+- Fixed 404 error - Bubble API endpoint was incorrectly named
+- Added missing Firestore security rules for family_unread_counters collection
+- Verified family counters are being created successfully in logs
+
+### Current Issue:
+- Bubble FirestoreDataList plugin can't connect to ANY Firestore collection (including previously working ones)
+- This suggests an authentication/configuration issue with the Bubble plugin itself
 
 ### Next Steps:
-- Test that family counters are being created when messages are sent
-- Verify Bubble can query familyUnreadCounters collection
-- Test aggregation when sibling info is provided via URL params
+- Check browser console for specific error messages
+- Verify API key and project ID in Bubble plugin settings
+- Test aggregation when sibling info is provided via URL params (after connection is fixed)
 
 ## Navigation Context & Routing
 - App uses URL parameters to determine current view and context
