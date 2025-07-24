@@ -240,6 +240,7 @@ export function useLogModal() {
 
   const formatTimeForDisplay = (date: Date): string => {
     return new Intl.DateTimeFormat("en-US", {
+      timeZone: state.timezone,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,

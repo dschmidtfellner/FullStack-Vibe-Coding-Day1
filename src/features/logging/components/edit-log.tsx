@@ -35,6 +35,18 @@ export function EditLog() {
   // Validation dialog state
   const [showValidationDialog, setShowValidationDialog] = useState(false);
 
+  // Format time in the child's timezone
+  const formatTimeInTimezone = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: state.timezone,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  };
+
   // Get current log from cache or fetch it
   useEffect(() => {
     if (!state.logId) return;
@@ -368,7 +380,7 @@ export function EditLog() {
       <BasicInfoSection
         log={log}
         user={user}
-        formatTimeInTimezone={formatTimeForDisplay}
+        formatTimeInTimezone={formatTimeInTimezone}
         onDelete={navigateBack}
         logId={state.logId || null}
       />
@@ -387,7 +399,7 @@ export function EditLog() {
         user={user}
         editingEventIndex={editingEventIndex}
         editingTime={editingTime}
-        formatTimeForDisplay={formatTimeForDisplay}
+        formatTimeForDisplay={formatTimeInTimezone}
         getEventTypeText={getEventTypeText}
         hasConsecutiveSameType={hasConsecutiveSameType}
         onEditEvent={handleEditEvent}
@@ -413,7 +425,7 @@ export function EditLog() {
         interjectionIndex={interjectionIndex}
         events={events}
         user={user}
-        formatTimeForDisplay={formatTimeForDisplay}
+        formatTimeForDisplay={formatTimeInTimezone}
         getEventTypeText={getEventTypeText}
         onSave={handleSaveInterjection}
         onCancel={() => {
