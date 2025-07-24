@@ -305,7 +305,7 @@ export function EditLog() {
 
   return (
     <div
-      className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto ${
+      className={`relative h-full font-['Poppins'] max-w-[800px] mx-auto pt-[60px] ${
         user?.darkMode ? "bg-[#15111B]" : "bg-white"
       }`}
     >
