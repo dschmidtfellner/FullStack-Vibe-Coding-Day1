@@ -56,9 +56,10 @@ export function CommentsModal({
 
           // Check if message is unread for current user
           const isRead =
-            message.readBy &&
-            typeof message.readBy === "object" &&
-            message.readBy[user?.id] === true;
+            message.senderId === user?.id || // User's own messages are always "read"
+            (message.readBy &&
+             typeof message.readBy === "object" &&
+             message.readBy[user?.id] === true);
           if (!isRead) {
             unreadMessages.push(message);
           }

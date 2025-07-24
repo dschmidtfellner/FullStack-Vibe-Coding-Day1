@@ -6,7 +6,7 @@ import { SleepEvent } from "@/lib/firebase/types";
 import { BubbleUser } from "@/lib/jwt-auth";
 
 interface EventsListProps {
-  events: { type: SleepEvent["type"]; timestamp: Date }[];
+  events: { type: SleepEvent["type"]; timestamp: Date; localTime?: string }[];
   user: BubbleUser | null;
   editingEventIndex: number | null;
   editingTime: string;
@@ -108,7 +108,7 @@ export function EventsList({
                         user?.darkMode ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
-                      {formatTimeForDisplay(event.timestamp)}
+                      {event.localTime || formatTimeForDisplay(event.timestamp)}
                     </span>
 
                     <button

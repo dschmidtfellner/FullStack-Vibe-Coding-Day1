@@ -14,7 +14,7 @@ export function EditLog() {
   const [log, setLog] = useState<SleepLog | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [events, setEvents] = useState<
-    { type: SleepEvent["type"]; timestamp: Date }[]
+    { type: SleepEvent["type"]; timestamp: Date; localTime?: string }[]
   >([]);
   const [editingEventIndex, setEditingEventIndex] = useState<number | null>(
     null,
@@ -60,6 +60,7 @@ export function EditLog() {
         const localEvents = cachedLog.events.map((e) => ({
           type: e.type,
           timestamp: e.childLocalTimestamp.toDate(),
+          localTime: e.localTime, // Use the pre-formatted time string
         }));
         setEvents(localEvents);
         // Set initial date from first event

@@ -27,7 +27,7 @@ export function useLogModal() {
   // Core state
   const [isLoading, setIsLoading] = useState(false);
   const [sleepType, setSleepType] = useState<"nap" | "bedtime">("nap");
-  const [events, setEvents] = useState<Array<{ type: SleepEvent["type"]; timestamp: Date }>>([]);
+  const [events, setEvents] = useState<Array<{ type: SleepEvent["type"]; timestamp: Date; localTime?: string }>>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => {
     if (state.defaultLogDate) {
@@ -93,6 +93,7 @@ export function useLogModal() {
           const eventsWithDates = cachedLog.events.map((event) => ({
             type: event.type,
             timestamp: fromChildLocalTime(event.childLocalTimestamp),
+            localTime: event.localTime, // Preserve the pre-formatted time
           }));
           setEvents(eventsWithDates);
 
@@ -120,6 +121,7 @@ export function useLogModal() {
               const eventsWithDates = log.events.map((event) => ({
                 type: event.type,
                 timestamp: fromChildLocalTime(event.childLocalTimestamp),
+                localTime: event.localTime, // Preserve the pre-formatted time
               }));
               setEvents(eventsWithDates);
 

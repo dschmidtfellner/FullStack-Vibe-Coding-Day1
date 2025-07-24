@@ -3,7 +3,7 @@ import { SleepEvent } from '@/lib/firebase/types';
 
 interface LogSubsequentScreenProps {
   user: any;
-  events: Array<{ type: SleepEvent["type"]; timestamp: Date }>;
+  events: Array<{ type: SleepEvent["type"]; timestamp: Date; localTime?: string }>;
   currentTime: Date;
   handleTimeChange: (value: string | null) => void;
   formatTimeForPicker: (date: Date) => string;
@@ -82,7 +82,7 @@ export function LogSubsequentScreen({
                             : "text-gray-600"
                         }`}
                       >
-                        {formatTimeForDisplay(event.timestamp)}
+                        {event.localTime || formatTimeForDisplay(event.timestamp)}
                       </span>
                     </div>
                   );
