@@ -78,34 +78,39 @@ export async function handleMessageCreated(
     console.log(`Updated unread counters for message: ${context.params.messageId}`);
     
     // Update family counters for each recipient
-    // In Phase 1, we treat each child as its own family until we get sibling info from URL params
     const familyBatch = db.batch();
     
     for (const userId of notificationData.recipients) {
       // Don't count for sender
       if (userId === message.senderId) continue;
       
-      // Create/update family counter treating this child as its own family
-      const familyCounterId = `user_${userId}_family_${message.childId}`;
-      const familyCounterRef = db.doc(`family_unread_counters/${familyCounterId}`);
-      
-      // Get the individual counter we just updated to calculate family totals
-      const individualCounterId = `user_${userId}_child_${message.childId}`;
-      const individualDoc = await db.doc(`unread_counters/${individualCounterId}`).get();
-      
-      if (individualDoc.exists) {
-        const individualData = individualDoc.data();
+      // Check if message has family context
+      if (message.familyContext && message.familyContext.originalChildId && message.familyContext.siblings.length > 0) {
+        // Use family context from message to aggregate across siblings
+        await updateFamilyCounters(userId, message.familyContext.originalChildId, message.familyContext.siblings, db);
+      } else {
+        // No family context - treat this child as its own family
+        const familyCounterId = `user_${userId}_family_${message.childId}`;
+        const familyCounterRef = db.doc(`family_unread_counters/${familyCounterId}`);
         
-        // For now, family counts = individual counts (will be aggregated when we have siblings)
-        familyBatch.set(familyCounterRef, {
-          id: familyCounterId,
-          userId,
-          originalChildId: message.childId,
-          familyTotalUnreadCount: individualData?.totalUnreadCount || 0,
-          familyChatUnreadCount: individualData?.chatUnreadCount || 0,
-          familyLogUnreadCount: individualData?.logUnreadCount || 0,
-          lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        // Get the individual counter we just updated to calculate family totals
+        const individualCounterId = `user_${userId}_child_${message.childId}`;
+        const individualDoc = await db.doc(`unread_counters/${individualCounterId}`).get();
+        
+        if (individualDoc.exists) {
+          const individualData = individualDoc.data();
+          
+          // For single-child families, family counts = individual counts
+          familyBatch.set(familyCounterRef, {
+            id: familyCounterId,
+            userId,
+            originalChildId: message.childId,
+            familyTotalUnreadCount: individualData?.totalUnreadCount || 0,
+            familyChatUnreadCount: individualData?.chatUnreadCount || 0,
+            familyLogUnreadCount: individualData?.logUnreadCount || 0,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
       }
     }
     

@@ -42,14 +42,15 @@ export async function sendMessage(
   senderName: string,
   text: string,
   conversationId: string,
-  childId: string
+  childId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
     if (import.meta.env.DEV) {
-      console.log('Firebase sendMessage called with:', { senderId, senderName, text: text.substring(0, 50), conversationId, childId });
+      console.log('Firebase sendMessage called with:', { senderId, senderName, text: text.substring(0, 50), conversationId, childId, familyContext });
     }
     
-    const messageData = {
+    const messageData: any = {
       text,
       senderId,
       senderName,
@@ -60,6 +61,11 @@ export async function sendMessage(
       read: false,
       appVersion: getAppVersion(),
     };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     if (import.meta.env.DEV) {
@@ -84,7 +90,8 @@ export async function sendImageMessage(
   senderName: string,
   imageFile: File,
   conversationId: string,
-  childId: string
+  childId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
     console.log('sendImageMessage called with:', {
@@ -93,7 +100,8 @@ export async function sendImageMessage(
       fileName: imageFile.name,
       fileSize: imageFile.size,
       conversationId,
-      childId
+      childId,
+      familyContext
     });
     
     // Upload image to Firebase Storage
@@ -103,7 +111,7 @@ export async function sendImageMessage(
     
     // Send message with image
     console.log('Creating message document in Firestore...');
-    const messageData = {
+    const messageData: any = {
       senderId,
       senderName,
       conversationId,
@@ -114,6 +122,11 @@ export async function sendImageMessage(
       read: false,
       appVersion: getAppVersion(),
     };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     console.log('Image message created successfully:', messageRef.id);
@@ -137,7 +150,8 @@ export async function sendAudioMessage(
   senderName: string,
   audioBlob: Blob,
   conversationId: string,
-  childId: string
+  childId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
     // Convert blob to file
@@ -149,7 +163,7 @@ export async function sendAudioMessage(
     const audioUrl = await uploadFile(audioFile, 'audio');
     
     // Send message with audio
-    const messageRef = await addDoc(collection(db, 'messages'), {
+    const messageData: any = {
       senderId,
       senderName,
       conversationId,
@@ -159,7 +173,14 @@ export async function sendAudioMessage(
       timestamp: serverTimestamp(),
       read: false,
       appVersion: getAppVersion(),
-    });
+    };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
+    
+    const messageRef = await addDoc(collection(db, 'messages'), messageData);
 
     // Update conversation with last message info
     await updateConversationLastMessage(conversationId, '🎵 Audio', serverTimestamp());

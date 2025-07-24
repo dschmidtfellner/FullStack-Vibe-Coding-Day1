@@ -620,21 +620,26 @@ Implementing automatic family unread counter creation to match individual unread
 1. feat: Implement automatic family unread counter creation to match individual counters
 2. fix: Add security rules for family_unread_counters collection  
 3. fix: Correct Bubble API endpoint name to firebase_message_recipients
+4. feat: Add family context support to message sending for sibling aggregation
 
-### Issues Fixed:
+### Implementation Complete:
 - Family counters now created automatically when messages are sent
-- Fixed 404 error - Bubble API endpoint was incorrectly named
-- Added missing Firestore security rules for family_unread_counters collection
-- Verified family counters are being created successfully in logs
+- React app passes family context (originalChildId, siblings) from URL params
+- Cloud Functions aggregate family counters across siblings when context provided
+- Falls back to single-child family counters when no siblings specified
 
-### Current Issue:
-- Bubble FirestoreDataList plugin can't connect to ANY Firestore collection (including previously working ones)
-- This suggests an authentication/configuration issue with the Bubble plugin itself
+### Key Changes:
+- Added originalChildId and siblings to NavigationContext from URL params
+- Updated all message sending functions to accept optional familyContext
+- MessageInputBar now passes family context with all messages
+- Cloud Functions use familyContext to aggregate counters across siblings
+- When no family context, treats each child as its own family
 
-### Next Steps:
-- Check browser console for specific error messages
-- Verify API key and project ID in Bubble plugin settings
-- Test aggregation when sibling info is provided via URL params (after connection is fixed)
+### Testing Steps:
+1. Load app with sibling URL params: `?childId=child1&originalChildId=mainChild&siblings=mainChild,child1,child2`
+2. Send message to any sibling
+3. Check that family counter for originalChildId shows aggregated totals
+4. Verify Bubble can query family_unread_counters collection
 
 ## Navigation Context & Routing
 - App uses URL parameters to determine current view and context

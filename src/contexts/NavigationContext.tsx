@@ -18,6 +18,9 @@ export type NavigationState = {
     | "edit-log"
     | null;
   defaultLogDate?: string; // For passing default date to new log modal
+  // Family context for Phase 1 sibling support
+  originalChildId: string | null;
+  siblings: string[];
 };
 
 // Navigation context type definition
@@ -65,6 +68,13 @@ export function NavigationProvider({
   const initialView =
     (urlParams.get("view") as NavigationState["view"]) || "LogList";
   const initialLogId = urlParams.get("logId");
+  
+  // Parse family context for Phase 1 sibling support
+  const initialOriginalChildId = urlParams.get("originalChildId") || initialChildId;
+  const siblingsParam = urlParams.get("siblings");
+  const initialSiblings = siblingsParam 
+    ? siblingsParam.split(",").filter(Boolean) 
+    : initialChildId ? [initialChildId] : []; // Default to just current child if no siblings
 
   const [state, setState] = useState<NavigationState>({
     view: initialView,
@@ -75,6 +85,8 @@ export function NavigationProvider({
     logCache: new Map(),
     isLoading: false,
     previousView: null,
+    originalChildId: initialOriginalChildId,
+    siblings: initialSiblings,
   });
 
   // Update URL without page reload

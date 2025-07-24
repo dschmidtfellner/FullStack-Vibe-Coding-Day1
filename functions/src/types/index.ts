@@ -88,6 +88,10 @@ export interface MessageData {
   readBy?: { [userId: string]: boolean };
   logId?: string;
   appVersion?: string;
+  familyContext?: {
+    originalChildId: string;
+    siblings: string[];
+  };
 }
 
 /**

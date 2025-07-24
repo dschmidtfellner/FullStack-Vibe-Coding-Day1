@@ -26,6 +26,10 @@ export interface FirebaseMessage {
   logId?: string;  // Optional - if this message is a comment on a log
   reactions?: { [emoji: string]: MessageReaction };  // reactions organized by emoji
   appVersion?: string;  // App version for push notification deep links (dev, test, live)
+  familyContext?: {  // Optional - for Phase 1 sibling support
+    originalChildId: string;
+    siblings: string[];
+  };
 }
 
 export interface Conversation {

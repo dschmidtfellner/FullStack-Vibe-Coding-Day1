@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Send, Plus, Mic, Square } from 'lucide-react';
 import { sendMessage, sendImageMessage, sendAudioMessage, setTypingStatus, sendLogComment, sendLogImageComment, sendLogAudioComment } from '@/lib/firebase/index';
 import { BubbleUser } from '@/lib/jwt-auth';
+import { useNavigation } from '@/contexts/NavigationContext';
 
 interface MessageInputBarProps {
   user: BubbleUser;
@@ -34,6 +35,12 @@ export function MessageInputBar({
   typingUsers = [],
   onMessageSent,
 }: MessageInputBarProps) {
+  // Get family context from navigation
+  const { state } = useNavigation();
+  const familyContext = state.originalChildId && state.siblings.length > 0 
+    ? { originalChildId: state.originalChildId, siblings: state.siblings }
+    : undefined;
+  
   // State management
   const [isUploading, setIsUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -89,7 +96,8 @@ export function MessageInputBar({
           file,
           conversationId,
           childId,
-          logId
+          logId,
+          familyContext
         );
         console.log('Log image comment sent successfully:', messageId);
       } else {
@@ -99,7 +107,8 @@ export function MessageInputBar({
           user.name,
           file,
           conversationId,
-          childId
+          childId,
+          familyContext
         );
         console.log('Image message sent successfully:', messageId);
       }
@@ -145,7 +154,8 @@ export function MessageInputBar({
                 audioBlob,
                 conversationId,
                 childId,
-                logId
+                logId,
+                familyContext
               );
               console.log('Log audio comment sent successfully');
             } else {
@@ -155,7 +165,8 @@ export function MessageInputBar({
                 user.name,
                 audioBlob,
                 conversationId,
-                childId
+                childId,
+                familyContext
               );
               console.log('Audio message sent successfully');
             }
@@ -228,7 +239,8 @@ export function MessageInputBar({
           newMessage.trim(),
           conversationId,
           childId,
-          logId
+          logId,
+          familyContext
         );
       } else {
         // Send regular message
@@ -237,7 +249,8 @@ export function MessageInputBar({
           user.name,
           newMessage.trim(),
           conversationId,
-          childId
+          childId,
+          familyContext
         );
       }
       setNewMessage("");

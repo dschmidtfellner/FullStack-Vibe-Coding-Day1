@@ -41,12 +41,13 @@ export async function sendLogComment(
   text: string,
   conversationId: string,
   childId: string,
-  logId: string
+  logId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
-    console.log('Firebase sendLogComment called with:', { senderId, senderName, text, conversationId, childId, logId });
+    console.log('Firebase sendLogComment called with:', { senderId, senderName, text, conversationId, childId, logId, familyContext });
     
-    const messageData = {
+    const messageData: any = {
       text,
       senderId,
       senderName,
@@ -58,6 +59,11 @@ export async function sendLogComment(
       read: false,
       appVersion: getAppVersion(),
     };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
     
     console.log('Adding log comment to Firestore:', messageData);
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
@@ -85,7 +91,8 @@ export async function sendLogImageComment(
   imageFile: File,
   conversationId: string,
   childId: string,
-  logId: string
+  logId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
     console.log('sendLogImageComment called with:', {
@@ -95,7 +102,8 @@ export async function sendLogImageComment(
       fileSize: imageFile.size,
       conversationId,
       childId,
-      logId
+      logId,
+      familyContext
     });
     
     // Upload image to Firebase Storage
@@ -105,7 +113,7 @@ export async function sendLogImageComment(
     
     // Send message with image and logId
     console.log('Creating log image comment in Firestore...');
-    const messageData = {
+    const messageData: any = {
       senderId,
       senderName,
       conversationId,
@@ -117,6 +125,11 @@ export async function sendLogImageComment(
       read: false,
       appVersion: getAppVersion(),
     };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
     
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     console.log('Log image comment created successfully:', messageRef.id);
@@ -144,7 +157,8 @@ export async function sendLogAudioComment(
   audioBlob: Blob,
   conversationId: string,
   childId: string,
-  logId: string
+  logId: string,
+  familyContext?: { originalChildId: string; siblings: string[] }
 ) {
   try {
     console.log('sendLogAudioComment called with:', {
@@ -153,7 +167,8 @@ export async function sendLogAudioComment(
       audioSize: audioBlob.size,
       conversationId,
       childId,
-      logId
+      logId,
+      familyContext
     });
     
     // Convert blob to file
@@ -168,7 +183,7 @@ export async function sendLogAudioComment(
     
     // Send message with audio and logId
     console.log('Creating log audio comment in Firestore...');
-    const messageData = {
+    const messageData: any = {
       senderId,
       senderName,
       conversationId,
@@ -180,6 +195,11 @@ export async function sendLogAudioComment(
       read: false,
       appVersion: getAppVersion(),
     };
+    
+    // Add family context if provided
+    if (familyContext) {
+      messageData.familyContext = familyContext;
+    }
 
     const messageRef = await addDoc(collection(db, 'messages'), messageData);
     console.log('Log audio comment created successfully:', messageRef.id);
