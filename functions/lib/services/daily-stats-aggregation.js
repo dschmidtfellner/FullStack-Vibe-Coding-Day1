@@ -122,8 +122,8 @@ function calculateAggregatedStats(logs, childId, date, timezone) {
             ? `${Math.round(timeToFallAsleepMs / (1000 * 60))}m`
             : '0m',
         averageWakeUpLength: wakeUpCount > 0
-            ? `${Math.round(totalWakeUpDurationMs / wakeUpCount / (1000 * 60))} minutes`
-            : '0 minutes',
+            ? formatDuration(Math.round(totalWakeUpDurationMs / wakeUpCount))
+            : '0m',
         lastUpdated: admin.firestore.Timestamp.now(),
         sourceLogIds,
         calculationVersion: 1
@@ -286,7 +286,7 @@ function createEmptyStats(childId, date, timezone) {
         longestSleepStretch: '0h 0m',
         numberOfWakeUps: 0,
         timeToFallAsleep: '0m',
-        averageWakeUpLength: '0 minutes',
+        averageWakeUpLength: '0m',
         lastUpdated: admin.firestore.Timestamp.now(),
         sourceLogIds: [],
         calculationVersion: 1

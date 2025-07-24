@@ -143,7 +143,7 @@ export interface DailySleepStats {
   longestSleepStretch: string; // "Xh Ym" format - longest single stretch across all logs starting this date
   numberOfWakeUps: number; // Total count across all logs starting this date
   timeToFallAsleep: string; // "Xm" format - from bedtime log (Put in Bed → Fell Asleep)
-  averageWakeUpLength: string; // "X minutes" format - average across all wake-ups for logs starting this date
+  averageWakeUpLength: string; // "Xh Ym" format - average across all wake-ups for logs starting this date
   
   // Metadata
   lastUpdated: Timestamp;
