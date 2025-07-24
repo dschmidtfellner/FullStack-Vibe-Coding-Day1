@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendClaudeNotification = exports.exploreFCMTokenStorage = exports.createUserMapping = exports.getUserMapping = exports.syncFCMTokens = exports.testPushNotification = exports.markAllLogsAsRead = exports.markLogAsRead = exports.markChatAsRead = exports.getFamilyUnreadCounters = exports.getUnreadCounters = exports.onMessageCreated = void 0;
+exports.manualRecalculateStats = exports.onSleepLogChange = exports.sendClaudeNotification = exports.exploreFCMTokenStorage = exports.createUserMapping = exports.getUserMapping = exports.syncFCMTokens = exports.testPushNotification = exports.markAllLogsAsRead = exports.markLogAsRead = exports.markChatAsRead = exports.getFamilyUnreadCounters = exports.getUnreadCounters = exports.onMessageCreated = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 // Initialize the new Firebase project (default)
@@ -11,6 +11,7 @@ const unread_counters_1 = require("./services/unread-counters");
 const user_management_1 = require("./services/user-management");
 const test_endpoints_1 = require("./services/test-endpoints");
 const fcm_tokens_1 = require("./services/fcm-tokens");
+const daily_stats_aggregation_1 = require("./services/daily-stats-aggregation");
 // Trigger: When message is created - update unread counters
 exports.onMessageCreated = functions.firestore
     .document('messages/{messageId}')
@@ -303,6 +304,33 @@ exports.sendClaudeNotification = functions.https.onRequest(async (req, res) => {
     }
     catch (error) {
         console.error('Error sending Claude notification:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            details: error.message
+        });
+    }
+});
+// Trigger: When sleep log is created/updated/deleted - recalculate daily stats
+exports.onSleepLogChange = functions.firestore
+    .document('logs/{logId}')
+    .onWrite(async (change, context) => {
+    await (0, daily_stats_aggregation_1.handleSleepLogChange)(change, context, db);
+});
+// Manual recalculation endpoint for fixing historical data
+exports.manualRecalculateStats = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+    try {
+        const result = await (0, daily_stats_aggregation_1.manualRecalculateStats)(req.body, db);
+        res.json(result);
+    }
+    catch (error) {
+        console.error('Error in manual recalculation:', error);
         res.status(500).json({
             error: 'Internal server error',
             details: error.message

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Daily Sleep Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 300px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .stats-container {
+            margin-top: 20px;
+            display: grid;
+            gap: 20px;
+        }
+        .stat-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat-item {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>View Daily Sleep Stats</h1>
+    
+    <div class="info">
+        <p>This page queries the daily_sleep_stats collection to view pre-calculated statistics.</p>
+        <p>Enter a child ID and date to view their daily stats.</p>
+    </div>
+    
+    <form id="queryForm">
+        <div class="form-group">
+            <label for="childId">Child ID:</label>
+            <input type="text" id="childId" placeholder="e.g., child_12345" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date" required>
+        </div>
+        
+        <button type="submit">View Stats</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc 
+        } from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyApvOUfF2ufNSs33Pzrm0YMmwQWZW1DW-Y",
+            authDomain: "doulaconnect-messaging.firebaseapp.com",
+            projectId: "doulaconnect-messaging",
+            storageBucket: "doulaconnect-messaging.appspot.com",
+            messagingSenderId: "415430679387",
+            appId: "1:415430679387:web:29e9c88cc696d7bdf05b95"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Set default date to today
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const childId = document.getElementById('childId').value;
+            const date = document.getElementById('date').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                // Query the daily_sleep_stats collection
+                const statsId = `child_${childId}_date_${date}`;
+                const statsDoc = await getDoc(doc(db, 'daily_sleep_stats', statsId));
+                
+                if (statsDoc.exists()) {
+                    const stats = statsDoc.data();
+                    
+                    resultDiv.innerHTML = `
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <h3>Daily Sleep Statistics for ${date}</h3>
+                                <div class="stat-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-label">Time Asleep</div>
+                                        <div class="stat-value">${stats.timeAsleep}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Time Awake in Bed</div>
+                                        <div class="stat-value">${stats.timeAwakeInBed}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Longest Sleep Stretch</div>
+                                        <div class="stat-value">${stats.longestSleepStretch}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Number of Wake-Ups</div>
+                                        <div class="stat-value">${stats.numberOfWakeUps}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Time to Fall Asleep</div>
+                                        <div class="stat-value">${stats.timeToFallAsleep}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Average Wake-Up Length</div>
+                                        <div class="stat-value">${stats.averageWakeUpLength}</div>
+                                    </div>
+                                </div>
+                                <p style="margin-top: 15px; color: #666;">
+                                    <strong>Timezone:</strong> ${stats.timezone}<br>
+                                    <strong>Last Updated:</strong> ${stats.lastUpdated.toDate().toLocaleString()}<br>
+                                    <strong>Source Logs:</strong> ${stats.sourceLogIds.length} logs
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">No stats found for child ${childId} on ${date}</p>
+                        <p>This could mean:</p>
+                        <ul>
+                            <li>No sleep logs exist for this date</li>
+                            <li>Stats haven't been calculated yet (try using the manual recalculation tool)</li>
+                            <li>The child ID might be incorrect</li>
+                        </ul>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

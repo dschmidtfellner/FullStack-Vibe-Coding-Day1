@@ -17,6 +17,7 @@ import {
   markChatMessagesAsRead,
 } from "@/lib/firebase/index";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { toCompactTime } from "@/lib/firebase/timezone-utils";
 
 // Universal skeleton loading component (will be extracted later)
 function UniversalSkeleton() {
@@ -183,12 +184,12 @@ export function MessagingView() {
         day: "numeric",
       }).format(date) +
       ", " +
-      new Intl.DateTimeFormat("en-US", {
+      toCompactTime(new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
         hour: "numeric",
         minute: "2-digit",
         hour12: true,
-      }).format(date).toLowerCase()
+      }).format(date)).toLowerCase()
     );
   };
 

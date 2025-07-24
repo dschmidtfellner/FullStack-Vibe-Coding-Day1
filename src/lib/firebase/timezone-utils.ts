@@ -1,6 +1,15 @@
 import { Timestamp } from 'firebase/firestore';
 
 /**
+ * Convert time string from standard format to compact format
+ * @param timeStr - Time string like "7:31 PM"
+ * @returns Compact time string like "7:31p"
+ */
+export function toCompactTime(timeStr: string): string {
+  return timeStr.replace(" AM", "a").replace(" PM", "p");
+}
+
+/**
  * Convert a date to Child Local Time (stored as "fake UTC")
  * This takes the wall clock time in the child's timezone and stores it as if it were UTC
  * @param date - The actual date/time
@@ -97,10 +106,10 @@ export function formatLocalDate(date: Date, timezone: string): string {
  * Helper function to format time in baby's timezone
  */
 export function formatLocalTime(date: Date, timezone: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return toCompactTime(new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
-  }).format(date);
+  }).format(date));
 }

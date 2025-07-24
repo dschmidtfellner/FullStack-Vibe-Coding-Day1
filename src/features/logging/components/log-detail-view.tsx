@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toCompactTime } from '@/lib/firebase/timezone-utils';
 import { useBubbleAuth } from '@/hooks/useBubbleAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useTopSpacing } from '@/hooks/useTopSpacing';
@@ -172,12 +173,12 @@ export function LogDetailView() {
     if (!timestamp) return "";
 
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat("en-US", {
+    return toCompactTime(new Intl.DateTimeFormat("en-US", {
       timeZone: state.timezone,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).format(date);
+    }).format(date));
   };
 
   // Get event type text

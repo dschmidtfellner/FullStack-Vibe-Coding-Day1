@@ -667,3 +667,58 @@ Adding timezone support to all timestamp displays throughout the app to ensure t
 - App uses URL parameters to determine current view and context
 - Key params: `view`, `childId`, `logId`, `conversationId`
 - Timezone passed via URL parameter from Bubble parent app
+
+## Current Session: Daily Sleep Stats Aggregation (2025-07-24)
+
+### Feature: Pre-calculated daily sleep statistics for Bubble.io integration
+
+### What Was Implemented:
+
+1. **Backend Infrastructure**:
+   - Created `DailySleepStats` TypeScript interface in Firebase types
+   - Built Cloud Functions service (`daily-stats-aggregation.ts`) with:
+     - Automatic trigger on sleep log changes
+     - Manual recalculation HTTP endpoint
+     - Smart date handling for cross-midnight logs
+   - Deployed two new Firebase functions:
+     - `onSleepLogChange` - Auto-triggers on log create/update/delete
+     - `manualRecalculateStats` - HTTP endpoint for bulk recalculation
+
+2. **Security & Permissions**:
+   - Updated Firestore rules to allow public read of daily_sleep_stats
+   - Write access restricted to Cloud Functions only
+
+3. **Test Infrastructure**:
+   - Created test pages for manual recalculation and viewing stats
+   - Both pages confirmed working in production
+
+### How It Works:
+
+1. When a sleep log is created/updated/deleted, Cloud Function automatically triggers
+2. Function aggregates all sleep logs for that date into 6 key metrics:
+   - Time Asleep
+   - Time Awake in Bed
+   - Longest Sleep Stretch
+   - Number of Wake-Ups
+   - Time to Fall Asleep (bedtime only)
+   - Average Wake-Up Length
+
+3. Results stored in `daily_sleep_stats` collection with ID format: `child_{childId}_date_{YYYY-MM-DD}`
+4. Bubble can query this collection directly for O(1) performance
+
+### Key Files Modified:
+- `/src/lib/firebase/types.ts` - Added DailySleepStats interface
+- `/functions/src/services/daily-stats-aggregation.ts` - Core aggregation logic
+- `/functions/src/index.ts` - Added function exports
+- `/firestore.rules` - Added read permissions for daily_sleep_stats
+
+### Manual Recalculation Endpoint:
+```
+POST https://us-central1-doulaconnect-messaging.cloudfunctions.net/manualRecalculateStats
+Body: { "childId": "xxx", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD" }
+```
+
+### Next Steps:
+- Historical data migration script
+- Bubble.io integration setup
+- Monitor function performance in production

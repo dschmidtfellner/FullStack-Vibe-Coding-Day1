@@ -11,6 +11,7 @@ import {
 import { FirebaseMessage } from "@/lib/firebase/types";
 import { db } from "@/lib/firebase/core";
 import { markAllLogCommentsAsRead } from "@/lib/firebase/index";
+import { toCompactTime } from "@/lib/firebase/timezone-utils";
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -221,12 +222,12 @@ export function CommentsModal({
                   const messageDate = comment.timestamp.toDate();
                   const timezone = state.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
                   
-                  const timeStr = new Intl.DateTimeFormat("en-US", {
+                  const timeStr = toCompactTime(new Intl.DateTimeFormat("en-US", {
                     timeZone: timezone,
                     hour: "numeric",
                     minute: "2-digit",
                     hour12: true,
-                  }).format(messageDate);
+                  }).format(messageDate));
                   
                   const dateStr = new Intl.DateTimeFormat("en-US", {
                     timeZone: timezone,

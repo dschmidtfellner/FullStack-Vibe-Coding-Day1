@@ -126,3 +126,27 @@ export interface UnreadCounters {
   // Metadata
   lastUpdated: Timestamp;
 }
+
+// =============================================================================
+// DAILY SLEEP STATISTICS TYPES
+// =============================================================================
+
+export interface DailySleepStats {
+  id: string; // Format: "child_{childId}_date_{YYYY-MM-DD}"
+  childId: string;
+  date: string; // YYYY-MM-DD in child's timezone
+  timezone: string; // Child's timezone when calculated
+  
+  // Core metrics (matching Summary page UI)
+  timeAsleep: string; // "Xh Ym" format - total across all logs starting this date
+  timeAwakeInBed: string; // "Xh Ym" format - total across all logs starting this date  
+  longestSleepStretch: string; // "Xh Ym" format - longest single stretch across all logs starting this date
+  numberOfWakeUps: number; // Total count across all logs starting this date
+  timeToFallAsleep: string; // "Xm" format - from bedtime log (Put in Bed → Fell Asleep)
+  averageWakeUpLength: string; // "X minutes" format - average across all wake-ups for logs starting this date
+  
+  // Metadata
+  lastUpdated: Timestamp;
+  sourceLogIds: string[]; // Array of log IDs that contributed to these stats
+  calculationVersion: number; // For future schema migrations
+}

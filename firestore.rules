@@ -50,5 +50,11 @@ service cloud.firestore {
       allow read, write: if true; // Allow access to family unread counters
       allow create: if true; // Allow counter creation
     }
+    
+    // Daily sleep stats collection - allow read for all, write only from admin/functions
+    match /daily_sleep_stats/{statId} {
+      allow read: if true; // Allow anyone to read daily stats
+      allow write: if false; // Only Cloud Functions can write (they use Admin SDK)
+    }
   }
 }

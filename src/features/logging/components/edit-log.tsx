@@ -4,6 +4,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { Timestamp } from 'firebase/firestore';
 import { SleepEvent, SleepLog } from '@/lib/firebase/types';
 import { updateSleepLog, getLog } from '@/lib/firebase/index';
+import { toCompactTime } from '@/lib/firebase/timezone-utils';
 import { UniversalSkeleton } from '@/components/shared/UniversalSkeleton';
 import { BasicInfoSection, DateSelectorSection, InterjectionSection } from './edit-log-form-sections';
 import { EventsList } from './edit-log-events';
@@ -39,12 +40,12 @@ export function EditLog() {
   const formatTimeInTimezone = (timestamp: any) => {
     if (!timestamp) return "";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat("en-US", {
+    return toCompactTime(new Intl.DateTimeFormat("en-US", {
       timeZone: state.timezone,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).format(date);
+    }).format(date));
   };
 
   // Get current log from cache or fetch it
@@ -101,12 +102,12 @@ export function EditLog() {
 
   // Format time for display
   const formatTimeForDisplay = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
+    return toCompactTime(new Intl.DateTimeFormat("en-US", {
       timeZone: state.timezone,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).format(date);
+    }).format(date));
   };
 
   // Format date for the date selector

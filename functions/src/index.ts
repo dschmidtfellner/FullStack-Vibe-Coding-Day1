@@ -26,6 +26,10 @@ import {
   exploreFCMTokenStorage as exploreFCMTokenStorageService 
 } from "./services/test-endpoints";
 import { FCMTokenManager } from "./services/fcm-tokens";
+import { 
+  handleSleepLogChange, 
+  manualRecalculateStats as manualRecalculateStatsService 
+} from "./services/daily-stats-aggregation";
 
 // Trigger: When message is created - update unread counters
 export const onMessageCreated = functions.firestore
@@ -369,6 +373,37 @@ export const sendClaudeNotification = functions.https.onRequest(async (req, res)
 
   } catch (error: any) {
     console.error('Error sending Claude notification:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
+// Trigger: When sleep log is created/updated/deleted - recalculate daily stats
+export const onSleepLogChange = functions.firestore
+  .document('logs/{logId}')
+  .onWrite(async (change, context) => {
+    await handleSleepLogChange(change, context, db);
+  });
+
+// Manual recalculation endpoint for fixing historical data
+export const manualRecalculateStats = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  try {
+    const result = await manualRecalculateStatsService(req.body, db);
+    res.json(result);
+
+  } catch (error: any) {
+    console.error('Error in manual recalculation:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       details: error.message 

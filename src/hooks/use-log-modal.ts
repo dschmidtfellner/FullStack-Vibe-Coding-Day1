@@ -13,6 +13,7 @@ import {
   getChildStartOfDay,
   getChildEndOfDay,
 } from '@/lib/firebase/index';
+import { toCompactTime } from '@/lib/firebase/timezone-utils';
 
 export interface ValidationWarning {
   type: "future" | "long-gap" | "too-long-gap";
@@ -241,12 +242,12 @@ export function useLogModal() {
   };
 
   const formatTimeForDisplay = (date: Date): string => {
-    return new Intl.DateTimeFormat("en-US", {
+    return toCompactTime(new Intl.DateTimeFormat("en-US", {
       timeZone: state.timezone,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).format(date);
+    }).format(date));
   };
 
   const createEventTimestamp = (
@@ -449,12 +450,12 @@ export function useLogModal() {
             type: e.type,
             childLocalTimestamp: Timestamp.fromDate(e.timestamp),
             originalTimezone: state.timezone,
-            localTime: new Intl.DateTimeFormat("en-US", {
+            localTime: toCompactTime(new Intl.DateTimeFormat("en-US", {
               timeZone: state.timezone,
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
-            }).format(e.timestamp),
+            }).format(e.timestamp)),
           }));
           const updatedLog = {
             ...currentLog,
