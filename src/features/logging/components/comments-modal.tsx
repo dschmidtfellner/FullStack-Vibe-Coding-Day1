@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useNavigation } from '@/contexts/NavigationContext';
-import { X, MessageSquare, Search } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigation } from "@/contexts/NavigationContext";
+import { X, MessageSquare, Search } from "lucide-react";
 import {
   collection,
   query,
   where,
   orderBy,
   onSnapshot,
-} from 'firebase/firestore';
-import { FirebaseMessage } from '@/lib/firebase/types';
-import { db } from '@/lib/firebase/core';
-import { markAllLogCommentsAsRead } from '@/lib/firebase/index';
+} from "firebase/firestore";
+import { FirebaseMessage } from "@/lib/firebase/types";
+import { db } from "@/lib/firebase/core";
+import { markAllLogCommentsAsRead } from "@/lib/firebase/index";
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -58,8 +58,8 @@ export function CommentsModal({
           const isRead =
             message.senderId === user?.id || // User's own messages are always "read"
             (message.readBy &&
-             typeof message.readBy === "object" &&
-             message.readBy[user?.id] === true);
+              typeof message.readBy === "object" &&
+              message.readBy[user?.id] === true);
           if (!isRead) {
             unreadMessages.push(message);
           }
@@ -215,6 +215,7 @@ export function CommentsModal({
                   const logType = log?.sleepType || "sleep";
                   const logTypeDisplay =
                     logType.charAt(0).toUpperCase() + logType.slice(1);
+                  const logStartTime = log?.events?.[0]?.localTime || "";
 
                   // Format timestamp
                   const messageDate = comment.timestamp.toDate();
@@ -247,28 +248,35 @@ export function CommentsModal({
                         }
                       }}
                     >
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0 mb-2">
-                        <p
-                          className="text-sm sm:text-base"
-                          style={{ color: "#745288", fontWeight: "500" }}
-                        >
-                          {comment.senderName} commented on {logTypeDisplay}
-                        </p>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0 mb-1">
+                        <div className="flex flex-col">
+                          <p
+                            className="text-sm sm:text-base"
+                            style={{ color: "#745288", fontWeight: "600" }}
+                          >
+                            {comment.senderName}
+                          </p>
+                          <p
+                            className="text-xs sm:text-sm"
+                            style={{ color: "#745288", fontWeight: "400" }}
+                          >
+                            {logTypeDisplay} at {logStartTime}
+                          </p>
+                        </div>
+
                         <div className="flex gap-2 sm:text-right sm:flex-col">
                           <p
                             className={`text-sm ${
                               user?.darkMode ? "text-gray-400" : "text-gray-600"
                             }`}
                           >
-                            {timeStr}
+                            {dateStr}, {timeStr}
                           </p>
                           <p
                             className={`text-xs ${
                               user?.darkMode ? "text-gray-500" : "text-gray-500"
                             }`}
-                          >
-                            {dateStr}
-                          </p>
+                          ></p>
                         </div>
                       </div>
                       <p
