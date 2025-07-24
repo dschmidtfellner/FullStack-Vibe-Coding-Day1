@@ -19,8 +19,7 @@ import { SleepEvent, SleepLog } from './types';
 import { 
   toChildLocalTime, 
   formatLocalDate, 
-  formatLocalTime,
-  toCompactTime 
+  formatLocalTime
 } from './timezone-utils';
 
 /**
